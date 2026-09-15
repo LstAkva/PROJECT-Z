@@ -38,3 +38,13 @@ def test_database_connection() -> bool:
         return False
     except Exception:
         return False
+
+def get_db():
+    """Provides a transactional database session per request."""
+    if SessionLocal is None:
+        raise RuntimeError("Database session factory is not configured.")
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

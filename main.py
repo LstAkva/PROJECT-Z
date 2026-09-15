@@ -1,9 +1,13 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from database import test_database_connection
+from api.quizzes import router as quizzes_router
 
-app = FastAPI()
+app = FastAPI(title="ZakoWhat API")
 templates = Jinja2Templates(directory="templates")
+
+# Mount API routers
+app.include_router(quizzes_router)
 
 @app.get("/health")
 def health_check():
