@@ -4,3 +4,4 @@ jinja2
 sqlalchemy
 psycopg2-binary
 python-dotenv
+alembic
