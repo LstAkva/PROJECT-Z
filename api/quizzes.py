@@ -16,30 +16,34 @@ def sanitize_round_config(round_obj: Round) -> dict:
 
 @router.get("", status_code=status.HTTP_200_OK)
 def list_quizzes(db: Session = Depends(get_db)):
-    """Returns published quizzes available for discovery."""
     quizzes = db.query(Quiz).all()
     results = []
-
     for quiz in quizzes:
-        # Get the latest published version
-        latest_version = (
+        latest_published = (
             db.query(QuizVersion)
-            .filter(QuizVersion.quiz_id == quiz.id)
+            .filter(QuizVersion.quiz_id == quiz.id, QuizVersion.status == "published")
             .order_by(QuizVersion.version_number.desc())
             .first()
         )
-        if not latest_version:
-            continue
-
-        results.append({
-            "quiz_id": quiz.id,
-            "title": quiz.title,
-            "description": quiz.description,
-            "version_number": latest_version.version_number,
-            "published_at": latest_version.published_at.isoformat() if latest_version.published_at else None,
-        })
-
+        if latest_published:
+            results.append({
+                "quiz_id": quiz.id,
+                "title": quiz.title,
+                "version_number": latest_published.version_number,
+            })
     return results
+
+from datetime import datetime, timezone
+
+@router.post("/{quiz_id}/publish/{version_number}", status_code=status.HTTP_200_OK)
+def publish_quiz_version(quiz_id: int, version_number: int, db: Session = Depends(get_db)):
+    version = db.query(QuizVersion).filter(QuizVersion.quiz_id == quiz_id, QuizVersion.version_number == version_number).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    version.status = "published"
+    version.published_at = datetime.now(timezone.utc)
+    db.commit()
+    return {"message": f"Version {version_number} published"}
 
 @router.get("/{quiz_id}", status_code=status.HTTP_200_OK)
 def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):

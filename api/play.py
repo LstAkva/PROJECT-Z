@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
 from models import Quiz, QuizVersion, Round, Question, AcceptedAnswer, SoloAttempt, AnswerRecord
-
+import re
 router = APIRouter(prefix="/api/play", tags=["play"])
 
 
@@ -14,14 +14,15 @@ class AnswerSubmission(BaseModel):
     answer: str
 
 
-def normalize_answer(text: str) -> str:
-    """Lowercases, strips leading/trailing whitespace, and strips basic punctuation."""
+def normalize_uzbek_latin(text: str) -> str:
+    """Normalizes specifically for Uzbek Latin ZakoWhat content."""
     if not text:
         return ""
-    text = text.strip().lower()
-    for char in string.punctuation:
-        text = text.replace(char, "")
-    return " ".join(text.split())
+    text = text.lower()
+    text = re.sub(r"[’ʻʼ`]", "'", text)
+    text = text.strip('.,!?"()[]{}:;* ')
+    text = re.sub(r'\s+', ' ', text)
+    return text
 
 
 def get_ordered_rounds(db: Session, quiz_version_id: int) -> List[Round]:
@@ -69,16 +70,19 @@ def start_solo_attempt(quiz_id: int, db: Session = Depends(get_db)):
     if not quiz:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
 
-    latest_version = (
-        db.query(QuizVersion)
-        .filter(QuizVersion.quiz_id == quiz.id)
-        .order_by(QuizVersion.version_number.desc())
-        .first()
-    )
-    if not latest_version:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz has no published version")
+    latest_published = (
+    db.query(QuizVersion)
+    .filter(QuizVersion.quiz_id == quiz.id, QuizVersion.status == "published")
+    .order_by(QuizVersion.version_number.desc())
+    .first()
+)
+    if not latest_published:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No published version available")
 
-    rounds = get_ordered_rounds(db, latest_version.id)
+
+
+
+    rounds = get_ordered_rounds(db, latest_published.id)
     if not rounds:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Quiz has no rounds")
 
@@ -88,7 +92,7 @@ def start_solo_attempt(quiz_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="First round has no questions")
 
     attempt = SoloAttempt(
-        quiz_version_id=latest_version.id,
+        quiz_version_id=latest_published.id,
         current_round_index=0,
         current_question_index=0,
         total_score=0,
@@ -150,8 +154,32 @@ def submit_answer(session_token: str, submission: AnswerSubmission, db: Session 
     current_q = questions[attempt.current_question_index]
 
     accepted_answers = db.query(AcceptedAnswer).filter(AcceptedAnswer.question_id == current_q.id).all()
-    cleaned_input = normalize_answer(submission.answer)
-    is_correct = any(normalize_answer(ans.answer_text) == cleaned_input for ans in accepted_answers)
+    cleaned_input = normalize_uzbek_latin(submission.answer)
+    
+    is_correct = False
+    matched_answer_text = None
+    
+    # Проверка на правильность
+    for ans in accepted_answers:
+        norm_ans = normalize_uzbek_latin(ans.answer_text)
+        if norm_ans == cleaned_input:
+            is_correct = True
+            matched_answer_text = norm_ans
+            break
+
+    # Правило Zanjir: ответ должен начинаться на последнюю букву предыдущего ПРАВИЛЬНОГО ответа
+    if is_correct and current_round.round_type == "zanjir" and attempt.current_question_index > 0:
+        prev_q = questions[attempt.current_question_index - 1]
+        prev_accepted = db.query(AcceptedAnswer).filter(AcceptedAnswer.question_id == prev_q.id).first()
+        
+        if prev_accepted:
+            prev_norm = normalize_uzbek_latin(prev_accepted.answer_text)
+            expected_start = prev_norm[-1] if prev_norm else ""
+            actual_start = matched_answer_text[0] if matched_answer_text else ""
+            
+            if expected_start != actual_start:
+                is_correct = False
+
     points = current_q.points if is_correct else 0
 
     record = AnswerRecord(
@@ -165,7 +193,7 @@ def submit_answer(session_token: str, submission: AnswerSubmission, db: Session 
     attempt.total_score += points
     attempt.current_question_index += 1
 
-    # Check if all questions in the current round have been answered
+    # Проверяем, завершился ли текущий раунд
     if attempt.current_question_index >= len(questions):
         attempt.status = "round_reveal"
         db.commit()
@@ -192,7 +220,6 @@ def submit_answer(session_token: str, submission: AnswerSubmission, db: Session 
         "reveal_available": False,
         "next_state": format_question_response(next_q, attempt.current_question_index, len(questions), current_round),
     }
-
 
 @router.get("/{session_token}/reveal", status_code=status.HTTP_200_OK)
 def get_round_reveal(session_token: str, db: Session = Depends(get_db)):

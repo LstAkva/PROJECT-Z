@@ -1,6 +1,7 @@
 import secrets
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, JSON, Boolean
+from sqlalchemy.dialects.postgresql import JSONB  # <-- ДОБАВЛЕН ИМПОРТ
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -24,7 +25,8 @@ class QuizVersion(Base):
     id = Column(Integer, primary_key=True, index=True)
     quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
     version_number = Column(Integer, nullable=False)
-    published_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    status = Column(String, default="draft", nullable=False) # draft, published, archived
+    published_at = Column(DateTime, nullable=True) 
     
     quiz = relationship("Quiz", back_populates="versions")
     rounds = relationship("Round", back_populates="quiz_version", cascade="all, delete-orphan")
@@ -54,6 +56,15 @@ class Question(Base):
     media_url = Column(String, nullable=True)
     points = Column(Integer, default=1)
     
+    # --- НОВЫЕ ПОЛЯ (Import Contract v1) ---
+    explanation = Column(Text, nullable=True)
+    status = Column(String, nullable=False, default="draft", server_default="draft")
+    source_meta = Column(JSONB, nullable=True)
+    compound_group_id = Column(String, nullable=True)
+    compound_type = Column(String, nullable=True)
+    category = Column(String, nullable=True)
+    # ---------------------------------------
+
     round = relationship("Round", back_populates="questions")
     accepted_answers = relationship("AcceptedAnswer", back_populates="question", cascade="all, delete-orphan")
 
@@ -64,6 +75,10 @@ class AcceptedAnswer(Base):
     id = Column(Integer, primary_key=True, index=True)
     question_id = Column(Integer, ForeignKey("questions.id"), nullable=False)
     answer_text = Column(String, nullable=False)
+    
+    # --- НОВОЕ ПОЛЕ (Import Contract v1) ---
+    is_primary = Column(Boolean, nullable=False, default=False, server_default="false")
+    # ---------------------------------------
     
     question = relationship("Question", back_populates="accepted_answers")
 
