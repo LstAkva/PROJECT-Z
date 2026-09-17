@@ -221,6 +221,124 @@ def validate_only(json_filepath):
 # DEDUPLICATION LOGIC
 # =========================================================
 
+class DeduplicationIndex:
+    """
+    In-memory deduplication index preloaded once from the database.
+    Provides O(1) multi-layer duplicate checking and eliminates N+1 queries.
+    """
+    def __init__(self, db=None):
+        self.canonical_ids = set()
+        self.telegram_keys = set()
+        self.file_keys = set()
+        self.content_keys = set()
+        if db is not None:
+            self.preload(db)
+
+    def preload(self, db):
+        # 1. Fetch primary answers map: question_id -> list of answer texts
+        primary_answers = (
+            db.query(AcceptedAnswer.question_id, AcceptedAnswer.answer_text)
+            .filter(AcceptedAnswer.is_primary.is_(True))
+            .all()
+        )
+        prim_map = {}
+        for qid, atext in primary_answers:
+            if atext:
+                prim_map.setdefault(qid, []).append(atext)
+
+        # 2. Fetch all existing questions in one single query
+        for q in db.query(Question).all():
+            sm = q.source_meta or {}
+            cid = sm.get("canonical_id")
+            if cid:
+                self.canonical_ids.add(str(cid))
+
+            ch = sm.get("channel_id")
+            msg = sm.get("question_message_id")
+            sf = sm.get("source_file")
+            qn = sm.get("question_number")
+
+            if sf and qn:
+                self.file_keys.add((str(sf), str(qn)))
+
+            primary_list = prim_map.get(q.id) or ([sm.get("primary_answer")] if sm.get("primary_answer") else [])
+            nt = normalize_uzbek_latin(q.text or "")
+            pts = int(q.points) if q.points is not None else 1
+
+            pts_list = {pts}
+            if sm.get("points") is not None:
+                try:
+                    pts_list.add(int(sm.get("points")))
+                except (ValueError, TypeError):
+                    pass
+
+            text_candidates = {nt}
+            if sm.get("question_text"):
+                text_candidates.add(normalize_uzbek_latin(sm.get("question_text")))
+
+            for t in text_candidates:
+                for prim in primary_list:
+                    na = normalize_uzbek_latin(prim or "")
+                    if t and na:
+                        self.content_keys.add((t, na))
+                    for p in pts_list:
+                        if ch and msg:
+                            self.telegram_keys.add((str(ch), str(msg), p, t, na))
+
+    def is_duplicate(
+        self,
+        canonical_id=None,
+        channel_id=None,
+        question_message_id=None,
+        source_file=None,
+        question_number=None,
+        points=None,
+        norm_text=None,
+        norm_primary_ans=None,
+    ):
+        # Layer 1: Canonical ID
+        if canonical_id and str(canonical_id) in self.canonical_ids:
+            return True
+
+        # Layer 2: Telegram Provenance
+        if channel_id and question_message_id:
+            pts = int(points) if points is not None else 1
+            if (str(channel_id), str(question_message_id), pts, norm_text, norm_primary_ans) in self.telegram_keys:
+                return True
+
+        # Layer 3: File Provenance
+        if source_file and question_number:
+            if (str(source_file), str(question_number)) in self.file_keys:
+                return True
+
+        # Layer 4: Global Normalized Content Match (text + primary answer)
+        if norm_text and norm_primary_ans and (norm_text, norm_primary_ans) in self.content_keys:
+            return True
+
+        return False
+
+    def register(
+        self,
+        canonical_id=None,
+        channel_id=None,
+        question_message_id=None,
+        source_file=None,
+        question_number=None,
+        points=None,
+        norm_text=None,
+        norm_primary_ans=None,
+    ):
+        if canonical_id:
+            self.canonical_ids.add(str(canonical_id))
+        if channel_id and question_message_id:
+            pts = int(points) if points is not None else 1
+            self.telegram_keys.add((str(channel_id), str(question_message_id), pts, norm_text, norm_primary_ans))
+        if source_file and question_number:
+            self.file_keys.add((str(source_file), str(question_number)))
+        if norm_text and norm_primary_ans:
+            self.content_keys.add((norm_text, norm_primary_ans))
+
+
 def find_existing_canonical_id(db, canonical_id):
     if not canonical_id:
         return None
@@ -232,6 +350,7 @@ def find_existing_canonical_id(db, canonical_id):
         )
         if res:
             return res
+        return None
     except Exception:
         pass
 
@@ -240,6 +359,7 @@ def find_existing_canonical_id(db, canonical_id):
         if candidate.source_meta and str(candidate.source_meta.get("canonical_id")) == str(canonical_id):
             return candidate
     return None
+
 
 
 def find_existing_telegram_question(
@@ -315,6 +435,7 @@ def find_existing_file_question(
         )
         if res:
             return res
+        return None
     except Exception:
         pass
 
@@ -404,6 +525,9 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
         print(f"Importing directly into Question Bank: {filename} {'[DRY RUN]' if dry_run else ''}")
         print(f"Canonical records to process: {len(data)}")
 
+        # 1. PRELOAD DEDUPLICATION INDEX (O(1) lookups, zero N+1 queries)
+        dedup_index = DeduplicationIndex(db)
+
         # 2. PROCESS RECORDS
         for index, raw_item in enumerate(data):
             # Quality gate evaluation
@@ -429,40 +553,36 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
             points = item.get("points", 1) or 1
             question_text = item["text"]
             primary_answer = item["primary_answer"]
-
-            # Multi-layer deduplication
-            existing_q = None
-
-            # 2a. Canonical ID
             canonical_id = item.get("id") or raw_item.get("id")
-            if canonical_id:
-                existing_q = find_existing_canonical_id(db, canonical_id)
 
-            # 2b. Telegram / File Provenance
-            if existing_q is None:
-                if channel_id and question_message_id:
-                    existing_q = find_existing_telegram_question(
-                        db=db,
-                        channel_id=channel_id,
-                        question_message_id=question_message_id,
-                        points=points,
-                        question_text=question_text,
-                        primary_answer=primary_answer,
-                    )
-                elif source_file and question_number:
-                    existing_q = find_existing_file_question(
-                        db=db,
-                        source_file=source_file,
-                        question_number=question_number,
-                    )
+            norm_text = normalize_uzbek_latin(question_text)
+            norm_primary_ans = normalize_uzbek_latin(primary_answer)
 
-            # 2c. Global Content Match (Normalized text + primary answer)
-            if existing_q is None:
-                existing_q = find_existing_content_match(db, question_text, primary_answer)
-
-            if existing_q is not None:
+            # In-memory multi-layer deduplication (O(1), zero DB queries)
+            if dedup_index.is_duplicate(
+                canonical_id=canonical_id,
+                channel_id=channel_id,
+                question_message_id=question_message_id,
+                source_file=source_file,
+                question_number=question_number,
+                points=points,
+                norm_text=norm_text,
+                norm_primary_ans=norm_primary_ans,
+            ):
                 stats["skipped_duplicate"] += 1
                 continue
+
+            # Register immediately in index to prevent duplicate ingestion within the same batch
+            dedup_index.register(
+                canonical_id=canonical_id,
+                channel_id=channel_id,
+                question_message_id=question_message_id,
+                source_file=source_file,
+                question_number=question_number,
+                points=points,
+                norm_text=norm_text,
+                norm_primary_ans=norm_primary_ans,
+            )
 
             # Status resolution:
             # Quality Gate decision is authoritative for whether a record is admitted and its Question Bank status.
@@ -542,13 +662,9 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
                 media_provider=media_provider,
                 media_url=media_url,
             )
-            db.add(new_question)
-            db.flush()
-
             # Primary answer
-            db.add(
+            new_question.accepted_answers.append(
                 AcceptedAnswer(
-                    question_id=new_question.id,
                     answer_text=primary_answer,
                     is_primary=True,
                 )
@@ -571,14 +687,14 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
                     continue
 
                 seen_alternatives.add(ans_text)
-                db.add(
+                new_question.accepted_answers.append(
                     AcceptedAnswer(
-                        question_id=new_question.id,
                         answer_text=ans_text,
                         is_primary=False,
                     )
                 )
 
+            db.add(new_question)
             stats["added"] += 1
 
         if dry_run:

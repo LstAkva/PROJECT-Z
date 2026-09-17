@@ -276,3 +276,131 @@ def test_dev_database_not_touched_by_tests(mem_db):
     assert mem_db.bind.name == "sqlite"
 
 
+def test_zero_per_record_queries_during_import(mem_db, tmp_path):
+    """
+    Performance Contract: Deduplication preloads existing data once.
+    Zero per-record SELECT queries are issued during the loop (no N+1).
+    """
+    from sqlalchemy import event
+
+    # Create 20 distinct records
+    records = []
+    for i in range(20):
+        records.append({
+            "id": f"batch_perf_q_{i}",
+            "text": f"Unikal savol matni {i}?",
+            "primary_answer": f"Javob {i}",
+            "accepted_answers": [{"text": f"Javob {i}", "type": "primary"}],
+            "points": 10,
+            "source": {
+                "channel_id": "111222",
+                "question_message_id": 100 + i,
+                "source_name": "Perf Test"
+            },
+            "editorial": {"status": "ready", "flags": []}
+        })
+
+    f = tmp_path / "test_perf_batch.json"
+    f.write_text(json.dumps(records, ensure_ascii=False), encoding="utf-8")
+
+    queries = []
+
+    def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+        # Record only SELECT queries to detect table scanning N+1
+        if statement.strip().upper().startswith("SELECT"):
+            queries.append(statement)
+
+    engine = mem_db.bind
+    event.listen(engine, "before_cursor_execute", before_cursor_execute)
+    try:
+        stats = import_questions(str(f), dry_run=True, db_session=mem_db)
+    finally:
+        event.remove(engine, "before_cursor_execute", before_cursor_execute)
+
+    assert stats["total"] == 20
+    assert stats["added"] == 20
+    # Exactly 2 SELECT queries were executed:
+    # 1. db.query(AcceptedAnswer).filter(...is_primary.is_(True))
+    # 2. db.query(Question).all()
+    # ZERO per-record SELECT queries for the 20 items.
+    assert len(queries) == 2, f"Expected 2 preload SELECT queries, got {len(queries)}: {queries}"
+
+
+def test_internal_batch_duplicates_detected_in_memory(mem_db, tmp_path):
+    """
+    Verify that duplicate questions occurring within the same batch file
+    are registered and detected in-memory without hitting the database.
+    """
+    records = [
+        {
+            "id": "batch_dup_1",
+            "text": "O'zbekiston mustaqilligi qachon e'lon qilingan?",
+            "primary_answer": "1991-yil",
+            "accepted_answers": [{"text": "1991-yil", "type": "primary"}],
+            "points": 10,
+            "source": {"channel_id": "100", "question_message_id": 1, "source_name": "Batch"},
+            "editorial": {"status": "ready"}
+        },
+        {
+            "id": "batch_dup_2",  # Different ID, but identical normalized content
+            "text": "O\u2018zbekiston mustaqilligi qachon e\u2019lon qilingan?",
+            "primary_answer": "1991-yil",
+            "accepted_answers": [{"text": "1991-yil", "type": "primary"}],
+            "points": 10,
+            "source": {"channel_id": "200", "question_message_id": 2, "source_name": "Batch"},
+            "editorial": {"status": "ready"}
+        }
+    ]
+    f = tmp_path / "batch_dup.json"
+    f.write_text(json.dumps(records, ensure_ascii=False), encoding="utf-8")
+
+    stats = import_questions(str(f), dry_run=False, db_session=mem_db)
+    assert stats["total"] == 2
+    assert stats["added"] == 1
+    assert stats["skipped_duplicate"] == 1
+    assert mem_db.query(Question).count() == 1
+
+
+def test_answers_properly_persisted_without_per_record_flush(mem_db, tmp_path):
+    """
+    Verify that Question and AcceptedAnswer relationships are correctly populated
+    upon final commit even with db.flush() removed from the per-record loop.
+    """
+    record = {
+        "id": "rel_test_1",
+        "text": "Amir Temur qayerda tug'ilgan?",
+        "primary_answer": "Xo'ja Ilg'or",
+        "accepted_answers": [
+            {"text": "Xo'ja Ilg'or", "type": "primary"},
+            {"text": "Xo'jailg'or", "type": "variant"},
+            {"text": "Kesh yaqinida", "type": "variant"}
+        ],
+        "points": 15,
+        "source": {"channel_id": "300", "question_message_id": 10, "source_name": "Batch"},
+        "editorial": {"status": "ready"}
+    }
+    f = tmp_path / "rel_test.json"
+    f.write_text(json.dumps([record], ensure_ascii=False), encoding="utf-8")
+
+    stats = import_questions(str(f), dry_run=False, db_session=mem_db)
+    assert stats["added"] == 1
+
+    q = mem_db.query(Question).first()
+    assert q is not None
+    assert len(q.accepted_answers) == 3
+
+    prim_answers = [a for a in q.accepted_answers if a.is_primary]
+    alt_answers = [a for a in q.accepted_answers if not a.is_primary]
+
+    assert len(prim_answers) == 1
+    assert prim_answers[0].answer_text == "Xo'ja Ilg'or"
+    assert prim_answers[0].question_id == q.id
+
+    assert len(alt_answers) == 2
+    alt_texts = {a.answer_text for a in alt_answers}
+    assert alt_texts == {"Xo'jailg'or", "Kesh yaqinida"}
+    for a in alt_answers:
+        assert a.question_id == q.id
+
+
+

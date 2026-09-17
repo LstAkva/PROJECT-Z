@@ -10,7 +10,7 @@ def normalize_uzbek_latin(text: str) -> str:
     if not text:
         return ""
     text = text.lower()
-    text = re.sub(r"[’ʻʼ`]", "'", text)
+    text = re.sub(r"[‘’ʻʼ`]", "'", text)
     text = text.strip('.,!?"()[]{}:;* ')
     text = re.sub(r'\s+', ' ', text)
     return text
