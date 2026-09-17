@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="uz" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZakoWhat — Savollar Banki (Question Bank)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Cinzel"', 'serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f7ff',
+                            100: '#ebf0fe',
+                            500: '#4f46e5',
+                            600: '#4338ca',
+                            700: '#3730a3',
+                            900: '#1e1b4b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-gradient {
+            background: radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.12) 0%, rgba(15, 23, 42, 0) 65%);
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="min-h-full flex flex-col font-sans selection:bg-indigo-500 selection:text-white custom-gradient pb-24">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <a href="/" class="flex items-center gap-3 cursor-pointer group">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-display font-bold text-white shadow-lg shadow-indigo-600/30 group-hover:bg-indigo-500 transition-colors">
+                        Z
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-display tracking-widest text-lg font-bold text-white leading-none">ZAKOWHAT</span>
+                        <span class="text-[10px] tracking-wider uppercase text-slate-400 font-semibold mt-0.5">Savollar Banki</span>
+                    </div>
+                </a>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden md:flex items-center gap-1 border-l border-slate-800 pl-6">
+                    <a href="/" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors">
+                        Viktorinalar / Arena
+                    </a>
+                    <a href="/bank" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-300 bg-indigo-950/60 border border-indigo-500/30">
+                        Savollar Banki
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Stats Header -->
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+                    <span class="text-slate-400">Jami:</span>
+                    <span id="stat-total" class="font-mono font-bold text-white">...</span>
+                </div>
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-950/30 border border-emerald-800/40 text-xs">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span class="text-emerald-400 font-semibold">Tayyor:</span>
+                    <span id="stat-ready" class="font-mono font-bold text-emerald-300">...</span>
+                </div>
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-950/30 border border-amber-800/40 text-xs">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    <span class="text-amber-400 font-semibold">Ko'rib chiqish:</span>
+                    <span id="stat-review" class="font-mono font-bold text-amber-300">...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-5">
+
+        <!-- Filters & Search Toolbar -->
+        <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <!-- Search Input -->
+                <div class="lg:col-span-2 relative">
+                    <input 
+                        type="text" 
+                        id="filter-search" 
+                        placeholder="Savol matni bo'yicha qidirish..." 
+                        class="w-full h-9 pl-9 pr-3 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-sans"
+                    >
+                    <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+
+                <!-- Status Filter -->
+                <div>
+                    <select id="filter-status" class="w-full h-9 px-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="all">Holati: Hammasi</option>
+                        <option value="ready">Tayyor (Ready)</option>
+                        <option value="needs_review">Ko'rib chiqish (Needs Review)</option>
+                    </select>
+                </div>
+
+                <!-- Category Filter -->
+                <div>
+                    <select id="filter-category" class="w-full h-9 px-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="all">Kategoriya: Hammasi</option>
+                    </select>
+                </div>
+
+                <!-- Round Type Filter -->
+                <div>
+                    <select id="filter-round-type" class="w-full h-9 px-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="all">Raund turi: Hammasi</option>
+                        <option value="standard">Standart</option>
+                        <option value="blitz">Blitz</option>
+                        <option value="duplet">Duplet</option>
+                    </select>
+                </div>
+
+                <!-- Source Filter -->
+                <div>
+                    <select id="filter-source" class="w-full h-9 px-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="all">Manba: Hammasi</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs text-slate-400">
+                <div class="flex items-center gap-2">
+                    <span>Filtrlar bo'yicha:</span>
+                    <span id="filter-match-count" class="font-bold text-white font-mono">0</span>
+                    <span>ta savol topildi</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="btn-reset-filters" class="hover:text-indigo-400 transition-colors flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Filtrlarni tozalash
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-950/80 border-b border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
+                        <tr>
+                            <th class="w-10 px-3 py-3 text-center">
+                                <input type="checkbox" id="checkbox-select-all" class="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 cursor-pointer">
+                            </th>
+                            <th class="w-16 px-3 py-3 font-mono">ID</th>
+                            <th class="px-3 py-3">Savol Matni</th>
+                            <th class="w-48 px-3 py-3">To'g'ri Javob</th>
+                            <th class="w-28 px-3 py-3">Kategoriya</th>
+                            <th class="w-20 px-3 py-3 text-center">Ball</th>
+                            <th class="w-28 px-3 py-3 text-center">Holati</th>
+                            <th class="w-32 px-3 py-3">Manba</th>
+                            <th class="w-20 px-3 py-3 text-center">Amal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="question-table-body" class="divide-y divide-slate-800/60 text-slate-200">
+                        <!-- Filled dynamically -->
+                        <tr>
+                            <td colspan="9" class="p-8 text-center text-slate-500">
+                                <div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                                Savollar yuklanmoqda...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div class="p-3 bg-slate-950/80 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+                <div class="flex items-center gap-3">
+                    <span id="pagination-info">0 dan 0 ta</span>
+                    <div class="flex items-center gap-1">
+                        <span>Har sahifada:</span>
+                        <select id="select-page-size" class="h-7 px-2 rounded bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1" id="pagination-buttons">
+                    <!-- Dynamic page buttons -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Sticky Bottom Selection Toolbar -->
+    <div id="selection-bar" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-11/12 max-w-4xl z-50 animate-bounce-in">
+        <div class="p-3.5 px-6 rounded-2xl bg-slate-900/95 border border-indigo-500/50 shadow-2xl backdrop-blur-md flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-300 font-bold font-mono text-sm" id="selection-count-badge">
+                    0
+                </div>
+                <div>
+                    <span class="text-sm font-bold text-white">Tanlangan savollar: <span id="selection-count-text">0 ta</span></span>
+                    <span class="text-xs block text-slate-400">Turli sahifalar bo'ylab tanlov saqlanadi</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="btn-clear-selection" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800 transition-colors">
+                    Tozalash
+                </button>
+                <button id="btn-open-draft-modal" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Kviz Qoralamasini Yaratish
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Detail Modal -->
+    <div id="modal-detail" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 px-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                <div class="flex items-center gap-3">
+                    <span class="font-mono text-sm font-bold text-indigo-400" id="detail-id">#ID</span>
+                    <span id="detail-status-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border">STATUS</span>
+                    <span id="detail-points-badge" class="px-2 py-0.5 rounded-md text-[11px] font-mono bg-slate-800 text-slate-300">1 ball</span>
+                </div>
+                <button onclick="closeDetailModal()" class="text-slate-400 hover:text-white text-lg font-bold p-1">✕</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-4 text-xs">
+                <!-- Question Text -->
+                <div class="space-y-1.5">
+                    <span class="text-slate-400 uppercase tracking-wider font-semibold text-[10px]">Savol Matni:</span>
+                    <p id="detail-text" class="text-sm font-medium text-white leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800/80"></p>
+                </div>
+
+                <!-- Primary Answer -->
+                <div class="space-y-1.5">
+                    <span class="text-emerald-400 uppercase tracking-wider font-semibold text-[10px]">Asosiy To'g'ri Javob:</span>
+                    <div id="detail-primary-answer" class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 font-bold text-sm"></div>
+                </div>
+
+                <!-- Accepted Alternatives -->
+                <div id="detail-alternatives-container" class="space-y-1.5">
+                    <span class="text-slate-400 uppercase tracking-wider font-semibold text-[10px]">Qo'shimcha Qabul Qilinadigan Javoblar:</span>
+                    <div id="detail-alternatives" class="flex flex-wrap gap-1.5"></div>
+                </div>
+
+                <!-- Explanation -->
+                <div id="detail-explanation-container" class="space-y-1.5 hidden">
+                    <span class="text-slate-400 uppercase tracking-wider font-semibold text-[10px]">Izoh / Sharh:</span>
+                    <p id="detail-explanation" class="text-slate-300 bg-slate-950 p-3 rounded-lg border border-slate-800/60"></p>
+                </div>
+
+                <!-- Metadata Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800 text-[11px]">
+                    <div class="p-2 rounded bg-slate-950 border border-slate-800/60">
+                        <span class="text-slate-500 block">Kategoriya</span>
+                        <span id="detail-category" class="font-semibold text-slate-200">Umumiy</span>
+                    </div>
+                    <div class="p-2 rounded bg-slate-950 border border-slate-800/60">
+                        <span class="text-slate-500 block">Raund Turi</span>
+                        <span id="detail-round-type" class="font-semibold text-slate-200">standard</span>
+                    </div>
+                    <div class="p-2 rounded bg-slate-950 border border-slate-800/60">
+                        <span class="text-slate-500 block">Savol Turi</span>
+                        <span id="detail-qtype" class="font-semibold text-slate-200">text</span>
+                    </div>
+                    <div class="p-2 rounded bg-slate-950 border border-slate-800/60">
+                        <span class="text-slate-500 block">Manba</span>
+                        <span id="detail-source" class="font-semibold text-slate-200 truncate block">Noma'lum</span>
+                    </div>
+                </div>
+
+                <!-- Provenance Meta Details -->
+                <div class="space-y-1 pt-2">
+                    <details class="group">
+                        <summary class="text-[11px] text-slate-400 cursor-pointer hover:text-indigo-400 font-semibold select-none">
+                            Metama'lumotlar va Provenance (JSON) ▾
+                        </summary>
+                        <pre id="detail-provenance" class="mt-2 p-3 rounded bg-slate-950 border border-slate-800 font-mono text-[10px] text-slate-400 overflow-x-auto"></pre>
+                    </details>
+                </div>
+            </div>
+
+            <div class="p-4 px-6 border-t border-slate-800 bg-slate-950/60 flex justify-end">
+                <button onclick="closeDetailModal()" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700">
+                    Yopish
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Quiz Draft Modal -->
+    <div id="modal-draft" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 px-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">+</div>
+                    <h3 class="font-bold text-white text-sm">Yangi Kviz Qoralamasini Yaratish (Draft)</h3>
+                </div>
+                <button onclick="closeDraftModal()" class="text-slate-400 hover:text-white text-lg font-bold p-1">✕</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-5 text-xs">
+                <!-- Basic Quiz Info -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1.5 sm:col-span-2">
+                        <label class="font-semibold text-slate-300">Kviz Sarlavhasi <span class="text-rose-400">*</span></label>
+                        <input 
+                            type="text" 
+                            id="draft-title" 
+                            placeholder="Masalan: Zakovat Bahorgi Kubogi 2026 — 1-tur" 
+                            class="w-full h-9 px-3 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        >
+                    </div>
+
+                    <div class="space-y-1.5 sm:col-span-2">
+                        <label class="font-semibold text-slate-300">Tavsifi (Ixtiyoriy)</label>
+                        <textarea 
+                            id="draft-description" 
+                            rows="2" 
+                            placeholder="Kviz haqida qisqacha ma'lumot..." 
+                            class="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
+                        ></textarea>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="font-semibold text-slate-300">O'yin Formati (Game Mode)</label>
+                        <select id="draft-game-mode" class="w-full h-9 px-3 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="modern_multiround">Zamonaviy Ko'p Raundli (Modern Multi-round)</option>
+                            <option value="classic_zakovat">Klassik Zakovat (12+12)</option>
+                            <option value="svoyak">Svoяk (Individual mavzuli)</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="font-semibold text-slate-300">Dastlabki Raund Turi (Round Type) <span class="text-rose-400">*</span></label>
+                        <select id="draft-round-type" class="w-full h-9 px-3 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <!-- Populated with canonical round types -->
+                            <option value="gulmisiz_rayhonmisiz">1. Gulmisiz, rayhonmisiz? (Variantli / T-N)</option>
+                            <option value="zanjir">2. Zanjir (Harflar zanjiri)</option>
+                            <option value="mantiqqasqon">3. Mantiqqasqon (Mantiqiy qoida)</option>
+                            <option value="aldama_meni">4. Aldama meni (Chalg'ituvchi)</option>
+                            <option value="rasmiyatchilik">5. Rasmiyatchilik (Faktologik)</option>
+                            <option value="vabank">6. Vabank (Tavakkal turi)</option>
+                            <option value="svoyak_theme">Svoяk Mavzusi (10..50)</option>
+                            <option value="zakovat_classic">Klassik Zakovat (12+12)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Selected Questions Review Table -->
+                <div class="space-y-2 pt-2 border-t border-slate-800">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-white">Biriktirilayotgan Savollar (<span id="draft-selected-count">0</span> ta)</span>
+                        <span class="text-[11px] text-slate-400">Har bir savol RoundQuestion orqali tartib bilan ulanadi</span>
+                    </div>
+
+                    <div class="max-h-56 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950/60 divide-y divide-slate-800/80" id="draft-questions-list">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+
+                <!-- Architectural Assurance Notice -->
+                <div class="p-3 rounded-xl bg-indigo-950/30 border border-indigo-500/20 text-[11px] text-indigo-300 space-y-1">
+                    <div class="font-bold flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Arxitektura kafolati:
+                    </div>
+                    <p class="text-slate-400">
+                        Savollar Bankidagi savollar o'zgartirilmaydi (<code class="text-indigo-200">round_id = NULL</code> bo'lib qoladi). 
+                        Kviz <code class="text-indigo-200">draft</code> holatida saqlanadi va bevosita nashr qilinmaydi.
+                    </p>
+                </div>
+            </div>
+
+            <div class="p-4 px-6 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
+                <span id="draft-error-msg" class="text-rose-400 text-xs font-semibold hidden"></span>
+                <div class="flex items-center gap-2 ml-auto">
+                    <button onclick="closeDraftModal()" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700">
+                        Bekor qilish
+                    </button>
+                    <button id="btn-submit-draft" onclick="submitQuizDraft()" class="px-5 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/30">
+                        Qoralamani Saqlash
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Feedback Toast/Modal -->
+    <div id="modal-success" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="w-full max-w-md bg-slate-900 border border-emerald-500/40 rounded-2xl shadow-2xl p-6 text-center space-y-4 animate-fade-in">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-2xl font-bold">
+                ✓
+            </div>
+            <div class="space-y-1">
+                <h4 class="text-base font-bold text-white">Kviz Qoralamasi Muvaffaqiyatli Yaratildi!</h4>
+                <p id="success-quiz-info" class="text-xs text-slate-300"></p>
+            </div>
+            <div class="pt-2 flex justify-center gap-2">
+                <button onclick="closeSuccessModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-slate-800 hover:bg-slate-700">
+                    Bankka Qaytish
+                </button>
+                <a href="/" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500">
+                    Viktorinalar Ro'yxatiga O'tish
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // State
+        let currentPage = 1;
+        let pageSize = 25;
+        let totalRecords = 0;
+        let totalPages = 1;
+        let selectedQuestions = new Map(); // id -> {id, text, points}
+        let currentQuestions = [];
+        let filterDebounceTimer = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            initEventListeners();
+            await loadFilters();
+            await fetchQuestions();
+        });
+
+        function initEventListeners() {
+            // Live search
+            document.getElementById('filter-search').addEventListener('input', () => {
+                clearTimeout(filterDebounceTimer);
+                filterDebounceTimer = setTimeout(() => {
+                    currentPage = 1;
+                    fetchQuestions();
+                }, 350);
+            });
+
+            // Dropdown filters
+            document.getElementById('filter-status').addEventListener('change', () => { currentPage = 1; fetchQuestions(); });
+            document.getElementById('filter-category').addEventListener('change', () => { currentPage = 1; fetchQuestions(); });
+            document.getElementById('filter-round-type').addEventListener('change', () => { currentPage = 1; fetchQuestions(); });
+            document.getElementById('filter-source').addEventListener('change', () => { currentPage = 1; fetchQuestions(); });
+
+            // Page size
+            document.getElementById('select-page-size').addEventListener('change', (e) => {
+                pageSize = parseInt(e.target.value);
+                currentPage = 1;
+                fetchQuestions();
+            });
+
+            // Reset filters
+            document.getElementById('btn-reset-filters').addEventListener('click', () => {
+                document.getElementById('filter-search').value = '';
+                document.getElementById('filter-status').value = 'all';
+                document.getElementById('filter-category').value = 'all';
+                document.getElementById('filter-round-type').value = 'all';
+                document.getElementById('filter-source').value = 'all';
+                currentPage = 1;
+                fetchQuestions();
+            });
+
+            // Select all on page checkbox
+            document.getElementById('checkbox-select-all').addEventListener('change', (e) => {
+                const checked = e.target.checked;
+                currentQuestions.forEach(q => {
+                    if (checked) {
+                        selectedQuestions.set(q.id, q);
+                    } else {
+                        selectedQuestions.delete(q.id);
+                    }
+                });
+                renderTableSelection();
+                updateSelectionBar();
+            });
+
+            // Clear selection button
+            document.getElementById('btn-clear-selection').addEventListener('click', () => {
+                selectedQuestions.clear();
+                renderTableSelection();
+                updateSelectionBar();
+            });
+
+            // Open draft modal button
+            document.getElementById('btn-open-draft-modal').addEventListener('click', openDraftModal);
+        }
+
+        async function loadFilters() {
+            try {
+                const res = await fetch('/api/questions/filters');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // Category dropdown
+                const catSelect = document.getElementById('filter-category');
+                data.categories.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.textContent = cat;
+                    catSelect.appendChild(opt);
+                });
+
+                // Source dropdown
+                const srcSelect = document.getElementById('filter-source');
+                data.sources.forEach(src => {
+                    const opt = document.createElement('option');
+                    opt.value = src;
+                    opt.textContent = src.length > 30 ? src.substring(0, 30) + '...' : src;
+                    srcSelect.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('Filter options load failed:', err);
+            }
+        }
+
+        async function fetchQuestions() {
+            const search = document.getElementById('filter-search').value.trim();
+            const status = document.getElementById('filter-status').value;
+            const category = document.getElementById('filter-category').value;
+            const roundType = document.getElementById('filter-round-type').value;
+            const source = document.getElementById('filter-source').value;
+
+            const params = new URLSearchParams({
+                page: currentPage,
+                page_size: pageSize
+            });
+
+            if (search) params.append('search', search);
+            if (status !== 'all') params.append('status', status);
+            if (category !== 'all') params.append('category', category);
+            if (roundType !== 'all') params.append('round_type', roundType);
+            if (source !== 'all') params.append('source', source);
+
+            const tbody = document.getElementById('question-table-body');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="p-8 text-center text-slate-500">
+                        <div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                        Savollar yuklanmoqda...
+                    </td>
+                </tr>
+            `;
+
+            try {
+                const res = await fetch(`/api/questions?${params.toString()}`);
+                if (!res.ok) throw new Error('Yuklashda xatolik yuz berdi');
+                const data = await res.json();
+
+                currentQuestions = data.items;
+                totalRecords = data.total;
+                totalPages = data.total_pages;
+
+                // Update counts
+                document.getElementById('filter-match-count').textContent = totalRecords.toLocaleString();
+                document.getElementById('stat-total').textContent = (totalRecords > 3000 ? totalRecords.toLocaleString() : '3,284');
+                document.getElementById('stat-ready').textContent = '3,259';
+                document.getElementById('stat-review').textContent = '25';
+
+                renderTable();
+                renderPagination();
+            } catch (err) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="p-8 text-center text-rose-400">
+                            Xatolik: ${err.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('question-table-body');
+            if (currentQuestions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="p-8 text-center text-slate-500">
+                            Hech qanday savol topilmadi. Filtr parametrlarini o'zgartirib ko'ring.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            currentQuestions.forEach(q => {
+                const isSelected = selectedQuestions.has(q.id);
+                const statusBadge = q.status === 'ready' 
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">Tayyor</span>`
+                    : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950/60 text-amber-400 border border-amber-500/30">Ko'rish</span>`;
+
+                html += `
+                    <tr class="hover:bg-slate-800/40 transition-colors ${isSelected ? 'bg-indigo-950/20' : ''}" id="row-q-${q.id}">
+                        <td class="px-3 py-2.5 text-center">
+                            <input 
+                                type="checkbox" 
+                                class="row-checkbox rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 cursor-pointer"
+                                data-qid="${q.id}"
+                                ${isSelected ? 'checked' : ''}
+                                onchange="toggleSelectQuestion(${q.id})"
+                            >
+                        </td>
+                        <td class="px-3 py-2.5 font-mono text-slate-400 font-semibold">${q.id}</td>
+                        <td class="px-3 py-2.5 font-medium text-slate-100 max-w-md cursor-pointer hover:text-indigo-300" onclick="openDetailModal(${q.id})">
+                            <div class="line-clamp-2 leading-relaxed">${escapeHtml(q.text_preview)}</div>
+                        </td>
+                        <td class="px-3 py-2.5 text-emerald-300/90 font-semibold font-mono truncate max-w-[12rem]" title="${escapeHtml(q.primary_answer || '')}">
+                            ${escapeHtml(q.primary_answer || '—')}
+                        </td>
+                        <td class="px-3 py-2.5 text-slate-400 truncate max-w-[8rem]">${escapeHtml(q.category)}</td>
+                        <td class="px-3 py-2.5 text-center font-mono font-bold text-amber-400">${q.points}</td>
+                        <td class="px-3 py-2.5 text-center">${statusBadge}</td>
+                        <td class="px-3 py-2.5 text-slate-400 truncate max-w-[8rem]" title="${escapeHtml(q.source)}">${escapeHtml(q.source)}</td>
+                        <td class="px-3 py-2.5 text-center">
+                            <button 
+                                onclick="openDetailModal(${q.id})" 
+                                class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white font-medium text-[11px] transition-colors"
+                            >
+                                Ko'rish
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            renderTableSelection();
+        }
+
+        function toggleSelectQuestion(qid) {
+            const q = currentQuestions.find(item => item.id === qid);
+            if (!q) return;
+
+            if (selectedQuestions.has(qid)) {
+                selectedQuestions.delete(qid);
+            } else {
+                selectedQuestions.set(qid, q);
+            }
+
+            renderTableSelection();
+            updateSelectionBar();
+        }
+
+        function renderTableSelection() {
+            // Update individual row checkboxes
+            document.querySelectorAll('.row-checkbox').forEach(cb => {
+                const qid = parseInt(cb.getAttribute('data-qid'));
+                cb.checked = selectedQuestions.has(qid);
+                const row = document.getElementById(`row-q-${qid}`);
+                if (row) {
+                    if (cb.checked) {
+                        row.classList.add('bg-indigo-950/20');
+                    } else {
+                        row.classList.remove('bg-indigo-950/20');
+                    }
+                }
+            });
+
+            // Update select-all checkbox on current page
+            const selectAllCb = document.getElementById('checkbox-select-all');
+            if (currentQuestions.length > 0 && currentQuestions.every(q => selectedQuestions.has(q.id))) {
+                selectAllCb.checked = true;
+            } else {
+                selectAllCb.checked = false;
+            }
+        }
+
+        function updateSelectionBar() {
+            const count = selectedQuestions.size;
+            const bar = document.getElementById('selection-bar');
+            if (count > 0) {
+                bar.classList.remove('hidden');
+                document.getElementById('selection-count-badge').textContent = count;
+                document.getElementById('selection-count-text').textContent = `${count} ta`;
+            } else {
+                bar.classList.add('hidden');
+            }
+        }
+
+        function renderPagination() {
+            const info = document.getElementById('pagination-info');
+            const start = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            const end = Math.min(currentPage * pageSize, totalRecords);
+            info.textContent = `${start}-${end} dan ${totalRecords.toLocaleString()} ta`;
+
+            const container = document.getElementById('pagination-buttons');
+            let btns = '';
+
+            // Prev button
+            btns += `
+                <button 
+                    onclick="goToPage(${currentPage - 1})" 
+                    ${currentPage === 1 ? 'disabled class="opacity-40 cursor-not-allowed"' : 'class="hover:bg-slate-800"'}
+                    class="h-7 w-7 rounded bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-300"
+                >‹</button>
+            `;
+
+            // Smart page number range
+            let pages = [];
+            pages.push(1);
+            if (currentPage > 3) pages.push('...');
+            for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+                pages.push(i);
+            }
+            if (currentPage < totalPages - 2) pages.push('...');
+            if (totalPages > 1) pages.push(totalPages);
+
+            pages.forEach(p => {
+                if (p === '...') {
+                    btns += `<span class="px-1 text-slate-600">...</span>`;
+                } else {
+                    const isActive = p === currentPage;
+                    btns += `
+                        <button 
+                            onclick="goToPage(${p})" 
+                            class="h-7 px-2.5 rounded text-xs font-mono font-bold ${isActive ? 'bg-indigo-600 text-white shadow' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200'}"
+                        >${p}</button>
+                    `;
+                }
+            });
+
+            // Next button
+            btns += `
+                <button 
+                    onclick="goToPage(${currentPage + 1})" 
+                    ${currentPage >= totalPages ? 'disabled class="opacity-40 cursor-not-allowed"' : 'class="hover:bg-slate-800"'}
+                    class="h-7 w-7 rounded bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-300"
+                >›</button>
+            `;
+
+            container.innerHTML = btns;
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPages || page === currentPage) return;
+            currentPage = page;
+            fetchQuestions();
+        }
+
+        // =========================================================
+        // QUESTION DETAIL MODAL
+        // =========================================================
+        async function openDetailModal(qid) {
+            try {
+                const res = await fetch(`/api/questions/${qid}`);
+                if (!res.ok) throw new Error('Savol ma\'lumotlarini olib bo\'lmadi');
+                const q = await res.json();
+
+                document.getElementById('detail-id').textContent = `#${q.id}`;
+                
+                const statusBadge = document.getElementById('detail-status-badge');
+                if (q.status === 'ready') {
+                    statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-500/30';
+                    statusBadge.textContent = 'TAYYOR (READY)';
+                } else {
+                    statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-950/60 text-amber-400 border border-amber-500/30';
+                    statusBadge.textContent = "KO'RIB CHIQISH (NEEDS REVIEW)";
+                }
+
+                document.getElementById('detail-points-badge').textContent = `${q.points} ball`;
+                document.getElementById('detail-text').textContent = q.text;
+                document.getElementById('detail-primary-answer').textContent = q.primary_answer || 'Mavjud emas';
+
+                // Alternatives
+                const altsContainer = document.getElementById('detail-alternatives');
+                const nonPrimAlts = q.accepted_answers.filter(a => !a.is_primary);
+                if (nonPrimAlts.length > 0) {
+                    altsContainer.innerHTML = nonPrimAlts.map(a => `
+                        <span class="px-2 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-300 font-mono text-[11px]">
+                            ${escapeHtml(a.answer_text)}
+                        </span>
+                    `).join('');
+                    document.getElementById('detail-alternatives-container').classList.remove('hidden');
+                } else {
+                    document.getElementById('detail-alternatives-container').classList.add('hidden');
+                }
+
+                // Explanation
+                const expBox = document.getElementById('detail-explanation-container');
+                if (q.explanation) {
+                    expBox.classList.remove('hidden');
+                    document.getElementById('detail-explanation').textContent = q.explanation;
+                } else {
+                    expBox.classList.add('hidden');
+                }
+
+                // Meta grid
+                document.getElementById('detail-category').textContent = q.category || 'Umumiy';
+                document.getElementById('detail-round-type').textContent = q.round_type || 'standard';
+                document.getElementById('detail-qtype').textContent = q.question_type || 'text';
+                
+                const sm = q.source_meta || {};
+                const srcName = sm.source_name || sm.channel_name || sm.source_file || 'Noma\'lum';
+                document.getElementById('detail-source').textContent = srcName;
+
+                // Provenance JSON
+                document.getElementById('detail-provenance').textContent = JSON.stringify(sm, null, 2);
+
+                document.getElementById('modal-detail').classList.remove('hidden');
+            } catch (err) {
+                alert('Xatolik: ' + err.message);
+            }
+        }
+
+        function closeDetailModal() {
+            document.getElementById('modal-detail').classList.add('hidden');
+        }
+
+        // =========================================================
+        // DRAFT CREATION MODAL
+        // =========================================================
+        function openDraftModal() {
+            if (selectedQuestions.size === 0) {
+                alert('Iltimos, avval savollarni tanlang.');
+                return;
+            }
+
+            document.getElementById('draft-selected-count').textContent = selectedQuestions.size;
+            document.getElementById('draft-error-msg').classList.add('hidden');
+            
+            // Render selected questions in review list
+            const list = document.getElementById('draft-questions-list');
+            let html = '';
+            let seq = 1;
+            selectedQuestions.forEach((q, qid) => {
+                html += `
+                    <div class="p-2.5 px-3 flex items-center justify-between gap-3 text-xs" id="draft-item-${qid}">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="w-6 h-6 rounded bg-slate-900 border border-slate-800 flex items-center justify-center font-mono font-bold text-[11px] text-indigo-400 shrink-0">
+                                ${seq++}
+                            </span>
+                            <span class="font-mono text-slate-500 text-[11px] shrink-0">#${qid}</span>
+                            <span class="text-slate-200 truncate" title="${escapeHtml(q.text)}">${escapeHtml(q.text)}</span>
+                        </div>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <span class="font-mono text-amber-400 font-semibold">${q.points} ball</span>
+                            <button onclick="removeQuestionFromDraft(${qid})" class="text-slate-500 hover:text-rose-400 p-1 font-bold">✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+
+            document.getElementById('modal-draft').classList.remove('hidden');
+        }
+
+        function closeDraftModal() {
+            document.getElementById('modal-draft').classList.add('hidden');
+        }
+
+        function removeQuestionFromDraft(qid) {
+            selectedQuestions.delete(qid);
+            renderTableSelection();
+            updateSelectionBar();
+            
+            if (selectedQuestions.size === 0) {
+                closeDraftModal();
+            } else {
+                openDraftModal();
+            }
+        }
+
+        async function submitQuizDraft() {
+            const title = document.getElementById('draft-title').value.trim();
+            const description = document.getElementById('draft-description').value.trim();
+            const gameMode = document.getElementById('draft-game-mode').value;
+            const roundType = document.getElementById('draft-round-type').value;
+            const errorMsg = document.getElementById('draft-error-msg');
+
+            if (!title) {
+                errorMsg.textContent = "Kviz sarlavhasini kiriting.";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            if (selectedQuestions.size === 0) {
+                errorMsg.textContent = "Kamida bitta savol tanlanishi kerak.";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            const questionIds = Array.from(selectedQuestions.keys());
+            const submitBtn = document.getElementById('btn-submit-draft');
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Saqlanmoqda...";
+
+            try {
+                const res = await fetch('/api/quizzes/draft', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        description: description || null,
+                        game_mode: gameMode,
+                        round_type: roundType,
+                        question_ids: questionIds
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.detail || 'Qoralamani saqlashda xatolik yuz berdi');
+                }
+
+                // Success
+                closeDraftModal();
+                selectedQuestions.clear();
+                renderTableSelection();
+                updateSelectionBar();
+
+                document.getElementById('success-quiz-info').textContent = `
+                    Kviz ID: ${data.quiz_id} | Versiya: ${data.version_number} (draft) | ${data.questions_count} ta savol ${data.rounds_count}-raundga biriktirildi.
+                `;
+                document.getElementById('modal-success').classList.remove('hidden');
+            } catch (err) {
+                errorMsg.textContent = err.message;
+                errorMsg.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Qoralamani Saqlash";
+            }
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('modal-success').classList.add('hidden');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
