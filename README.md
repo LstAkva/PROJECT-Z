@@ -67,12 +67,24 @@ Platforma quyidagi rasmiy o'yin rejimlarini qo'llab-quvvatlaydi:
 - 2-tur yakunida umumiy 24 savollik hisobot.
 
 ### C. Svoяk (`svoyak`)
-- Mavzular bo'yicha tabaqalangan ballar (10, 20, 30, 40, 50).
-- To'g'ri javob `+ball`, xato javob avtomatik ravishda `-ball`, bo'sh javob `0`.
+- Tabaqalangan ball qiymatlari (10, 20, 30, 40, 50).
+- To'g'ri javob = `+savol qiymati` (masalan, +10, +20, +30, +40, +50).
+- Noto'g'ri javob = `-savol qiymati` (masalan, -10, -20, -30, -40, -50).
+- Bo'sh qoldirish (pass) = `0` ball (jarimasiz).
+- Ball qiymati `RoundQuestion.points_override` orqali belgilanadi (agar kiritilmagan bo'lsa, `Question.default_points`dan olinadi).
 
 ---
 
-## 4. Lokal Ishga Tushirish
+## 4. Baza Audit Holati (DEV)
+
+Mavjud 69 ta savolning tasdiqlangan audit taqsimoti:
+- **38 ta YES**: Savollar bankiga tayyor (structurally sound).
+- **22 ta REVIEW**: Qo'lda ko'rib chiqish talab etiladi (media / formatlash).
+- **9 ta NO**: Chiqarib yuboriladigan yozuvlar (6 ta eski ruscha demo + 2 ta xom telegram kirill + 1 ta pilot kirill javob).
+- **Jami NO = 9 ta** (15 ta emas). Tozalashdan so'ng qoluvchi savollar soni: **60 ta**.
+
+
+## 5. Lokal Ishga Tushirish
 
 ### Muhitni faollashtirish va bog'liqliklar:
 ```powershell
@@ -93,7 +105,7 @@ Brauzerda: `http://127.0.0.1:8000` ochiladi.
 
 ---
 
-## 5. Testlarni Ishga Tushirish
+## 6. Testlarni Ishga Tushirish
 
 Sinovlar in-memory SQLite bazasida 100% xavfsiz va tezkor bajariladi:
 
@@ -105,7 +117,7 @@ Natija: **49 ta test muvaffaqiyatli o'tadi**.
 
 ---
 
-## 6. Savollar Bankiga Import Pipeline
+## 7. Savollar Bankiga Import Pipeline
 
 Import to'g'ridan-to'g'ri umumiy Savollar Bankiga (`questions` va `accepted_answers`) yo'naltiriladi. Hech qanday soxta konga yoki bufer raundga ehtiyoj yo'q:
 
@@ -122,7 +134,7 @@ Import to'g'ridan-to'g'ri umumiy Savollar Bankiga (`questions` va `accepted_answ
 
 ---
 
-## 7. API Kontrakt
+## 8. API Kontrakt
 
 | Usul | Yo'nalish | Tavsif |
 | :--- | :--- | :--- |

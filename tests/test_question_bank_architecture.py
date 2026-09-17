@@ -427,8 +427,14 @@ def test_published_manifest_immutability(client, db_session):
 
 
 def test_svoyak_negative_scoring(client, db_session):
-    """Verify Svoяk mode: tiered points, correct awards +points, wrong deducts -points, blank gives 0."""
-    quiz = Quiz(title="Svoyak Game")
+    """
+    Verify Svoяk mode confirmed rules:
+    - correct answer awards +point value (e.g. +10, +20, +30, +40, +50)
+    - wrong answer deducts -point value (e.g. -10, -20, -30, -40, -50)
+    - blank/pass awards 0
+    - RoundQuestion.points_override takes precedence over Question.default_points
+    """
+    quiz = Quiz(title="Svoyak Full Championship")
     db_session.add(quiz)
     db_session.flush()
 
@@ -440,13 +446,26 @@ def test_svoyak_negative_scoring(client, db_session):
     db_session.add(r)
     db_session.flush()
 
-    # 3 questions with tiered points: 10, 20, 30
-    for i, pts in enumerate([10, 20, 30], start=1):
-        q = Question(text=f"Svoyak Savol {i}", points=pts, default_points=pts, status="ready")
+    # 5 questions representing canonical Svoяk tier values: 10, 20, 30, 40, 50
+    # Q1: points_override=10
+    # Q2: points_override=20
+    # Q3: points_override=30
+    # Q4: points_override=40 (Question.default_points=1 overridden by RoundQuestion)
+    # Q5: points_override=None, uses Question.default_points=50
+    tiers = [
+        (1, 10, 10),      # Q1: def=10, override=10 -> 10
+        (2, 20, 20),      # Q2: def=20, override=20 -> 20
+        (3, 30, 30),      # Q3: def=30, override=30 -> 30
+        (4, 1, 40),       # Q4: def=1,  override=40 -> 40 (override test)
+        (5, 50, None),    # Q5: def=50, override=None -> 50 (fallback test)
+    ]
+
+    for seq, def_pts, over_pts in tiers:
+        q = Question(text=f"Svoyak Savol {seq}", default_points=def_pts, points=def_pts, status="ready")
         db_session.add(q)
         db_session.flush()
-        db_session.add(RoundQuestion(round_id=r.id, question_id=q.id, sequence=i, points_override=pts))
-        db_session.add(AcceptedAnswer(question_id=q.id, answer_text=f"ans{i}", is_primary=True))
+        db_session.add(RoundQuestion(round_id=r.id, question_id=q.id, sequence=seq, points_override=over_pts))
+        db_session.add(AcceptedAnswer(question_id=q.id, answer_text=f"ans{seq}", is_primary=True))
 
     version.published_manifest = compile_published_manifest(version, db_session)
     db_session.commit()
@@ -454,20 +473,30 @@ def test_svoyak_negative_scoring(client, db_session):
     start_resp = client.post(f"/api/play/start/{quiz.id}")
     token = start_resp.json()["session_token"]
 
-    # Q1 (10 pts): Correct -> +10
+    # Q1 (10 pts): Correct -> +10, total = 10
     ans1 = client.post(f"/api/play/{token}/answer", json={"answer": "ans1"})
     assert ans1.json()["points_awarded"] == 10
     assert ans1.json()["total_score"] == 10
 
-    # Q2 (20 pts): Wrong -> -20
+    # Q2 (20 pts): Wrong -> -20, total = -10
     ans2 = client.post(f"/api/play/{token}/answer", json={"answer": "wrong"})
     assert ans2.json()["points_awarded"] == -20
     assert ans2.json()["total_score"] == -10
 
-    # Q3 (30 pts): Blank -> 0
+    # Q3 (30 pts): Blank / pass -> 0, total = -10
     ans3 = client.post(f"/api/play/{token}/answer", json={"answer": ""})
     assert ans3.json()["points_awarded"] == 0
     assert ans3.json()["total_score"] == -10
+
+    # Q4 (40 pts via override): Wrong -> -40, total = -50
+    ans4 = client.post(f"/api/play/{token}/answer", json={"answer": "noto'g'ri"})
+    assert ans4.json()["points_awarded"] == -40
+    assert ans4.json()["total_score"] == -50
+
+    # Q5 (50 pts via default_points): Correct -> +50, total = 0
+    ans5 = client.post(f"/api/play/{token}/answer", json={"answer": "ans5"})
+    assert ans5.json()["points_awarded"] == 50
+    assert ans5.json()["total_score"] == 0
 
 
 def test_old_answer_records_remain_valid(db_session):
