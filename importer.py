@@ -5,6 +5,7 @@ from collections import Counter
 
 from database import SessionLocal
 from models import Quiz, QuizVersion, Round, Question, AcceptedAnswer
+from quality_gate import evaluate_record
 
 
 class QuestionValidator:
@@ -410,10 +411,31 @@ def find_existing_file_question(
     )
 
 
-def import_questions(json_filepath):
+def find_existing_canonical_id(db, canonical_id):
+    if not canonical_id:
+        return None
+    return (
+        db.query(Question)
+        .filter(Question.source_meta["canonical_id"].astext == str(canonical_id))
+        .first()
+    )
+
+
+def find_existing_question_in_round(db, round_id, question_text):
+    if not question_text:
+        return None
+    return (
+        db.query(Question)
+        .filter(Question.round_id == round_id, Question.text == question_text)
+        .first()
+    )
+
+
+def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_review=False, db_session=None):
     filename = os.path.basename(json_filepath)
 
-    db = SessionLocal()
+    owns_db = db_session is None
+    db = db_session if db_session is not None else SessionLocal()
     validator = QuestionValidator()
 
     stats = {
@@ -421,6 +443,7 @@ def import_questions(json_filepath):
         "added": 0,
         "skipped_duplicate": 0,
         "skipped_rejected": 0,
+        "skipped_needs_review": 0,
         "needs_review": 0,
         "ready": 0,
         "draft": 0,
@@ -441,10 +464,14 @@ def import_questions(json_filepath):
                 "Canonical JSON must contain a top-level array."
             )
 
+        if limit is not None and limit > 0:
+            data = data[:limit]
+            print(f"Limiting to first {limit} records.")
+
         stats["total"] = len(data)
 
-        print(f"Importing: {filename}")
-        print(f"Canonical records: {len(data)}")
+        print(f"Importing: {filename} {'[DRY RUN]' if dry_run else ''}")
+        print(f"Canonical records to process: {len(data)}")
 
         # =========================================================
         # IMPORT ROUND
@@ -461,6 +488,17 @@ def import_questions(json_filepath):
         # PROCESS RECORDS
         # =========================================================
         for index, raw_item in enumerate(data):
+
+            # -----------------------------------------------------
+            # 0. QUALITY GATE FILTER
+            # -----------------------------------------------------
+            qg_status, qg_reasons = evaluate_record(raw_item, index)
+            if qg_status == "rejected":
+                stats["skipped_rejected"] += 1
+                continue
+            if qg_status == "needs_review" and not allow_needs_review:
+                stats["skipped_needs_review"] += 1
+                continue
 
             # -----------------------------------------------------
             # 1. VALIDATE
@@ -492,38 +530,36 @@ def import_questions(json_filepath):
             primary_answer = item["primary_answer"]
 
             # -----------------------------------------------------
-            # 2. DEDUPLICATION
+            # 2. DEDUPLICATION (Multi-layer)
             # -----------------------------------------------------
             existing_q = None
 
-            if channel_id and question_message_id:
+            # 2a. Canonical ID
+            canonical_id = item.get("id") or raw_item.get("id")
+            if canonical_id:
+                existing_q = find_existing_canonical_id(db, canonical_id)
 
-                existing_q = find_existing_telegram_question(
-                    db=db,
-                    channel_id=channel_id,
-                    question_message_id=question_message_id,
-                    points=points,
-                    question_text=question_text,
-                    primary_answer=primary_answer,
-                )
+            # 2b. Telegram / File Provenance
+            if existing_q is None:
+                if channel_id and question_message_id:
+                    existing_q = find_existing_telegram_question(
+                        db=db,
+                        channel_id=channel_id,
+                        question_message_id=question_message_id,
+                        points=points,
+                        question_text=question_text,
+                        primary_answer=primary_answer,
+                    )
+                elif source_file and question_number:
+                    existing_q = find_existing_file_question(
+                        db=db,
+                        source_file=source_file,
+                        question_number=question_number,
+                    )
 
-            elif source_file and question_number:
-
-                existing_q = find_existing_file_question(
-                    db=db,
-                    source_file=source_file,
-                    question_number=question_number,
-                )
-
-            else:
-                stats["skipped_rejected"] += 1
-                validator._reject(
-                    filename,
-                    index,
-                    raw_item,
-                    "missing_dedup_provenance",
-                )
-                continue
+            # 2c. Exact question text in target round
+            if existing_q is None:
+                existing_q = find_existing_question_in_round(db, round_id, question_text)
 
             if existing_q is not None:
                 stats["skipped_duplicate"] += 1
@@ -681,9 +717,13 @@ def import_questions(json_filepath):
             stats["added"] += 1
 
         # =========================================================
-        # COMMIT
+        # COMMIT OR ROLLBACK (DRY-RUN)
         # =========================================================
-        db.commit()
+        if dry_run:
+            db.rollback()
+            print("\n[DRY RUN] Database transaction rolled back. No rows were committed.")
+        else:
+            db.commit()
 
         # =========================================================
         # REPORT
@@ -694,16 +734,12 @@ def import_questions(json_filepath):
         )
 
         print("\n=== DB IMPORT SUMMARY ===")
-        print(f"Total records      : {stats['total']}")
-        print(f"Added              : {stats['added']}")
-        print(
-            f"Skipped (duplicate): "
-            f"{stats['skipped_duplicate']}"
-        )
-        print(
-            f"Skipped (rejected) : "
-            f"{stats['skipped_rejected']}"
-        )
+        print(f"Mode               : {'DRY RUN (Read-Only)' if dry_run else 'LIVE COMMIT'}")
+        print(f"Total processed    : {stats['total']}")
+        print(f"{'Would Add' if dry_run else 'Added'}          : {stats['added']}")
+        print(f"Skipped (duplicate): {stats['skipped_duplicate']}")
+        print(f"Skipped (rejected) : {stats['skipped_rejected']}")
+        print(f"Skipped (needs rev): {stats['skipped_needs_review']}")
 
         print("--- Status Details ---")
         print(
@@ -747,7 +783,10 @@ def import_questions(json_filepath):
         raise
 
     finally:
-        db.close()
+        if owns_db:
+            db.close()
+
+    return stats
 
 
 def parse_args():
@@ -759,6 +798,25 @@ def parse_args():
         "--validate-only",
         action="store_true",
         help="Validate canonical JSON without touching the database",
+    )
+
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Simulate database import with rollback without modifying any data",
+    )
+
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Limit number of records to process",
+    )
+
+    parser.add_argument(
+        "--allow-needs-review",
+        action="store_true",
+        help="Also import questions flagged as needs_review (default is only ready_to_import)",
     )
 
     parser.add_argument(
@@ -777,4 +835,9 @@ if __name__ == "__main__":
     if args.validate_only:
         validate_only(args.json_file)
     else:
-        import_questions(args.json_file)
+        import_questions(
+            args.json_file,
+            dry_run=args.dry_run,
+            limit=args.limit,
+            allow_needs_review=args.allow_needs_review,
+        )

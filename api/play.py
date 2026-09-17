@@ -14,15 +14,7 @@ class AnswerSubmission(BaseModel):
     answer: str
 
 
-def normalize_uzbek_latin(text: str) -> str:
-    """Normalizes specifically for Uzbek Latin ZakoWhat content."""
-    if not text:
-        return ""
-    text = text.lower()
-    text = re.sub(r"[’ʻʼ`]", "'", text)
-    text = text.strip('.,!?"()[]{}:;* ')
-    text = re.sub(r'\s+', ' ', text)
-    return text
+from services.gameplay import normalize_uzbek_latin, verify_zanjir_chain, is_true_false_match
 
 
 def get_ordered_rounds(db: Session, quiz_version_id: int) -> List[Round]:
@@ -43,7 +35,12 @@ def get_round_questions(db: Session, round_id: int) -> List[Question]:
     )
 
 
-def format_question_response(question: Question, question_index: int, total_in_round: int, round_obj: Round) -> dict:
+def format_question_response(
+    question: Question,
+    question_index: int,
+    total_in_round: int,
+    round_obj: Round,
+) -> dict:
     return {
         "status": "in_progress",
         "round": {
@@ -162,25 +159,33 @@ def submit_answer(session_token: str, submission: AnswerSubmission, db: Session 
     # Проверка на правильность
     for ans in accepted_answers:
         norm_ans = normalize_uzbek_latin(ans.answer_text)
-        if norm_ans == cleaned_input:
-            is_correct = True
-            matched_answer_text = norm_ans
-            break
+        if current_round.round_type == "true_false":
+            if is_true_false_match(cleaned_input, norm_ans):
+                is_correct = True
+                matched_answer_text = norm_ans
+                break
+        else:
+            if norm_ans == cleaned_input:
+                is_correct = True
+                matched_answer_text = norm_ans
+                break
 
     # Правило Zanjir: ответ должен начинаться на последнюю букву предыдущего ПРАВИЛЬНОГО ответа
     if is_correct and current_round.round_type == "zanjir" and attempt.current_question_index > 0:
         prev_q = questions[attempt.current_question_index - 1]
-        prev_accepted = db.query(AcceptedAnswer).filter(AcceptedAnswer.question_id == prev_q.id).first()
+        prev_accepted = (
+            db.query(AcceptedAnswer)
+            .filter(AcceptedAnswer.question_id == prev_q.id, AcceptedAnswer.is_primary.is_(True))
+            .first()
+        )
+        if not prev_accepted:
+            prev_accepted = db.query(AcceptedAnswer).filter(AcceptedAnswer.question_id == prev_q.id).first()
         
         if prev_accepted:
-            prev_norm = normalize_uzbek_latin(prev_accepted.answer_text)
-            expected_start = prev_norm[-1] if prev_norm else ""
-            actual_start = matched_answer_text[0] if matched_answer_text else ""
-            
-            if expected_start != actual_start:
+            if not verify_zanjir_chain(prev_accepted.answer_text, matched_answer_text):
                 is_correct = False
 
-    points = current_q.points if is_correct else 0
+    points = (current_q.points if current_q.points is not None else 1) if is_correct else 0
 
     record = AnswerRecord(
         attempt_id=attempt.id,

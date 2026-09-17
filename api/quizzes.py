@@ -29,6 +29,7 @@ def list_quizzes(db: Session = Depends(get_db)):
             results.append({
                 "quiz_id": quiz.id,
                 "title": quiz.title,
+                "description": quiz.description,
                 "version_number": latest_published.version_number,
             })
     return results
@@ -55,7 +56,7 @@ def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):
     # Fetch the latest published version
     latest_version = (
         db.query(QuizVersion)
-        .filter(QuizVersion.quiz_id == quiz.id)
+        .filter(QuizVersion.quiz_id == quiz.id, QuizVersion.status == "published")
         .order_by(QuizVersion.version_number.desc())
         .first()
     )

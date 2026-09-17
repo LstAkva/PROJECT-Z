@@ -1,16 +1,756 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz" class="h-full bg-slate-950 text-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zakovat Platform</title>
-    <!-- Подключаем Tailwind CSS для красивого дизайна без написания CSS кода -->
+    <title>ZakoWhat — Milliy Intellektual Viktorina Platformasi</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Cinzel"', 'serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f7ff',
+                            100: '#ebf0fe',
+                            200: '#ced9fd',
+                            500: '#4f46e5',
+                            600: '#4338ca',
+                            700: '#3730a3',
+                            900: '#1e1b4b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-gradient {
+            background: radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.18) 0%, rgba(15, 23, 42, 0) 75%);
+        }
+        .shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.8s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-md text-center">
-        <h1 class="text-3xl font-bold text-blue-600 mb-4">Zakovat Platform MVP</h1>
-        <p class="text-gray-700">Фундамент заложен. Сервер работает отлично!</p>
-    </div>
+<body class="min-h-full flex flex-col font-sans selection:bg-indigo-500 selection:text-white custom-gradient">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="goToQuizSelection()">
+                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-display font-bold text-white shadow-lg shadow-indigo-600/30">
+                    Z
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-display tracking-widest text-lg font-bold text-white leading-none">ZAKOWHAT</span>
+                    <span class="text-[10px] tracking-wider uppercase text-slate-400 font-semibold mt-0.5">Intellektual Arena</span>
+                </div>
+            </div>
+
+            <!-- Header Status & Score -->
+            <div class="flex items-center gap-4">
+                <div id="header-score-badge" class="hidden items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-950/80 border border-indigo-500/40 text-xs font-semibold text-indigo-200">
+                    <span>Ball:</span>
+                    <span id="header-score-value" class="font-mono text-sm text-white font-bold">0</span>
+                </div>
+                <div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs text-slate-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="hidden sm:inline">Server Online</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Application Container -->
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
+
+        <!-- ================================================================= -->
+        <!-- SCREEN 1: QUIZ SELECTION -->
+        <!-- ================================================================= -->
+        <section id="screen-selection" class="space-y-8 animate-fade-in">
+            <div class="text-center space-y-3 max-w-2xl mx-auto">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-semibold text-indigo-400">
+                    <span>🏆 O'zbekiston intellektual chempionati</span>
+                </div>
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                    O'yinni Tanlang va Boshlang
+                </h1>
+                <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
+                    Standart bilim sinovi, To'g'ri/Noto'g'ri, Mantiqasqon va Zanjir raundlaridan iborat rasmiy musobaqa maydoni.
+                </p>
+            </div>
+
+            <!-- Quiz List Container -->
+            <div id="quiz-list-container" class="space-y-4">
+                <div class="p-8 rounded-2xl border border-slate-800 bg-slate-900/50 text-center space-y-3">
+                    <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p class="text-sm text-slate-400">Mavjud viktorinalar yuklanmoqda...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- SCREEN 2: ACTIVE GAMEPLAY (SOLO ATTEMPT) -->
+        <!-- ================================================================= -->
+        <section id="screen-gameplay" class="hidden space-y-6 animate-fade-in">
+            <!-- Round & Question Header Bar -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/70 border border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span id="gameplay-round-badge" class="px-3 py-1 rounded-lg text-xs font-bold tracking-wide uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        STANDART
+                    </span>
+                    <span id="gameplay-question-counter" class="text-sm font-semibold text-slate-300">
+                        Savol 1 / 5
+                    </span>
+                </div>
+
+                <!-- Timer & Points -->
+                <div class="flex items-center gap-4 self-end sm:self-auto">
+                    <div class="flex items-center gap-1.5 text-xs text-slate-400">
+                        <span>Ochko:</span>
+                        <span id="gameplay-points-value" class="font-bold text-amber-400 font-mono text-sm">1</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 font-mono text-sm font-bold text-slate-200">
+                        <svg class="w-4 h-4 text-indigo-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span id="gameplay-timer-value">60</span>s
+                    </div>
+                </div>
+            </div>
+
+            <!-- Round Progress Bar -->
+            <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                <div id="gameplay-progress-bar" class="bg-gradient-to-r from-indigo-500 to-indigo-400 h-1.5 rounded-full transition-all duration-300" style="width: 20%"></div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="relative p-6 sm:p-10 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
+
+                <!-- Media Display (if available) -->
+                <div id="question-media-container" class="hidden overflow-hidden rounded-xl border border-slate-800 max-h-72">
+                    <img id="question-media-img" src="" alt="Savol surati" class="w-full h-full object-contain bg-slate-950">
+                </div>
+
+                <!-- Question Text -->
+                <div class="space-y-2">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-400">Savol mazmuni:</div>
+                    <h2 id="gameplay-question-text" class="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-snug">
+                        Yuklanmoqda...
+                    </h2>
+                </div>
+
+                <!-- Answer Form Area -->
+                <div id="answer-form-wrapper" class="pt-4 border-t border-slate-800/80 space-y-4">
+
+                    <!-- Standard / Mantiqasqon / Zanjir Text Input -->
+                    <form id="text-answer-form" class="space-y-4" onsubmit="handleTextAnswerSubmit(event)">
+                        <div class="relative">
+                            <input
+                                type="text"
+                                id="answer-text-input"
+                                autocomplete="off"
+                                autofocus
+                                placeholder="Javobingizni lotin alifbosida kiriting..."
+                                class="w-full px-5 py-4 rounded-2xl bg-slate-950 border-2 border-slate-800 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 text-white placeholder-slate-400 text-base sm:text-lg transition-all outline-none"
+                            />
+                        </div>
+                        <div class="flex items-center justify-between gap-4">
+                            <span class="text-xs text-slate-400 hidden sm:inline">Maslahat: [Enter] tugmasini bosishingiz mumkin</span>
+                            <button
+                                type="submit"
+                                id="answer-submit-btn"
+                                class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm sm:text-base transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <span>Javobni Yuborish</span>
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- True/False Quick Choice Buttons (Toggled for true_false rounds) -->
+                    <div id="true-false-actions" class="hidden grid grid-cols-2 gap-4">
+                        <button
+                            type="button"
+                            onclick="handleTrueFalseSubmit('rost')"
+                            class="py-5 px-6 rounded-2xl bg-emerald-950/40 border-2 border-emerald-600/40 hover:border-emerald-500 hover:bg-emerald-900/50 text-emerald-300 font-bold text-lg sm:text-xl transition-all shadow-lg shadow-emerald-950/50 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95"
+                        >
+                            <span class="text-2xl">✓</span>
+                            <span>To'g'ri (Rost)</span>
+                            <span class="text-xs text-emerald-400/70 font-mono font-normal">[1 yoki H]</span>
+                        </button>
+                        <button
+                            type="button"
+                            onclick="handleTrueFalseSubmit('yolg\'on')"
+                            class="py-5 px-6 rounded-2xl bg-rose-950/40 border-2 border-rose-600/40 hover:border-rose-500 hover:bg-rose-900/50 text-rose-300 font-bold text-lg sm:text-xl transition-all shadow-lg shadow-rose-950/50 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95"
+                        >
+                            <span class="text-2xl">✕</span>
+                            <span>Noto'g'ri (Yolg'on)</span>
+                            <span class="text-xs text-rose-400/70 font-mono font-normal">[2 yoki Y]</span>
+                        </button>
+                    </div>
+
+                    <!-- Instant Feedback Banner -->
+                    <div id="gameplay-feedback-banner" class="hidden p-4 rounded-xl text-center font-bold text-sm sm:text-base animate-bounce">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- SCREEN 3: ROUND REVEAL -->
+        <!-- ================================================================= -->
+        <section id="screen-reveal" class="hidden space-y-6 animate-fade-in">
+            <div class="p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-6">
+                <div class="text-center space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-semibold text-indigo-300">
+                        <span>📋 Raund Natijalari</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Raund Yakunlandi!</h2>
+                    <p id="reveal-round-score-text" class="text-slate-400 text-sm sm:text-base">
+                        To'plangan ball: <span class="font-bold text-white font-mono">0</span>
+                    </p>
+                </div>
+
+                <!-- Mantiqasqon Hidden Rule Card -->
+                <div id="reveal-hidden-rule-card" class="hidden p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 space-y-1">
+                    <div class="text-xs uppercase tracking-wider font-bold text-amber-400 flex items-center gap-1.5">
+                        <span>💡</span>
+                        <span>Mantiqiy Bog'liqlik (Yashirin Qoida):</span>
+                    </div>
+                    <p id="reveal-hidden-rule-content" class="text-base sm:text-lg font-bold text-amber-200">
+                        ...
+                    </p>
+                </div>
+
+                <!-- Questions & Answers Summary List -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Savollar va javoblar tahlili:</h3>
+                    <div id="reveal-questions-list" class="space-y-3">
+                        <!-- Dynamic items generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Continue Action Button -->
+                <div class="pt-4 border-t border-slate-800 flex justify-end">
+                    <button
+                        type="button"
+                        id="reveal-continue-btn"
+                        onclick="handleContinueToNextRound()"
+                        class="w-full sm:w-auto px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <span id="reveal-continue-label">Keyingi Raundga O'tish</span>
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- SCREEN 4: FINAL RESULTS -->
+        <!-- ================================================================= -->
+        <section id="screen-results" class="hidden space-y-8 animate-fade-in text-center">
+            <div class="p-8 sm:p-12 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-8 max-w-2xl mx-auto">
+                <div class="w-20 h-20 rounded-3xl bg-indigo-600/20 border-2 border-indigo-500/40 text-4xl flex items-center justify-center mx-auto shadow-xl shadow-indigo-500/20">
+                    🏆
+                </div>
+
+                <div class="space-y-2">
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Viktorina Yakunlandi!</h2>
+                    <p class="text-slate-400 text-sm sm:text-base">Barcha raundlar bo'yicha yakuniy hisob-kitob tayyor.</p>
+                </div>
+
+                <!-- Big Score Showcase -->
+                <div class="p-6 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                    <div class="text-xs uppercase tracking-widest text-slate-400 font-bold">Umumiy To'plangan Ball</div>
+                    <div id="results-total-score" class="text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-amber-300 font-mono">
+                        0
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                        <div class="text-xs text-slate-400">To'g'ri Javoblar</div>
+                        <div id="results-correct-count" class="text-2xl font-bold text-emerald-400 font-mono mt-1">0</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                        <div class="text-xs text-slate-400">Noto'g'ri Javoblar</div>
+                        <div id="results-incorrect-count" class="text-2xl font-bold text-rose-400 font-mono mt-1">0</div>
+                    </div>
+                </div>
+
+                <!-- Round Breakdown Table -->
+                <div class="space-y-3 text-left">
+                    <h4 class="text-xs uppercase tracking-wider font-bold text-slate-400">Raundlar bo'yicha taqsimot:</h4>
+                    <div id="results-rounds-breakdown" class="space-y-2 text-sm">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Play Again Button -->
+                <div class="pt-4 border-t border-slate-800">
+                    <button
+                        type="button"
+                        onclick="goToQuizSelection()"
+                        class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <span>Yana Boshqa Viktorinani O'ynash</span>
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-400">
+        <div class="max-w-5xl mx-auto px-4">
+            ZakoWhat &copy; 2026. O'zbek intellektual viktorina tizimi. Barcha huquqlar himoyalangan.
+        </div>
+    </footer>
+
+    <!-- ================================================================= -->
+    <!-- JAVASCRIPT GAMEPLAY ENGINE & API CONTROLLER -->
+    <!-- ================================================================= -->
+    <script>
+        const API_BASE = '/api';
+
+        const state = {
+            sessionToken: null,
+            currentRoundType: 'standard',
+            currentQuestion: null,
+            totalScore: 0,
+            timerInterval: null,
+            timeLeft: 60,
+            isSubmitting: false,
+        };
+
+        // Navigation Controller
+        function showScreen(screenId) {
+            ['screen-selection', 'screen-gameplay', 'screen-reveal', 'screen-results'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            const target = document.getElementById(screenId);
+            if (target) target.classList.remove('hidden');
+
+            const scoreBadge = document.getElementById('header-score-badge');
+            if (screenId === 'screen-selection') {
+                scoreBadge.classList.add('hidden');
+            } else {
+                scoreBadge.classList.remove('hidden');
+                document.getElementById('header-score-value').innerText = state.totalScore;
+            }
+        }
+
+        // =====================================================================
+        // STAGE 1: LOAD QUIZZES
+        // =====================================================================
+        async function loadQuizzes() {
+            const container = document.getElementById('quiz-list-container');
+            container.innerHTML = `
+                <div class="p-8 rounded-2xl border border-slate-800 bg-slate-900/50 text-center space-y-3">
+                    <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p class="text-sm text-slate-400">Viktorinalar yuklanmoqda...</p>
+                </div>
+            `;
+
+            try {
+                const res = await fetch(`${API_BASE}/quizzes`);
+                if (!res.ok) throw new Error('Viktorinalarni yuklab bo\'lmadi');
+                const quizzes = await res.json();
+
+                if (!quizzes || quizzes.length === 0) {
+                    container.innerHTML = `
+                        <div class="p-8 rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 text-center space-y-3">
+                            <p class="text-slate-400 text-base font-semibold">Hozircha ochiq viktorinalar mavjud emas.</p>
+                            <p class="text-xs text-slate-400">Tez orada yangi turnirlar kiritiladi.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = quizzes.map(q => `
+                    <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/70 hover:border-indigo-500/50 hover:bg-slate-900 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1.5">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-lg font-bold text-white">${escapeHtml(q.title)}</h3>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">v${q.version_number}</span>
+                            </div>
+                            <p class="text-sm text-slate-400 max-w-xl">${escapeHtml(q.description || "O'zbek intellektual viktorina turniri")}</p>
+                            <div class="flex flex-wrap gap-2 pt-1 text-xs text-slate-400">
+                                <span class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">🎯 4 Raund</span>
+                                <span class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">⛓️ Zanjir</span>
+                                <span class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">💡 Mantiqasqon</span>
+                            </div>
+                        </div>
+                        <button
+                            onclick="startQuiz(${q.quiz_id})"
+                            class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 cursor-pointer self-start sm:self-center"
+                        >
+                            <span>Boshlash</span>
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="p-6 rounded-2xl border border-rose-900/50 bg-rose-950/20 text-center space-y-3">
+                        <p class="text-sm text-rose-300 font-semibold">Xatolik yuz berdi: ${escapeHtml(err.message)}</p>
+                        <button onclick="loadQuizzes()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white">Qayta urinish</button>
+                    </div>
+                `;
+            }
+        }
+
+        // =====================================================================
+        // STAGE 2: START QUIZ SESSION
+        // =====================================================================
+        async function startQuiz(quizId) {
+            try {
+                const res = await fetch(`${API_BASE}/play/start/${quizId}`, { method: 'POST' });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'O\'yinni boshlab bo\'lmadi');
+                }
+                const data = await res.json();
+                state.sessionToken = data.session_token;
+                state.totalScore = 0;
+                renderQuestionState(data.current_state);
+                showScreen('screen-gameplay');
+            } catch (err) {
+                alert('Xatolik: ' + err.message);
+            }
+        }
+
+        // =====================================================================
+        // STAGE 3: RENDER QUESTION
+        // =====================================================================
+        function renderQuestionState(stateObj) {
+            state.isSubmitting = false;
+            const round = stateObj.round;
+            const question = stateObj.question;
+            state.currentRoundType = round.round_type;
+            state.currentQuestion = question;
+
+            // Round Badge Theme
+            const badgeEl = document.getElementById('gameplay-round-badge');
+            const roundTypesMap = {
+                'standard': { name: 'Standart', color: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
+                'true_false': { name: "To'g'ri / Noto'g'ri", color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
+                'mantiqasqon': { name: 'Mantiqasqon', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+                'zanjir': { name: 'Zanjir (Harflar zanjiri)', color: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
+            };
+            const meta = roundTypesMap[round.round_type] || { name: round.round_type, color: 'bg-slate-800 text-slate-300 border-slate-700' };
+            badgeEl.className = `px-3 py-1 rounded-lg text-xs font-bold tracking-wide uppercase border ${meta.color}`;
+            badgeEl.innerText = meta.name;
+
+            // Counter & Progress
+            const currentQIndex = stateObj.round_question_index + 1;
+            const totalQ = stateObj.round_total_questions;
+            document.getElementById('gameplay-question-counter').innerText = `Savol ${currentQIndex} / ${totalQ}`;
+            const pct = Math.round((currentQIndex / totalQ) * 100);
+            document.getElementById('gameplay-progress-bar').style.width = `${pct}%`;
+
+            // Points
+            document.getElementById('gameplay-points-value').innerText = question.points || 1;
+
+            // Question Text
+            document.getElementById('gameplay-question-text').innerText = question.text;
+
+            // Media
+            const mediaContainer = document.getElementById('question-media-container');
+            const mediaImg = document.getElementById('question-media-img');
+            if (question.media_url) {
+                mediaImg.src = question.media_url;
+                mediaContainer.classList.remove('hidden');
+            } else {
+                mediaContainer.classList.add('hidden');
+                mediaImg.src = '';
+            }
+
+            // Form Toggling (Text Input vs True/False Buttons)
+            const textForm = document.getElementById('text-answer-form');
+            const tfActions = document.getElementById('true-false-actions');
+            const textInput = document.getElementById('answer-text-input');
+            const submitBtn = document.getElementById('answer-submit-btn');
+
+            document.getElementById('gameplay-feedback-banner').classList.add('hidden');
+
+            if (round.round_type === 'true_false') {
+                textForm.classList.add('hidden');
+                tfActions.classList.remove('hidden');
+            } else {
+                textForm.classList.remove('hidden');
+                tfActions.classList.add('hidden');
+                textInput.value = '';
+                textInput.disabled = false;
+                submitBtn.disabled = false;
+                setTimeout(() => textInput.focus(), 50);
+            }
+
+            startTimer(60);
+        }
+
+        // Timer
+        function startTimer(seconds) {
+            clearInterval(state.timerInterval);
+            state.timeLeft = seconds;
+            const timerEl = document.getElementById('gameplay-timer-value');
+            timerEl.innerText = state.timeLeft;
+
+            state.timerInterval = setInterval(() => {
+                state.timeLeft--;
+                timerEl.innerText = state.timeLeft;
+                if (state.timeLeft <= 0) {
+                    clearInterval(state.timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function handleTimeOut() {
+            if (state.isSubmitting) return;
+            submitAnswer(""); // Submit empty answer when time runs out
+        }
+
+        // =====================================================================
+        // STAGE 4: SUBMIT ANSWERS
+        // =====================================================================
+        function handleTextAnswerSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('answer-text-input');
+            const answer = input.value.trim();
+            submitAnswer(answer);
+        }
+
+        function handleTrueFalseSubmit(val) {
+            submitAnswer(val);
+        }
+
+        async function submitAnswer(answerText) {
+            if (state.isSubmitting) return;
+            state.isSubmitting = true;
+            clearInterval(state.timerInterval);
+
+            // Disable controls
+            const input = document.getElementById('answer-text-input');
+            const submitBtn = document.getElementById('answer-submit-btn');
+            if (input) input.disabled = true;
+            if (submitBtn) submitBtn.disabled = true;
+
+            const feedbackEl = document.getElementById('gameplay-feedback-banner');
+
+            try {
+                const res = await fetch(`${API_BASE}/play/${state.sessionToken}/answer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answer: answerText })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Javobni qabul qilib bo\'lmadi');
+                }
+
+                const result = await res.json();
+                state.totalScore = result.total_score;
+                document.getElementById('header-score-value').innerText = state.totalScore;
+
+                // Visual Feedback
+                feedbackEl.classList.remove('hidden');
+                if (result.is_correct) {
+                    feedbackEl.className = 'p-4 rounded-xl text-center font-bold text-base bg-emerald-950/70 border border-emerald-500/50 text-emerald-300';
+                    feedbackEl.innerHTML = `✓ TO'G'RI JAVOB! <span class="font-mono text-emerald-200">+${result.points_awarded} ball</span>`;
+                } else {
+                    feedbackEl.className = 'p-4 rounded-xl text-center font-bold text-base bg-rose-950/70 border border-rose-500/50 text-rose-300';
+                    feedbackEl.innerHTML = `✕ NOTO'G'RI! <span class="font-mono text-rose-200">+0 ball</span>`;
+                }
+
+                setTimeout(async () => {
+                    if (result.round_completed) {
+                        // Move to Round Reveal
+                        await loadRoundReveal();
+                    } else if (result.next_state) {
+                        renderQuestionState(result.next_state);
+                    }
+                }, 1100);
+
+            } catch (err) {
+                alert('Xatolik: ' + err.message);
+                state.isSubmitting = false;
+                if (input) input.disabled = false;
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        }
+
+        // =====================================================================
+        // STAGE 5: ROUND REVEAL
+        // =====================================================================
+        async function loadRoundReveal() {
+            try {
+                const res = await fetch(`${API_BASE}/play/${state.sessionToken}/reveal`);
+                if (!res.ok) throw new Error('Raund natijalarini olib bo\'lmadi');
+                const data = await res.json();
+
+                document.getElementById('reveal-round-score-text').innerHTML = `
+                    Bu raundda to'plangan ball: <span class="font-bold text-white font-mono text-lg">${data.round_score}</span> | Umumiy: <span class="font-bold text-indigo-400 font-mono text-lg">${data.total_score_so_far}</span>
+                `;
+
+                // Hidden Rule for Mantiqasqon
+                const hiddenRuleCard = document.getElementById('reveal-hidden-rule-card');
+                const hiddenRuleContent = document.getElementById('reveal-hidden-rule-content');
+                if (data.config && data.config.hidden_rule) {
+                    hiddenRuleContent.innerText = data.config.hidden_rule;
+                    hiddenRuleCard.classList.remove('hidden');
+                } else {
+                    hiddenRuleCard.classList.add('hidden');
+                }
+
+                // Questions List
+                const listEl = document.getElementById('reveal-questions-list');
+                listEl.innerHTML = data.questions.map((q, idx) => `
+                    <div class="p-4 rounded-xl bg-slate-950/70 border ${q.is_correct ? 'border-emerald-900/40 bg-emerald-950/10' : 'border-slate-800'} space-y-2">
+                        <div class="flex items-start justify-between gap-3">
+                            <span class="text-xs font-mono font-bold text-slate-400">#${q.sequence}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${q.is_correct ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
+                                ${q.is_correct ? `+${q.points_awarded} ball` : '0 ball'}
+                            </span>
+                        </div>
+                        <div class="text-sm font-semibold text-slate-200">${escapeHtml(q.text)}</div>
+                        <div class="grid sm:grid-cols-2 gap-2 pt-1 text-xs">
+                            <div class="p-2 rounded bg-slate-900/90">
+                                <span class="text-slate-400">Sizning javobingiz:</span>
+                                <span class="font-bold ${q.is_correct ? 'text-emerald-300' : 'text-rose-300'}">${escapeHtml(q.submitted_answer || "(Javob berilmadi)")}</span>
+                            </div>
+                            <div class="p-2 rounded bg-slate-900/90">
+                                <span class="text-slate-400">Qabul qilingan javob:</span>
+                                <span class="font-bold text-indigo-300">${escapeHtml(q.correct_answers.join(' / '))}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                const btnLabel = document.getElementById('reveal-continue-label');
+                btnLabel.innerText = data.has_next_round ? "Keyingi Raundga O'tish" : "Yakuniy Natijalarni Ko'rish";
+
+                showScreen('screen-reveal');
+            } catch (err) {
+                alert('Reveal xatoligi: ' + err.message);
+            }
+        }
+
+        async function handleContinueToNextRound() {
+            try {
+                const res = await fetch(`${API_BASE}/play/${state.sessionToken}/continue`, { method: 'POST' });
+                if (!res.ok) throw new Error('Keyingi bosqichga o\'tib bo\'lmadi');
+                const data = await res.json();
+
+                if (data.quiz_completed || data.status === 'completed') {
+                    // Fetch and show final results
+                    await loadFinalResults();
+                } else if (data.current_state) {
+                    renderQuestionState(data.current_state);
+                    showScreen('screen-gameplay');
+                }
+            } catch (err) {
+                alert('Xatolik: ' + err.message);
+            }
+        }
+
+        // =====================================================================
+        // STAGE 6: FINAL RESULTS
+        // =====================================================================
+        async function loadFinalResults() {
+            try {
+                const res = await fetch(`${API_BASE}/play/${state.sessionToken}/results`);
+                if (!res.ok) throw new Error('Natijalarni yuklab bo\'lmadi');
+                const data = await res.json();
+
+                document.getElementById('results-total-score').innerText = data.total_score;
+                document.getElementById('results-correct-count').innerText = data.total_correct;
+                document.getElementById('results-incorrect-count').innerText = data.total_incorrect;
+
+                const breakdownEl = document.getElementById('results-rounds-breakdown');
+                breakdownEl.innerHTML = data.rounds.map(r => `
+                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                            <span class="font-bold text-white capitalize">${r.round_type.replace('_', ' ')} (Raund ${r.round_sequence})</span>
+                        </div>
+                        <div class="flex items-center gap-3 font-mono">
+                            <span class="text-emerald-400">✓ ${r.correct_count}</span>
+                            <span class="text-rose-400">✕ ${r.incorrect_count}</span>
+                            <span class="text-white font-bold bg-slate-900 px-2 py-0.5 rounded text-xs border border-slate-800">${r.round_score} ball</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                showScreen('screen-results');
+            } catch (err) {
+                alert('Natijalar xatoligi: ' + err.message);
+            }
+        }
+
+        function goToQuizSelection() {
+            clearInterval(state.timerInterval);
+            state.sessionToken = null;
+            showScreen('screen-selection');
+            loadQuizzes();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Global Keyboard Listeners (for True/False shortcuts)
+        document.addEventListener('keydown', (e) => {
+            const gameplayScreen = document.getElementById('screen-gameplay');
+            if (gameplayScreen && !gameplayScreen.classList.contains('hidden') && state.currentRoundType === 'true_false') {
+                if (e.key === '1' || e.key.toLowerCase() === 'h') {
+                    handleTrueFalseSubmit('rost');
+                } else if (e.key === '2' || e.key.toLowerCase() === 'y') {
+                    handleTrueFalseSubmit('yolg\'on');
+                }
+            }
+        });
+
+        // Initialize on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadQuizzes();
+        });
+    </script>
 </body>
 </html>

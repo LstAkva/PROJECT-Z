@@ -30,6 +30,7 @@ class QuizVersion(Base):
     
     quiz = relationship("Quiz", back_populates="versions")
     rounds = relationship("Round", back_populates="quiz_version", cascade="all, delete-orphan")
+    solo_attempts = relationship("SoloAttempt", back_populates="quiz_version", cascade="all, delete-orphan")
 
 class Round(Base):
     """Специфичный блок игровой механики внутри версии квиза."""
@@ -59,7 +60,7 @@ class Question(Base):
     # --- НОВЫЕ ПОЛЯ (Import Contract v1) ---
     explanation = Column(Text, nullable=True)
     status = Column(String, nullable=False, default="draft", server_default="draft")
-    source_meta = Column(JSONB, nullable=True)
+    source_meta = Column(JSONB().with_variant(JSON, "sqlite"), nullable=True)
     compound_group_id = Column(String, nullable=True)
     compound_type = Column(String, nullable=True)
     category = Column(String, nullable=True)
@@ -101,7 +102,7 @@ class SoloAttempt(Base):
     started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     completed_at = Column(DateTime, nullable=True)
 
-    quiz_version = relationship("QuizVersion")
+    quiz_version = relationship("QuizVersion", back_populates="solo_attempts")
     answers = relationship("AnswerRecord", back_populates="attempt", cascade="all, delete-orphan")
 
 
