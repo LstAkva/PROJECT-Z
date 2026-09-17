@@ -4,8 +4,9 @@ import os
 from collections import Counter
 
 from database import SessionLocal
-from models import Quiz, QuizVersion, Round, Question, AcceptedAnswer
+from models import Question, AcceptedAnswer
 from quality_gate import evaluate_record
+from services.gameplay import normalize_uzbek_latin
 
 
 class QuestionValidator:
@@ -118,90 +119,49 @@ class QuestionValidator:
         # =========================================================
         media_field = record.get("media")
 
-        if isinstance(media_field, list):
-            media_field = ", ".join(str(m) for m in media_field)
-            needs_review = True
-        elif media_field is None:
+        if isinstance(media_field, dict):
+            if "media_dependent" in flags and not media_field.get("url"):
+                needs_review = True
+        elif media_field is not None:
             media_field = None
-        elif not isinstance(media_field, str):
-            media_field = str(media_field)
 
-        if record.get("missing_media"):
-            needs_review = True
+        # =========================================================
+        # 6. POINTS
+        # =========================================================
+        points = record.get("points")
 
+        if points is not None:
+            try:
+                points = int(points)
+            except (ValueError, TypeError):
+                points = 1
+        else:
+            points = 1
+
+        # =========================================================
+        # 7. METRICS
+        # =========================================================
         if needs_review:
             self.stats["needs_review"] += 1
+        else:
+            self.stats["eligible"] += 1
 
-        # =========================================================
-        # 6. ACCEPTED ANSWERS
-        #
-        # Canonical format:
-        #
-        # [
-        #   {"text": "...", "type": "primary"},
-        #   {"text": "...", "type": "zachot"}
-        # ]
-        # =========================================================
-        accepted_answers = record.get("accepted_answers", [])
-
-        if not isinstance(accepted_answers, list):
-            accepted_answers = []
-
-        normalized_accepted_answers = []
-
-        for answer in accepted_answers:
-            if not isinstance(answer, dict):
-                continue
-
-            answer_text = answer.get("text")
-            answer_type = answer.get("type")
-
-            if not answer_text or not str(answer_text).strip():
-                continue
-
-            normalized_accepted_answers.append({
-                "text": str(answer_text).strip(),
-                "type": answer_type,
-            })
-
-        # =========================================================
-        # 7. ELIGIBLE
-        # =========================================================
-        self.stats["eligible"] += 1
-
-        # =========================================================
-        # 8. NORMALIZED RECORD
-        # =========================================================
         return {
             "id": record.get("id"),
             "text": question_text,
             "primary_answer": primary_answer,
-
-            "accepted_answers": normalized_accepted_answers,
-
+            "accepted_answers": record.get("accepted_answers", []),
             "explanation": record.get("explanation"),
-
-            "source": {
-                "source_name": source_data.get("source_name"),
-                "channel_name": source_data.get("channel_name"),
-                "channel_id": channel_id,
-                "question_message_id": question_message_id,
-                "source_file": source_file,
-                "question_number": question_number,
-                "source_page": source_data.get("source_page"),
-                "pack": source_data.get("pack"),
-            },
-
-            "editorial": editorial_data,
-
-            "compound": record.get("compound"),
-            "points": record.get("points"),
             "category": record.get("category"),
-
+            "source": source_data,
+            "editorial": editorial_data,
+            "compound": record.get("compound"),
+            "points": points,
             "media": media_field,
             "needs_review": needs_review,
-
             "round_type": record.get("round_type"),
+            "options": record.get("options"),
+            "question_type": record.get("question_type", "text"),
         }
 
 
@@ -260,61 +220,29 @@ def validate_only(json_filepath):
     print("\nNo database changes were made.")
 
 
-def get_or_create_import_round(db):
-    """
-    Создает технический Quiz / QuizVersion / Round
-    для импортированных вопросов, если они еще не существуют.
-    """
+# =========================================================
+# DEDUPLICATION LOGIC
+# =========================================================
 
-    quiz = (
-        db.query(Quiz)
-        .filter_by(title="Telegram Imports Database")
-        .first()
-    )
-
-    if not quiz:
-        quiz = Quiz(
-            title="Telegram Imports Database",
-            description="База импортированных вопросов из Telegram",
+def find_existing_canonical_id(db, canonical_id):
+    if not canonical_id:
+        return None
+    try:
+        res = (
+            db.query(Question)
+            .filter(Question.source_meta["canonical_id"].astext == str(canonical_id))
+            .first()
         )
-        db.add(quiz)
-        db.flush()
+        if res:
+            return res
+    except Exception:
+        pass
 
-    version = (
-        db.query(QuizVersion)
-        .filter_by(quiz_id=quiz.id)
-        .order_by(QuizVersion.version_number.desc())
-        .first()
-    )
-
-    if not version:
-        version = QuizVersion(
-            quiz_id=quiz.id,
-            version_number=1,
-            status="draft",
-        )
-        db.add(version)
-        db.flush()
-
-    import_round = (
-        db.query(Round)
-        .filter_by(
-            quiz_version_id=version.id,
-            round_type="import_buffer",
-        )
-        .first()
-    )
-
-    if not import_round:
-        import_round = Round(
-            quiz_version_id=version.id,
-            sequence=1,
-            round_type="import_buffer",
-        )
-        db.add(import_round)
-        db.flush()
-
-    return import_round.id
+    # Dialect-neutral fallback
+    for candidate in db.query(Question).all():
+        if candidate.source_meta and str(candidate.source_meta.get("canonical_id")) == str(canonical_id):
+            return candidate
+    return None
 
 
 def find_existing_telegram_question(
@@ -326,49 +254,31 @@ def find_existing_telegram_question(
     primary_answer,
 ):
     """
-    Telegram deduplication.
-
-    Один Telegram message может содержать несколько вопросов,
-    поэтому channel_id + question_message_id недостаточно.
-
-    Используем:
-    channel_id
-    + question_message_id
-    + points
-    + question_text
-    + primary_answer
+    Telegram deduplication across messages.
     """
-
-    query = (
-        db.query(Question)
-        .filter(
-            Question.source_meta["channel_id"].astext
-            == str(channel_id),
-
-            Question.source_meta["question_message_id"].astext
-            == str(question_message_id),
+    candidates = []
+    try:
+        candidates = (
+            db.query(Question)
+            .filter(
+                Question.source_meta["channel_id"].astext == str(channel_id),
+                Question.source_meta["question_message_id"].astext == str(question_message_id),
+            )
+            .all()
         )
-    )
-
-    candidates = query.all()
+    except Exception:
+        for q in db.query(Question).all():
+            sm = q.source_meta or {}
+            if str(sm.get("channel_id")) == str(channel_id) and str(sm.get("question_message_id")) == str(question_message_id):
+                candidates.append(q)
 
     for candidate in candidates:
-        # Новые импорты хранят эти поля в source_meta.
-        stored_points = candidate.source_meta.get("points")
-        stored_text = candidate.source_meta.get("question_text")
-        stored_primary = candidate.source_meta.get("primary_answer")
+        stored_points = candidate.source_meta.get("points") if candidate.source_meta else None
+        stored_text = candidate.source_meta.get("question_text") if candidate.source_meta else None
+        stored_primary = candidate.source_meta.get("primary_answer") if candidate.source_meta else None
 
-        if stored_points is not None:
-            points_match = stored_points == points
-        else:
-            # Fallback для старых записей, импортированных
-            # до появления расширенного source_meta.
-            points_match = candidate.points == points
-
-        if stored_text is not None:
-            text_match = stored_text == question_text
-        else:
-            text_match = candidate.text == question_text
+        points_match = (stored_points == points) if stored_points is not None else (candidate.points == points)
+        text_match = (stored_text == question_text) if stored_text is not None else (candidate.text == question_text)
 
         if stored_primary is not None:
             primary_match = stored_primary == primary_answer
@@ -381,7 +291,6 @@ def find_existing_telegram_question(
                 )
                 .first()
             )
-
             primary_match = (
                 primary_record is not None
                 and primary_record.answer_text == primary_answer
@@ -398,40 +307,69 @@ def find_existing_file_question(
     source_file,
     question_number,
 ):
-    return (
-        db.query(Question)
-        .filter(
-            Question.source_meta["source_file"].astext
-            == str(source_file),
-
-            Question.source_meta["question_number"].astext
-            == str(question_number),
+    try:
+        res = (
+            db.query(Question)
+            .filter(
+                Question.source_meta["source_file"].astext == str(source_file),
+                Question.source_meta["question_number"].astext == str(question_number),
+            )
+            .first()
         )
-        .first()
-    )
+        if res:
+            return res
+    except Exception:
+        pass
+
+    for q in db.query(Question).all():
+        sm = q.source_meta or {}
+        if str(sm.get("source_file")) == str(source_file) and str(sm.get("question_number")) == str(question_number):
+            return q
+    return None
 
 
-def find_existing_canonical_id(db, canonical_id):
-    if not canonical_id:
+def find_existing_content_match(db, question_text, primary_answer):
+    """
+    Global Question Bank deduplication: checks if an identical question (normalized text + primary answer)
+    already exists in the bank, regardless of source channel, file, or apostrophe typographical variance.
+    """
+    if not question_text or not primary_answer:
         return None
-    return (
-        db.query(Question)
-        .filter(Question.source_meta["canonical_id"].astext == str(canonical_id))
-        .first()
+
+    norm_text = normalize_uzbek_latin(question_text)
+    norm_ans = normalize_uzbek_latin(primary_answer)
+
+    # 1. First check exact text match
+    candidates = db.query(Question).filter(Question.text == question_text).all()
+    for cand in candidates:
+        for ans in cand.accepted_answers:
+            if ans.is_primary and normalize_uzbek_latin(ans.answer_text) == norm_ans:
+                return cand
+
+    # 2. Check by primary answer (fast and handles apostrophe variants in question text)
+    ans_candidates = (
+        db.query(AcceptedAnswer)
+        .filter(AcceptedAnswer.is_primary.is_(True))
+        .all()
     )
+    for ans in ans_candidates:
+        if normalize_uzbek_latin(ans.answer_text) == norm_ans:
+            q = ans.question
+            if q and normalize_uzbek_latin(q.text) == norm_text:
+                return q
+
+    return None
 
 
-def find_existing_question_in_round(db, round_id, question_text):
-    if not question_text:
-        return None
-    return (
-        db.query(Question)
-        .filter(Question.round_id == round_id, Question.text == question_text)
-        .first()
-    )
-
+# =========================================================
+# QUESTION BANK INGESTION
+# =========================================================
 
 def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_review=False, db_session=None):
+    """
+    Imports canonical questions directly into the central Question Bank.
+    Does NOT create any fake Quiz, fake QuizVersion, or fake import_buffer Round.
+    """
     filename = os.path.basename(json_filepath)
 
     owns_db = db_session is None
@@ -453,16 +391,12 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
     }
 
     try:
-        # =========================================================
-        # LOAD CANONICAL JSON
-        # =========================================================
+        # 1. LOAD CANONICAL JSON
         with open(json_filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         if not isinstance(data, list):
-            raise ValueError(
-                "Canonical JSON must contain a top-level array."
-            )
+            raise ValueError("Canonical JSON must contain a top-level array.")
 
         if limit is not None and limit > 0:
             data = data[:limit]
@@ -470,28 +404,12 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
 
         stats["total"] = len(data)
 
-        print(f"Importing: {filename} {'[DRY RUN]' if dry_run else ''}")
+        print(f"Importing directly into Question Bank: {filename} {'[DRY RUN]' if dry_run else ''}")
         print(f"Canonical records to process: {len(data)}")
 
-        # =========================================================
-        # IMPORT ROUND
-        # =========================================================
-        round_id = get_or_create_import_round(db)
-
-        max_seq = (
-            db.query(Question)
-            .filter_by(round_id=round_id)
-            .count()
-        )
-
-        # =========================================================
-        # PROCESS RECORDS
-        # =========================================================
+        # 2. PROCESS RECORDS
         for index, raw_item in enumerate(data):
-
-            # -----------------------------------------------------
-            # 0. QUALITY GATE FILTER
-            # -----------------------------------------------------
+            # Quality gate evaluation
             qg_status, qg_reasons = evaluate_record(raw_item, index)
             if qg_status == "rejected":
                 stats["skipped_rejected"] += 1
@@ -500,38 +418,22 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
                 stats["skipped_needs_review"] += 1
                 continue
 
-            # -----------------------------------------------------
-            # 1. VALIDATE
-            # -----------------------------------------------------
-            item = validator.validate_and_normalize(
-                raw_item,
-                filename,
-                index,
-            )
-
+            item = validator.validate_and_normalize(raw_item, filename, index)
             if item is None:
                 stats["skipped_rejected"] += 1
                 continue
 
             source = item["source"]
-
             channel_id = source.get("channel_id")
-            question_message_id = source.get(
-                "question_message_id"
-            )
-
+            question_message_id = source.get("question_message_id")
             source_file = source.get("source_file")
-            question_number = source.get(
-                "question_number"
-            )
+            question_number = source.get("question_number")
 
-            points = item.get("points")
+            points = item.get("points", 1) or 1
             question_text = item["text"]
             primary_answer = item["primary_answer"]
 
-            # -----------------------------------------------------
-            # 2. DEDUPLICATION (Multi-layer)
-            # -----------------------------------------------------
+            # Multi-layer deduplication
             existing_q = None
 
             # 2a. Canonical ID
@@ -557,17 +459,15 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
                         question_number=question_number,
                     )
 
-            # 2c. Exact question text in target round
+            # 2c. Global Content Match (Normalized text + primary answer)
             if existing_q is None:
-                existing_q = find_existing_question_in_round(db, round_id, question_text)
+                existing_q = find_existing_content_match(db, question_text, primary_answer)
 
             if existing_q is not None:
                 stats["skipped_duplicate"] += 1
                 continue
 
-            # -----------------------------------------------------
-            # 3. FINAL STATUS
-            # -----------------------------------------------------
+            # Editorial status
             editorial = item["editorial"]
             canonical_status = editorial.get("status")
 
@@ -580,88 +480,75 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
 
             stats[final_status] += 1
 
-            # -----------------------------------------------------
-            # 4. COMPOUND
-            # -----------------------------------------------------
+            # Compound
             compound_data = item.get("compound")
-
             if isinstance(compound_data, dict):
                 stats["compound"] += 1
-
-                compound_group_id = compound_data.get(
-                    "group_id"
-                )
-                compound_type = compound_data.get(
-                    "type"
-                )
+                compound_group_id = compound_data.get("group_id")
+                compound_type = compound_data.get("type")
             else:
                 compound_group_id = None
                 compound_type = None
 
-            # -----------------------------------------------------
-            # 5. CONTENT TYPE
-            # -----------------------------------------------------
             if item.get("round_type") == "jeopardy":
                 stats["jeopardy"] += 1
 
             flags = editorial.get("flags", [])
-
-            if (
-                "media_dependent" in flags
-                or "missing_media" in flags
-            ):
+            if "media_dependent" in flags or "missing_media" in flags:
                 stats["media_dependent"] += 1
 
-            # -----------------------------------------------------
-            # 6. SEQUENCE
-            # -----------------------------------------------------
-            max_seq += 1
-
-            # -----------------------------------------------------
-            # 7. SOURCE META
-            # -----------------------------------------------------
+            # Source Meta
             source_meta = {
                 "source_name": source.get("source_name"),
                 "channel_name": source.get("channel_name"),
-
                 "channel_id": channel_id,
                 "question_message_id": question_message_id,
-
                 "source_file": source_file,
                 "question_number": question_number,
-
                 "source_page": source.get("source_page"),
                 "pack": source.get("pack"),
-
-                # Extended deduplication / traceability
-                "canonical_id": item.get("id"),
+                "canonical_id": canonical_id,
                 "question_text": question_text,
                 "primary_answer": primary_answer,
                 "points": points,
             }
 
-            # -----------------------------------------------------
-            # 8. QUESTION
-            # -----------------------------------------------------
+            # Media resolution
+            media_url = None
+            media_provider = None
+            media_field = item.get("media")
+            if isinstance(media_field, dict):
+                media_url = media_field.get("url")
+                media_provider = media_field.get("provider")
+
+            # MCQ options resolution
+            options = item.get("options")
+            q_type = item.get("question_type", "text")
+            if options and isinstance(options, list) and q_type == "text":
+                q_type = "mcq"
+
+            # Create standalone Question in Question Bank
             new_question = Question(
-                round_id=round_id,
-                sequence=max_seq,
+                round_id=None,
+                sequence=None,
                 text=question_text,
                 explanation=item.get("explanation"),
                 status=final_status,
                 source_meta=source_meta,
                 points=points,
+                default_points=points,
                 category=item.get("category"),
                 compound_group_id=compound_group_id,
                 compound_type=compound_type,
+                options=options,
+                question_type=q_type,
+                media_provider=media_provider,
+                media_url=media_url,
             )
-
             db.add(new_question)
             db.flush()
 
-            # -----------------------------------------------------
-            # 9. PRIMARY ANSWER
-            # -----------------------------------------------------
+            # Primary answer
             db.add(
                 AcceptedAnswer(
                     question_id=new_question.id,
@@ -670,118 +557,54 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
                 )
             )
 
-            # -----------------------------------------------------
-            # 10. ACCEPTED / ZACHOT ANSWERS
-            # -----------------------------------------------------
+            # Alternate accepted answers
             seen_alternatives = set()
-
-            for answer in item.get(
-                "accepted_answers",
-                [],
-            ):
-
+            for answer in item.get("accepted_answers", []):
                 if not isinstance(answer, dict):
                     continue
+                ans_text = answer.get("text")
+                ans_type = answer.get("type")
 
-                answer_text = answer.get("text")
-                answer_type = answer.get("type")
-
-                if not answer_text:
+                if not ans_text:
+                    continue
+                ans_text = str(ans_text).strip()
+                if not ans_text or ans_type == "primary" or ans_text == primary_answer:
+                    continue
+                if ans_text in seen_alternatives:
                     continue
 
-                answer_text = str(answer_text).strip()
-
-                if not answer_text:
-                    continue
-
-                # Primary answer is already stored separately.
-                if answer_type == "primary":
-                    continue
-
-                if answer_text == primary_answer:
-                    continue
-
-                if answer_text in seen_alternatives:
-                    continue
-
-                seen_alternatives.add(answer_text)
-
+                seen_alternatives.add(ans_text)
                 db.add(
                     AcceptedAnswer(
                         question_id=new_question.id,
-                        answer_text=answer_text,
+                        answer_text=ans_text,
                         is_primary=False,
                     )
                 )
 
             stats["added"] += 1
 
-        # =========================================================
-        # COMMIT OR ROLLBACK (DRY-RUN)
-        # =========================================================
         if dry_run:
             db.rollback()
             print("\n[DRY RUN] Database transaction rolled back. No rows were committed.")
         else:
             db.commit()
 
-        # =========================================================
-        # REPORT
-        # =========================================================
-        print_validation_report(
-            filename,
-            validator,
-        )
-
-        print("\n=== DB IMPORT SUMMARY ===")
+        print_validation_report(filename, validator)
+        print("\n=== QUESTION BANK IMPORT SUMMARY ===")
         print(f"Mode               : {'DRY RUN (Read-Only)' if dry_run else 'LIVE COMMIT'}")
         print(f"Total processed    : {stats['total']}")
         print(f"{'Would Add' if dry_run else 'Added'}          : {stats['added']}")
         print(f"Skipped (duplicate): {stats['skipped_duplicate']}")
         print(f"Skipped (rejected) : {stats['skipped_rejected']}")
         print(f"Skipped (needs rev): {stats['skipped_needs_review']}")
-
-        print("--- Status Details ---")
-        print(
-            f"Needs review       : "
-            f"{stats['needs_review']}"
-        )
-        print(
-            f"Ready              : "
-            f"{stats['ready']}"
-        )
-        print(
-            f"Draft               : "
-            f"{stats['draft']}"
-        )
-
-        print("--- Content Types ---")
-        print(
-            f"Compound records   : "
-            f"{stats['compound']}"
-        )
-        print(
-            f"Jeopardy records   : "
-            f"{stats['jeopardy']}"
-        )
-        print(
-            f"Media-dependent    : "
-            f"{stats['media_dependent']}"
-        )
-
-        print("======================\n")
+        print("===================================\n")
 
     except Exception as exc:
         db.rollback()
-
-        print(
-            "\n❌ Import failed. "
-            "Transaction rolled back."
-        )
+        print("\n❌ Import failed. Transaction rolled back.")
         print(f"Error: {exc}\n")
-
         raise
-
     finally:
         if owns_db:
             db.close()
@@ -790,48 +613,17 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="ZakoWhat canonical question importer"
-    )
-
-    parser.add_argument(
-        "--validate-only",
-        action="store_true",
-        help="Validate canonical JSON without touching the database",
-    )
-
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Simulate database import with rollback without modifying any data",
-    )
-
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Limit number of records to process",
-    )
-
-    parser.add_argument(
-        "--allow-needs-review",
-        action="store_true",
-        help="Also import questions flagged as needs_review (default is only ready_to_import)",
-    )
-
-    parser.add_argument(
-        "json_file",
-        nargs="?",
-        default="canonical_1.json",
-        help="Canonical JSON file to process",
-    )
-
+    parser = argparse.ArgumentParser(description="ZakoWhat canonical question bank importer")
+    parser.add_argument("--validate-only", action="store_true", help="Validate canonical JSON without touching DB")
+    parser.add_argument("--dry-run", action="store_true", help="Simulate import with rollback")
+    parser.add_argument("--limit", type=int, default=None, help="Limit number of records to process")
+    parser.add_argument("--allow-needs-review", action="store_true", help="Also import questions flagged as needs_review")
+    parser.add_argument("json_file", nargs="?", default="canonical_1.json", help="Canonical JSON file to process")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-
     if args.validate_only:
         validate_only(args.json_file)
     else:

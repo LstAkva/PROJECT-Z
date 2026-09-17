@@ -1,65 +1,161 @@
 import string
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional, Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Quiz, QuizVersion, Round, Question, AcceptedAnswer, SoloAttempt, AnswerRecord
-import re
+from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAnswer, SoloAttempt, AnswerRecord
+from services.gameplay import normalize_uzbek_latin, verify_zanjir_chain, is_true_false_match
+
 router = APIRouter(prefix="/api/play", tags=["play"])
 
 
 class AnswerSubmission(BaseModel):
     answer: str
+    is_wager: bool = False
 
 
-from services.gameplay import normalize_uzbek_latin, verify_zanjir_chain, is_true_false_match
+def sanitize_config(config: Optional[dict]) -> dict:
+    if not config:
+        return {}
+    c = dict(config)
+    c.pop("hidden_rule", None)
+    return c
 
 
-def get_ordered_rounds(db: Session, quiz_version_id: int) -> List[Round]:
-    return (
+# =========================================================
+# MANIFEST / DB RESOLUTION HELPERS
+# =========================================================
+
+def get_manifest_or_db_rounds(version: QuizVersion, db: Session) -> List[Dict[str, Any]]:
+    """Returns a unified representation of rounds either from published_manifest or DB."""
+    if version.published_manifest and "rounds" in version.published_manifest:
+        return version.published_manifest["rounds"]
+
+    # Fallback to DB
+    rounds = (
         db.query(Round)
-        .filter(Round.quiz_version_id == quiz_version_id)
+        .filter(Round.quiz_version_id == version.id)
         .order_by(Round.sequence.asc())
         .all()
     )
+    result = []
+    for r in rounds:
+        rqs = (
+            db.query(RoundQuestion)
+            .filter(RoundQuestion.round_id == r.id)
+            .order_by(RoundQuestion.sequence.asc())
+            .all()
+        )
+        questions_data = []
+        if rqs:
+            for rq in rqs:
+                q = rq.question
+                pts = (
+                    rq.points_override
+                    if rq.points_override is not None
+                    else (q.default_points if q.default_points is not None else q.points)
+                )
+                accepted = [
+                    {"id": a.id, "answer_text": a.answer_text, "is_primary": a.is_primary}
+                    for a in q.accepted_answers
+                ]
+                questions_data.append({
+                    "round_question_id": rq.id,
+                    "question_id": q.id,
+                    "sequence": rq.sequence,
+                    "text": q.text,
+                    "explanation": q.explanation,
+                    "media_provider": q.media_provider,
+                    "media_url": q.media_url,
+                    "question_type": q.question_type or "text",
+                    "options": q.options,
+                    "points": pts if pts is not None else 1,
+                    "config": rq.config_override or {},
+                    "accepted_answers": accepted,
+                })
+        else:
+            legacy_qs = (
+                db.query(Question)
+                .filter(Question.round_id == r.id)
+                .order_by(Question.sequence.asc())
+                .all()
+            )
+            for q in legacy_qs:
+                accepted = [
+                    {"id": a.id, "answer_text": a.answer_text, "is_primary": a.is_primary}
+                    for a in q.accepted_answers
+                ]
+                questions_data.append({
+                    "round_question_id": None,
+                    "question_id": q.id,
+                    "sequence": q.sequence or 1,
+                    "text": q.text,
+                    "explanation": q.explanation,
+                    "media_provider": q.media_provider,
+                    "media_url": q.media_url,
+                    "question_type": q.question_type or "text",
+                    "options": q.options,
+                    "points": q.points or 1,
+                    "config": {},
+                    "accepted_answers": accepted,
+                })
 
-
-def get_round_questions(db: Session, round_id: int) -> List[Question]:
-    return (
-        db.query(Question)
-        .filter(Question.round_id == round_id)
-        .order_by(Question.sequence.asc())
-        .all()
-    )
+        result.append({
+            "round_id": r.id,
+            "sequence": r.sequence,
+            "round_type": r.round_type,
+            "config": r.config or {},
+            "questions": questions_data,
+        })
+    return result
 
 
 def format_question_response(
-    question: Question,
+    q_data: Dict[str, Any],
     question_index: int,
     total_in_round: int,
-    round_obj: Round,
+    round_data: Dict[str, Any],
 ) -> dict:
+    """Formats safe question payload for client display (answers never exposed)."""
+    # Sanitize options for MCQ (only key and text)
+    raw_options = q_data.get("options")
+    safe_options = None
+    if raw_options and isinstance(raw_options, list):
+        safe_options = [
+            {"key": opt.get("key"), "text": opt.get("text")}
+            for opt in raw_options
+            if isinstance(opt, dict) and "key" in opt and "text" in opt
+        ]
+
     return {
         "status": "in_progress",
         "round": {
-            "id": round_obj.id,
-            "sequence": round_obj.sequence,
-            "round_type": round_obj.round_type,
+            "id": round_data.get("round_id"),
+            "sequence": round_data.get("sequence"),
+            "round_type": round_data.get("round_type"),
+            "config": sanitize_config(round_data.get("config", {})),
         },
         "question": {
-            "id": question.id,
-            "sequence": question.sequence,
-            "text": question.text,
-            "media_provider": question.media_provider,
-            "media_url": question.media_url,
-            "points": question.points,
+            "id": q_data.get("question_id"),
+            "round_question_id": q_data.get("round_question_id"),
+            "sequence": q_data.get("sequence"),
+            "text": q_data.get("text"),
+            "media_provider": q_data.get("media_provider"),
+            "media_url": q_data.get("media_url"),
+            "question_type": q_data.get("question_type", "text"),
+            "options": safe_options,
+            "points": q_data.get("points", 1),
         },
         "round_question_index": question_index,
         "round_total_questions": total_in_round,
     }
 
+
+# =========================================================
+# GAMEPLAY ENDPOINTS
+# =========================================================
 
 @router.post("/start/{quiz_id}", status_code=status.HTTP_201_CREATED)
 def start_solo_attempt(quiz_id: int, db: Session = Depends(get_db)):
@@ -68,23 +164,20 @@ def start_solo_attempt(quiz_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
 
     latest_published = (
-    db.query(QuizVersion)
-    .filter(QuizVersion.quiz_id == quiz.id, QuizVersion.status == "published")
-    .order_by(QuizVersion.version_number.desc())
-    .first()
-)
+        db.query(QuizVersion)
+        .filter(QuizVersion.quiz_id == quiz.id, QuizVersion.status == "published")
+        .order_by(QuizVersion.version_number.desc())
+        .first()
+    )
     if not latest_published:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No published version available")
 
-
-
-
-    rounds = get_ordered_rounds(db, latest_published.id)
+    rounds = get_manifest_or_db_rounds(latest_published, db)
     if not rounds:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Quiz has no rounds")
 
     first_round = rounds[0]
-    questions = get_round_questions(db, first_round.id)
+    questions = first_round.get("questions", [])
     if not questions:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="First round has no questions")
 
@@ -102,6 +195,7 @@ def start_solo_attempt(quiz_id: int, db: Session = Depends(get_db)):
     return {
         "session_token": attempt.session_token,
         "quiz_title": quiz.title,
+        "game_mode": latest_published.game_mode,
         "current_state": format_question_response(questions[0], 0, len(questions), first_round),
     }
 
@@ -122,9 +216,9 @@ def get_current_state(session_token: str, db: Session = Depends(get_db)):
             "completed_round_index": attempt.current_round_index,
         }
 
-    rounds = get_ordered_rounds(db, attempt.quiz_version_id)
+    rounds = get_manifest_or_db_rounds(attempt.quiz_version, db)
     current_round = rounds[attempt.current_round_index]
-    questions = get_round_questions(db, current_round.id)
+    questions = current_round.get("questions", [])
     current_q = questions[attempt.current_question_index]
 
     return format_question_response(current_q, attempt.current_question_index, len(questions), current_round)
@@ -145,60 +239,135 @@ def submit_answer(session_token: str, submission: AnswerSubmission, db: Session 
             detail="Current round is finished. Review the reveal and call /continue to start the next round."
         )
 
-    rounds = get_ordered_rounds(db, attempt.quiz_version_id)
+    version = attempt.quiz_version
+    rounds = get_manifest_or_db_rounds(version, db)
     current_round = rounds[attempt.current_round_index]
-    questions = get_round_questions(db, current_round.id)
+    questions = current_round.get("questions", [])
     current_q = questions[attempt.current_question_index]
 
-    accepted_answers = db.query(AcceptedAnswer).filter(AcceptedAnswer.question_id == current_q.id).all()
-    cleaned_input = normalize_uzbek_latin(submission.answer)
-    
+    raw_answer = submission.answer or ""
+    trimmed_answer = raw_answer.strip()
+    round_type = current_round.get("round_type", "standard")
+    game_mode = getattr(version, "game_mode", "modern_multiround")
+
+    # Determine wager intent: explicit flag or leading '+'
+    is_wager = submission.is_wager
+    if trimmed_answer.startswith("+"):
+        is_wager = True
+        trimmed_answer = trimmed_answer[1:].strip()
+
+    # Detect blank/pass submission
+    is_blank = trimmed_answer == "" or trimmed_answer.lower() in ("pass", "o'tkazish", "otkazish")
+
+    accepted_answers_data = current_q.get("accepted_answers", [])
+    q_points = current_q.get("points", 1) or 1
+    cleaned_input = normalize_uzbek_latin(trimmed_answer)
+
     is_correct = False
     matched_answer_text = None
-    
-    # Проверка на правильность
-    for ans in accepted_answers:
-        norm_ans = normalize_uzbek_latin(ans.answer_text)
-        if current_round.round_type == "true_false":
-            if is_true_false_match(cleaned_input, norm_ans):
-                is_correct = True
-                matched_answer_text = norm_ans
-                break
+
+    if not is_blank:
+        # Check MCQ (Gulmisiz, rayhonmisiz?)
+        options = current_q.get("options")
+        is_mcq = (round_type in ("gulmisiz", "gulmisiz_rayhonmisiz", "mcq")) or (current_q.get("question_type") == "mcq")
+
+        if is_mcq and options and isinstance(options, list):
+            # 1. Player submitted option key (A, B, C, D)
+            matching_opt = next((opt for opt in options if opt.get("key", "").upper() == trimmed_answer.upper()), None)
+            if matching_opt:
+                # Compare against accepted answers (key or text)
+                for ans in accepted_answers_data:
+                    norm_ans = normalize_uzbek_latin(ans.get("answer_text", ""))
+                    if norm_ans in (normalize_uzbek_latin(matching_opt["key"]), normalize_uzbek_latin(matching_opt["text"])):
+                        is_correct = True
+                        matched_answer_text = matching_opt["key"]
+                        break
+            else:
+                # 2. Player submitted option text directly
+                for ans in accepted_answers_data:
+                    norm_ans = normalize_uzbek_latin(ans.get("answer_text", ""))
+                    if norm_ans == cleaned_input:
+                        is_correct = True
+                        matched_answer_text = norm_ans
+                        break
+
+        # Check True/False (Aldama meni)
+        elif round_type in ("true_false", "aldama_meni"):
+            for ans in accepted_answers_data:
+                norm_ans = normalize_uzbek_latin(ans.get("answer_text", ""))
+                if is_true_false_match(cleaned_input, norm_ans):
+                    is_correct = True
+                    matched_answer_text = norm_ans
+                    break
+
+        # Standard text evaluation
         else:
-            if norm_ans == cleaned_input:
-                is_correct = True
-                matched_answer_text = norm_ans
-                break
+            for ans in accepted_answers_data:
+                norm_ans = normalize_uzbek_latin(ans.get("answer_text", ""))
+                if norm_ans == cleaned_input:
+                    is_correct = True
+                    matched_answer_text = norm_ans
+                    break
 
-    # Правило Zanjir: ответ должен начинаться на последнюю букву предыдущего ПРАВИЛЬНОГО ответа
-    if is_correct and current_round.round_type == "zanjir" and attempt.current_question_index > 0:
-        prev_q = questions[attempt.current_question_index - 1]
-        prev_accepted = (
-            db.query(AcceptedAnswer)
-            .filter(AcceptedAnswer.question_id == prev_q.id, AcceptedAnswer.is_primary.is_(True))
-            .first()
-        )
-        if not prev_accepted:
-            prev_accepted = db.query(AcceptedAnswer).filter(AcceptedAnswer.question_id == prev_q.id).first()
-        
-        if prev_accepted:
-            if not verify_zanjir_chain(prev_accepted.answer_text, matched_answer_text):
-                is_correct = False
+        # Zanjir chain rule: answer must start with the terminal letter of the previous primary answer
+        if is_correct and round_type == "zanjir" and attempt.current_question_index > 0:
+            prev_q = questions[attempt.current_question_index - 1]
+            prev_accepted_list = prev_q.get("accepted_answers", [])
+            prev_primary = next((a["answer_text"] for a in prev_accepted_list if a.get("is_primary")), None)
+            if not prev_primary and prev_accepted_list:
+                prev_primary = prev_accepted_list[0].get("answer_text")
 
-    points = (current_q.points if current_q.points is not None else 1) if is_correct else 0
+            if prev_primary:
+                if not verify_zanjir_chain(prev_primary, matched_answer_text or cleaned_input):
+                    is_correct = False
+
+    # =========================================================
+    # SCORING COMPUTATION
+    # =========================================================
+    points = 0
+
+    if round_type == "vabank":
+        if is_blank:
+            points = 0
+            is_correct = False
+        else:
+            if is_wager:
+                points = 2 if is_correct else -2
+            else:
+                points = 1 if is_correct else -1
+
+    elif game_mode == "svoyak" or round_type == "svoyak_theme":
+        val = q_points
+        if is_blank:
+            points = 0
+            is_correct = False
+        else:
+            points = val if is_correct else -val
+
+    else:
+        # Default / Modern standard / Classic Zakovat (1 pt per correct, 0 on wrong/blank)
+        points = q_points if is_correct else 0
+
+    # =========================================================
+    # AUDIT LOG (AnswerRecord)
+    # =========================================================
+    q_id = current_q.get("question_id")
+    rq_id = current_q.get("round_question_id")
 
     record = AnswerRecord(
         attempt_id=attempt.id,
-        question_id=current_q.id,
-        submitted_text=submission.answer,
+        question_id=q_id,
+        round_question_id=rq_id,
+        submitted_text=raw_answer,
         is_correct=is_correct,
         points_awarded=points,
+        record_metadata={"is_wager": is_wager, "is_blank": is_blank} if (is_wager or is_blank) else None,
     )
     db.add(record)
     attempt.total_score += points
     attempt.current_question_index += 1
 
-    # Проверяем, завершился ли текущий раунд
+    # Check if current round completed
     if attempt.current_question_index >= len(questions):
         attempt.status = "round_reveal"
         db.commit()
@@ -226,6 +395,7 @@ def submit_answer(session_token: str, submission: AnswerSubmission, db: Session 
         "next_state": format_question_response(next_q, attempt.current_question_index, len(questions), current_round),
     }
 
+
 @router.get("/{session_token}/reveal", status_code=status.HTTP_200_OK)
 def get_round_reveal(session_token: str, db: Session = Depends(get_db)):
     """Exposes answers and rules ONLY for the round currently completed and waiting for reveal."""
@@ -239,13 +409,12 @@ def get_round_reveal(session_token: str, db: Session = Depends(get_db)):
             detail="Reveal is not available until the round is fully answered."
         )
 
-    rounds = get_ordered_rounds(db, attempt.quiz_version_id)
-    # The round to reveal is the one the player just finished
+    rounds = get_manifest_or_db_rounds(attempt.quiz_version, db)
     target_round = rounds[attempt.current_round_index]
-    questions = get_round_questions(db, target_round.id)
+    questions = target_round.get("questions", [])
 
     # Fetch player's answer records for these questions
-    question_ids = [q.id for q in questions]
+    question_ids = [q.get("question_id") for q in questions if q.get("question_id")]
     records = {
         rec.question_id: rec
         for rec in db.query(AnswerRecord)
@@ -257,17 +426,19 @@ def get_round_reveal(session_token: str, db: Session = Depends(get_db)):
     round_score = 0
 
     for q in questions:
-        rec = records.get(q.id)
-        accepted = db.query(AcceptedAnswer).filter(AcceptedAnswer.question_id == q.id).all()
-        correct_answers = [a.answer_text for a in accepted]
-
+        qid = q.get("question_id")
+        rec = records.get(qid)
+        correct_answers = [a.get("answer_text") for a in q.get("accepted_answers", [])]
         points = rec.points_awarded if rec else 0
         round_score += points
 
         revealed_questions.append({
-            "question_id": q.id,
-            "sequence": q.sequence,
-            "text": q.text,
+            "question_id": qid,
+            "round_question_id": q.get("round_question_id"),
+            "sequence": q.get("sequence"),
+            "text": q.get("text"),
+            "explanation": q.get("explanation"),
+            "options": q.get("options"),
             "submitted_answer": rec.submitted_text if rec else None,
             "is_correct": rec.is_correct if rec else False,
             "points_awarded": points,
@@ -277,12 +448,12 @@ def get_round_reveal(session_token: str, db: Session = Depends(get_db)):
     is_last_round = attempt.current_round_index >= (len(rounds) - 1)
 
     return {
-        "round_id": target_round.id,
-        "round_sequence": target_round.sequence,
-        "round_type": target_round.round_type,
+        "round_id": target_round.get("round_id"),
+        "round_sequence": target_round.get("sequence"),
+        "round_type": target_round.get("round_type"),
         "round_score": round_score,
         "total_score_so_far": attempt.total_score,
-        "config": target_round.config or {},  # Now safely reveals Mantiqasqon hidden_rule
+        "config": target_round.get("config", {}),  # Now safely reveals Mantiqasqon hidden_rule
         "questions": revealed_questions,
         "has_next_round": not is_last_round,
     }
@@ -301,7 +472,7 @@ def continue_to_next_round(session_token: str, db: Session = Depends(get_db)):
             detail="Session is not currently in a round reveal state."
         )
 
-    rounds = get_ordered_rounds(db, attempt.quiz_version_id)
+    rounds = get_manifest_or_db_rounds(attempt.quiz_version, db)
     is_last_round = attempt.current_round_index >= (len(rounds) - 1)
 
     if is_last_round:
@@ -321,7 +492,7 @@ def continue_to_next_round(session_token: str, db: Session = Depends(get_db)):
     db.commit()
 
     next_round = rounds[attempt.current_round_index]
-    next_questions = get_round_questions(db, next_round.id)
+    next_questions = next_round.get("questions", [])
 
     return {
         "status": "in_progress",
@@ -343,7 +514,8 @@ def get_final_results(session_token: str, db: Session = Depends(get_db)):
             detail="Quiz results are only available after completing the attempt."
         )
 
-    rounds = get_ordered_rounds(db, attempt.quiz_version_id)
+    version = attempt.quiz_version
+    rounds = get_manifest_or_db_rounds(version, db)
     all_records = db.query(AnswerRecord).filter(AnswerRecord.attempt_id == attempt.id).all()
     record_map = {r.question_id: r for r in all_records}
 
@@ -352,26 +524,29 @@ def get_final_results(session_token: str, db: Session = Depends(get_db)):
     total_incorrect = 0
 
     for r in rounds:
-        questions = get_round_questions(db, r.id)
+        questions = r.get("questions", [])
         r_score = 0
         r_correct = 0
         r_incorrect = 0
 
         for q in questions:
-            rec = record_map.get(q.id)
+            qid = q.get("question_id")
+            rec = record_map.get(qid)
             if rec and rec.is_correct:
                 r_correct += 1
                 r_score += rec.points_awarded
             else:
                 r_incorrect += 1
+                if rec:
+                    r_score += rec.points_awarded
 
         total_correct += r_correct
         total_incorrect += r_incorrect
 
         round_summaries.append({
-            "round_id": r.id,
-            "round_sequence": r.sequence,
-            "round_type": r.round_type,
+            "round_id": r.get("round_id"),
+            "round_sequence": r.get("sequence"),
+            "round_type": r.get("round_type"),
             "round_score": r_score,
             "correct_count": r_correct,
             "incorrect_count": r_incorrect,
@@ -379,6 +554,7 @@ def get_final_results(session_token: str, db: Session = Depends(get_db)):
 
     return {
         "status": "completed",
+        "game_mode": getattr(version, "game_mode", "modern_multiround"),
         "total_score": attempt.total_score,
         "total_correct": total_correct,
         "total_incorrect": total_incorrect,

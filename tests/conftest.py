@@ -6,7 +6,8 @@ from sqlalchemy.pool import StaticPool
 
 from database import Base, get_db
 from main import app
-from models import Quiz, QuizVersion, Round, Question, AcceptedAnswer
+from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAnswer
+from api.quizzes import compile_published_manifest
 
 # Isolated in-memory SQLite database for testing
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -56,7 +57,7 @@ def client(db_session):
 @pytest.fixture
 def seed_sample_quiz(db_session):
     """
-    Seeds a canonical 4-round published quiz with target round types:
+    Seeds a canonical 4-round published quiz using Question Bank + RoundQuestion architecture:
     1. standard
     2. true_false
     3. mantiqasqon
@@ -66,7 +67,7 @@ def seed_sample_quiz(db_session):
     db_session.add(quiz)
     db_session.flush()
 
-    version = QuizVersion(quiz_id=quiz.id, version_number=1, status="published")
+    version = QuizVersion(quiz_id=quiz.id, version_number=1, status="published", game_mode="modern_multiround")
     db_session.add(version)
     db_session.flush()
 
@@ -74,9 +75,10 @@ def seed_sample_quiz(db_session):
     r1 = Round(quiz_version_id=version.id, sequence=1, round_type="standard")
     db_session.add(r1)
     db_session.flush()
-    q1 = Question(round_id=r1.id, sequence=1, text="O'zbekiston poytaxti qaysi shahar?", points=1)
+    q1 = Question(text="O'zbekiston poytaxti qaysi shahar?", points=1, default_points=1, status="ready")
     db_session.add(q1)
     db_session.flush()
+    db_session.add(RoundQuestion(round_id=r1.id, question_id=q1.id, sequence=1, points_override=1))
     db_session.add_all([
         AcceptedAnswer(question_id=q1.id, answer_text="Toshkent", is_primary=True),
         AcceptedAnswer(question_id=q1.id, answer_text="Toshkent shahri", is_primary=False),
@@ -86,9 +88,10 @@ def seed_sample_quiz(db_session):
     r2 = Round(quiz_version_id=version.id, sequence=2, round_type="true_false")
     db_session.add(r2)
     db_session.flush()
-    q2 = Question(round_id=r2.id, sequence=1, text="Yer quyosh atrofida aylanadi.", points=1)
+    q2 = Question(text="Yer quyosh atrofida aylanadi.", points=1, default_points=1, status="ready", question_type="true_false")
     db_session.add(q2)
     db_session.flush()
+    db_session.add(RoundQuestion(round_id=r2.id, question_id=q2.id, sequence=1, points_override=1))
     db_session.add(AcceptedAnswer(question_id=q2.id, answer_text="rost", is_primary=True))
 
     # Round 3: Mantiqasqon
@@ -100,10 +103,12 @@ def seed_sample_quiz(db_session):
     )
     db_session.add(r3)
     db_session.flush()
-    q3 = Question(round_id=r3.id, sequence=1, text="Qizil rangli shirin meva", points=2)
-    q4 = Question(round_id=r3.id, sequence=2, text="Sariq rangli nordon sitrus mevasi", points=2)
+    q3 = Question(text="Qizil rangli shirin meva", points=2, default_points=2, status="ready")
+    q4 = Question(text="Sariq rangli nordon sitrus mevasi", points=2, default_points=2, status="ready")
     db_session.add_all([q3, q4])
     db_session.flush()
+    db_session.add(RoundQuestion(round_id=r3.id, question_id=q3.id, sequence=1, points_override=2))
+    db_session.add(RoundQuestion(round_id=r3.id, question_id=q4.id, sequence=2, points_override=2))
     db_session.add(AcceptedAnswer(question_id=q3.id, answer_text="olma", is_primary=True))
     db_session.add(AcceptedAnswer(question_id=q4.id, answer_text="limon", is_primary=True))
 
@@ -112,16 +117,21 @@ def seed_sample_quiz(db_session):
     db_session.add(r4)
     db_session.flush()
     # Chain: quyosh (ends in sh) -> shahar (ends in r) -> rishton (ends in n)
-    q5 = Question(round_id=r4.id, sequence=1, text="Kunduzgi yorug'lik manbai", points=1)
-    q6 = Question(round_id=r4.id, sequence=2, text="Aholi zich yashaydigan ma'muriy markaz", points=1)
-    q7 = Question(round_id=r4.id, sequence=3, text="Farg'ona vodiysidagi kulolchilik shahri", points=1)
+    q5 = Question(text="Kunduzgi yorug'lik manbai", points=1, default_points=1, status="ready")
+    q6 = Question(text="Aholi zich yashaydigan ma'muriy markaz", points=1, default_points=1, status="ready")
+    q7 = Question(text="Farg'ona vodiysidagi kulolchilik shahri", points=1, default_points=1, status="ready")
     db_session.add_all([q5, q6, q7])
     db_session.flush()
+    db_session.add(RoundQuestion(round_id=r4.id, question_id=q5.id, sequence=1, points_override=1))
+    db_session.add(RoundQuestion(round_id=r4.id, question_id=q6.id, sequence=2, points_override=1))
+    db_session.add(RoundQuestion(round_id=r4.id, question_id=q7.id, sequence=3, points_override=1))
     db_session.add_all([
         AcceptedAnswer(question_id=q5.id, answer_text="quyosh", is_primary=True),
         AcceptedAnswer(question_id=q6.id, answer_text="shahar", is_primary=True),
         AcceptedAnswer(question_id=q7.id, answer_text="rishton", is_primary=True),
     ])
 
+    # Attach compiled immutable published_manifest
+    version.published_manifest = compile_published_manifest(version, db_session)
     db_session.commit()
     return quiz
