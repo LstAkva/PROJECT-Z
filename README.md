@@ -4,44 +4,79 @@ ZakoWhat — O'zbekiston intellektual viktorina madaniyatiga (Zakovat, Svoya Igr
 
 ---
 
-## 1. Texnologik Stek
+## 1. Texnologik Stek va Arxitektura
 
-- **Backend**: Python 3.12, FastAPI, SQLAlchemy 2.0+, Alembic, Pydantic v2.
+- **Backend**: Python 3.12 / 3.14, FastAPI, SQLAlchemy 2.0+, Alembic, Pydantic v2.
 - **Database**: PostgreSQL (Neon Serverless) `DATABASE_URL` orqali.
 - **Testing**: Pytest, HTTPX (izolatsiyalangan in-memory SQLite sinov bazasi).
 - **Frontend**: Zamonaviy, toza SPA (Vanilla JS + Tailwind CSS), mobil va desktopga to'liq moslashgan.
-- **Ma'lumotlar**: `canonical_1.json` (4,318 ta savol) Telegram manbalaridan olingan va saralangan.
+- **Question Bank**: Markaziy mustaqil Savollar Banki (`Question` & `AcceptedAnswer`).
+- **Placement**: Ko'p-ko'pga (M:N) munosabatli `RoundQuestion` assotsiatsiyasi orqali savollarni paketlarga joylashtirish.
+- **Immutability**: E'lon qilingan versiyalarni muzlatilgan `published_manifest` (JSONB) orqali o'zgarmas saqlash.
 
 ---
 
-## 2. O'yin Turlari va Mexanikalari
+## 2. Ma'lumotlar Modeli (Question Bank + RoundQuestion)
 
-1. **`standard`**:
-   - Aniq bilimga asoslangan savollar.
-   - O'zbek lotin normalizatsiyasi (`normalize_uzbek_latin`): apostroflar (`'`, `‘`, `’`, `ʻ`, `ʼ`), tinish belgilari va registrlar xatosiz tekshiriladi.
-2. **`true_false`**:
-   - "To'g'ri / Noto'g'ri" (Rost / Yolg'on) savollari.
-   - `ha` / `rost` / `to'g'ri` / `true` hamda `yo'q` / `yolg'on` / `noto'g'ri` / `false` sinonimlarini to'liq tushunadi.
-3. **`mantiqasqon`**:
-   - Mantiqiy bog'liqlik va assotsiatsiyalar raundi.
-   - Raund qoidasi (`hidden_rule`) o'yin paytida sir tutiladi va faqat Raund Yakuni (`/reveal`) bosqichida ochiladi.
-4. **`zanjir` (Harflar Zanjiri)**:
-   - Server-boshqaruvli zanjir tekshiruvi.
-   - 1-savolda zanjir cheklovi yo'q.
-   - 2-savoldan boshlab, joriy savolning qabul qilingan javobi avvalgi savolning qabul qilingan asosiy javobining oxirgi harfi bilan boshlanishi shart.
-   - O'zbek tili harflari (`O'`, `G'`, `Sh`, `Ch`) to'g'ri qo'llab-quvvatlanadi.
-   - O'yin paytida harf bo'yicha hech qanday ko'rsatma (hint) berilmaydi; zanjir qoidasi server tomonidan ichki tarzda tekshiriladi va javob noto'g'ri bo'lsa `is_correct: False` qaytariladi.
+```
+Quiz (Paket konteyneri)
+  └── QuizVersion (game_mode, status, published_manifest)
+        └── Round (sequence, round_type, config)
+              └── RoundQuestion (sequence, points_override, config_override)
+                    └── Question (Universal savollar banki)
+                          └── AcceptedAnswer (To'g'ri javob variantlari)
+
+SoloAttempt (O'yin sessiyasi)
+  └── AnswerRecord (Yuborilgan javoblar auditi, round_question_id, wager)
+```
+
+### Muhim Tamoyillar:
+1. **Mustaqil Savollar Banki (`Question`)**: Savollar biror konga yoki raundga qat'iy bog'lanmagan (`round_id = NULL`). Bitta savol bir nechta konga va bir nechta raundga takrorlanmasdan qo'shilishi mumkin.
+2. **`RoundQuestion` Joylashuvi**: Savolning raunddagi tartibi (`sequence`), ball o'zgaruvchisi (`points_override`) va raund sozlamalari saqlanadi. `UNIQUE(round_id, sequence)` va `UNIQUE(round_id, question_id)` qoidalari qo'llaniladi.
+3. **Versiya O'zgarmasligi (`published_manifest`)**: Viktorina e'lon qilinganda (`publish`), uning barcha savollari, javoblari va qoidalari yaxlit JSONB ko'rinishida muzlatiladi. Savollar bankidagi keyingi tahrirlar e'lon qilingan o'yinlarga ta'sir qilmaydi.
 
 ---
 
-## 3. Lokal Ishga Tushirish
+## 3. O'yin Rejimlari va Mexanikalari
+
+Platforma quyidagi rasmiy o'yin rejimlarini qo'llab-quvvatlaydi:
+
+### A. Zamonaviy Ko'p Raundli Viktorina (`modern_multiround`)
+1. **Gulmisiz, rayhonmisiz? (`gulmisiz` / `mcq`)**:
+   - 4 ta variantli (A, B, C, D) test savollari.
+   - O'yin paytida to'g'ri javob sir tutiladi. Server avtoritativ tekshiradi.
+2. **Zanjir (`zanjir`)**:
+   - Harflar zanjiri qoidasi: javob avvalgi savol asosiy javobining oxirgi harfi bilan boshlanishi shart.
+   - O'yinchiga avtomatik harf ko'rsatmasi berilmaydi.
+3. **Mantiqqasqon (`mantiqasqon`)**:
+   - Yashirin mantiqiy bog'liqlik (`hidden_rule`).
+   - Raund yakunlangandan so'ng ochiladi (`/reveal`).
+4. **Aldama meni (`true_false` / `aldama_meni`)**:
+   - Rost yoki Yolg'on ("Ha" / "Yo'q") tugmalari.
+   - Ko'p tilli sinonimlarni tushunadi (`rost`/`yolg'on`, `ha`/`yo'q`, `true`/`false`).
+5. **Rasmiyatchilik (`rasmiyatchilik`)**:
+   - Rasm/media bilan beriladigan savollar. Erkin matnli javob.
+6. **Vabank (`vabank`)**:
+   - Oddiy javob: to'g'ri `+1`, noto'g'ri `-1`.
+   - Vabank (tavakkal): to'g'ri `+2`, noto'g'ri `-2`.
+   - Bo'sh qoldirish (pass): `0` ball (jarimasiz).
+
+### B. Klassik Zakovat (`classic_zakovat`)
+- 24 ta savol, 2 ta tur (12 + 12 savol).
+- 1-tur yakunida oraliq hisobot va ochilish (`/reveal`).
+- 2-tur yakunida umumiy 24 savollik hisobot.
+
+### C. Svoяk (`svoyak`)
+- Mavzular bo'yicha tabaqalangan ballar (10, 20, 30, 40, 50).
+- To'g'ri javob `+ball`, xato javob avtomatik ravishda `-ball`, bo'sh javob `0`.
+
+---
+
+## 4. Lokal Ishga Tushirish
 
 ### Muhitni faollashtirish va bog'liqliklar:
 ```powershell
-# Virtual muhitni faollashtirish
 .\venv\Scripts\Activate.ps1
-
-# Bog'liqliklarni o'rnatish
 pip install -r requirements.txt
 ```
 
@@ -58,52 +93,46 @@ Brauzerda: `http://127.0.0.1:8000` ochiladi.
 
 ---
 
-## 4. Testlarni Ishga Tushirish
+## 5. Testlarni Ishga Tushirish
 
-Sinovlar paytida jonli ma'lumotlar bazasiga **umuman ulanilmaydi**, barcha testlar in-memory SQLite bazasida 100% xavfsiz va tezkor bajariladi:
+Sinovlar in-memory SQLite bazasida 100% xavfsiz va tezkor bajariladi:
 
 ```powershell
 .\venv\Scripts\pytest.exe -v
 ```
 
-Natija: **37 ta test muvaffaqiyatli o'tadi**.
+Natija: **49 ta test muvaffaqiyatli o'tadi**.
 
 ---
 
-## 5. Quality Gate va Ma'lumotlar Importi
+## 6. Savollar Bankiga Import Pipeline
 
-### Quality Gate (Saralash va Hisobot):
-`canonical_1.json` faylidagi 4,318 ta savolni 3 ta toifaga ajratadi (`rejected`, `needs_review`, `ready_to_import`):
-```powershell
-.\venv\Scripts\python.exe quality_gate.py canonical_1.json
-```
-Natija:
-- **Ready to Import**: 3,356 (77.72%)
-- **Needs Review**: 790 (18.30%)
-- **Rejected**: 172 (3.98%)
+Import to'g'ridan-to'g'ri umumiy Savollar Bankiga (`questions` va `accepted_answers`) yo'naltiriladi. Hech qanday soxta konga yoki bufer raundga ehtiyoj yo'q:
 
-### Xavfsiz Sinov Importi (Dry-Run):
-Bazada hech narsani o'zgartirmasdan tranzaksiyani rollback qiladi:
 ```powershell
-.\venv\Scripts\python.exe importer.py --dry-run canonical_1_pilot.json
-```
+# Faqat tekshirish
+.\venv\Scripts\python.exe importer.py --validate-only canonical_1.json
 
-### Jonli Import (Faqat `ready_to_import` savollari):
-```powershell
+# Xavfsiz test (Rollback)
+.\venv\Scripts\python.exe importer.py --dry-run canonical_1.json --limit 50
+
+# Jonli import
 .\venv\Scripts\python.exe importer.py canonical_1.json --limit 50
 ```
 
 ---
 
-## 6. API Kontrakt
+## 7. API Kontrakt
 
 | Usul | Yo'nalish | Tavsif |
 | :--- | :--- | :--- |
 | `GET` | `/health` | Tizim va ma'lumotlar bazasi holati |
-| `GET` | `/api/quizzes` | E'lon qilingan (published) viktorinalar ro'yxati |
-| `POST`| `/api/play/start/{quiz_id}` | Yangi yakkalik o'yin sessiyasini boshlash |
-| `GET` | `/api/play/{session_token}` | Joriy savol yoki raund holatini olish |
-| `POST`| `/api/play/{session_token}/answer` | Javob yuborish va baholash |
+| `GET` | `/api/quizzes` | E'lon qilingan paketlar ro'yxati va ularning `game_mode`i |
+| `GET` | `/api/quizzes/{id}` | Viktorina tafsilotlari (javoblarsiz xavfsiz) |
+| `POST`| `/api/quizzes/{id}/publish/{v}` | Versiyani e'lon qilish va `published_manifest`ni muzlatish |
+| `POST`| `/api/play/start/{quiz_id}` | Yangi o'yin sessiyasini boshlash |
+| `GET` | `/api/play/{session_token}` | Joriy holat va savol (MCQ variantlari bilan) |
+| `POST`| `/api/play/{session_token}/answer` | Javob yuborish (Vabank va MCQ qo'llab-quvvatlanadi) |
 | `GET` | `/api/play/{session_token}/reveal` | Raund yakunida to'g'ri javoblarni ochish |
 | `POST`| `/api/play/{session_token}/continue` | Keyingi raundga o'tish |
-| `GET` | `/api/play/{session_token}/results` | Yakuniy natijalarni olish |
+| `GET` | `/api/play/{session_token}/results` | Yakuniy natijalar va turlar hisoboti |
