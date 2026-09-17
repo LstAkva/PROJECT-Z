@@ -108,9 +108,6 @@ class QuestionValidator:
 
         needs_review = False
 
-        if editorial_data.get("status") == "needs_review":
-            needs_review = True
-
         if "missing_media" in flags:
             needs_review = True
 
@@ -467,14 +464,13 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
                 stats["skipped_duplicate"] += 1
                 continue
 
-            # Editorial status
-            editorial = item["editorial"]
-            canonical_status = editorial.get("status")
-
-            if item["needs_review"]:
-                final_status = "needs_review"
-            elif canonical_status == "ready":
+            # Status resolution:
+            # Quality Gate decision is authoritative for whether a record is admitted and its Question Bank status.
+            # Raw canonical editorial.status (e.g. 'needs_review' on raw items) must NOT override Quality Gate.
+            if qg_status == "ready_to_import":
                 final_status = "ready"
+            elif qg_status == "needs_review":
+                final_status = "needs_review"
             else:
                 final_status = "draft"
 
@@ -493,6 +489,7 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
             if item.get("round_type") == "jeopardy":
                 stats["jeopardy"] += 1
 
+            editorial = item.get("editorial", {}) or {}
             flags = editorial.get("flags", [])
             if "media_dependent" in flags or "missing_media" in flags:
                 stats["media_dependent"] += 1
@@ -595,6 +592,9 @@ def import_questions(json_filepath, dry_run=False, limit=None, allow_needs_revie
         print(f"Mode               : {'DRY RUN (Read-Only)' if dry_run else 'LIVE COMMIT'}")
         print(f"Total processed    : {stats['total']}")
         print(f"{'Would Add' if dry_run else 'Added'}          : {stats['added']}")
+        print(f"  - Ready          : {stats['ready']}")
+        print(f"  - Needs Review   : {stats['needs_review']}")
+        print(f"  - Draft          : {stats['draft']}")
         print(f"Skipped (duplicate): {stats['skipped_duplicate']}")
         print(f"Skipped (rejected) : {stats['skipped_rejected']}")
         print(f"Skipped (needs rev): {stats['skipped_needs_review']}")
