@@ -419,7 +419,8 @@ def test_published_manifest_immutability(client, db_session):
     hacked_ans = client.post(f"/api/play/{token}/answer", json={"answer": "HackedJavob"})
     assert hacked_ans.json()["is_correct"] is False
 
-    # Start new attempt on same published quiz
+    # Start new attempt on same published quiz (as a new visitor)
+    client.cookies.clear()
     new_start = client.post(f"/api/play/start/{quiz.id}")
     new_token = new_start.json()["session_token"]
     orig_ans = client.post(f"/api/play/{new_token}/answer", json={"answer": "OriginalJavob"})

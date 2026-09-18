@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZakoWhat — Milliy Intellektual Viktorina Platformasi</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -77,8 +78,8 @@
                 </nav>
             </div>
 
-            <!-- Header Status & Score -->
-            <div class="flex items-center gap-4">
+            <!-- Header Status, Score & Auth -->
+            <div class="flex items-center gap-3 sm:gap-4">
                 <div id="header-score-badge" class="hidden items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-950/80 border border-indigo-500/40 text-xs font-semibold text-indigo-200">
                     <span>Ball:</span>
                     <span id="header-score-value" class="font-mono text-sm text-white font-bold">0</span>
@@ -86,6 +87,27 @@
                 <div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs text-slate-400">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="hidden sm:inline">Server Online</span>
+                </div>
+
+                <!-- User Profile / Auth Action Buttons -->
+                <div id="header-auth-section" class="flex items-center gap-2 pl-2 border-l border-slate-800">
+                    <div id="header-guest-controls" class="flex items-center gap-2">
+                        <button onclick="openAuthModal('login')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 border border-slate-800 transition-colors">
+                            Kirish
+                        </button>
+                        <button onclick="openAuthModal('register')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shadow-sm">
+                            Ro'yxatdan o'tish
+                        </button>
+                    </div>
+                    <div id="header-user-controls" class="hidden items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-xs text-indigo-300">👤</span>
+                            <span id="header-user-name" class="text-xs font-bold text-white max-w-[120px] truncate"></span>
+                        </div>
+                        <button onclick="handleLogout()" class="text-xs text-slate-400 hover:text-rose-400 transition-colors">
+                            Chiqish
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -294,23 +316,32 @@
                     <p class="text-slate-400 text-sm sm:text-base">Barcha raundlar bo'yicha yakuniy hisob-kitob tayyor.</p>
                 </div>
 
-                <!-- Big Score Showcase -->
-                <div class="p-6 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                    <div class="text-xs uppercase tracking-widest text-slate-400 font-bold">Umumiy To'plangan Ball</div>
-                    <div id="results-total-score" class="text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-amber-300 font-mono">
-                        0
+                <!-- Primary Metric Showcase: Correct/Total & Active Gameplay Time -->
+                <div class="grid grid-cols-2 gap-4 p-6 sm:p-8 rounded-2xl bg-slate-950 border border-slate-800">
+                    <div class="space-y-1 text-center">
+                        <div class="text-xs uppercase tracking-widest text-slate-400 font-bold">To'g'ri Javoblar</div>
+                        <div id="results-correct-ratio" class="text-4xl sm:text-5xl font-extrabold text-emerald-400 font-mono mt-1">
+                            0 / 0
+                        </div>
+                        <div class="text-[11px] text-slate-500 font-medium">To'plangan natija</div>
+                    </div>
+                    <div class="space-y-1 text-center border-l border-slate-800/80 pl-4">
+                        <div class="text-xs uppercase tracking-widest text-slate-400 font-bold">Faol O'yin Vaqti</div>
+                        <div id="results-active-time" class="text-4xl sm:text-5xl font-extrabold text-indigo-300 font-mono mt-1">
+                            00:00
+                        </div>
+                        <div class="text-[11px] text-slate-500 font-medium">Sof javob berish vaqti</div>
                     </div>
                 </div>
 
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                        <div class="text-xs text-slate-400">To'g'ri Javoblar</div>
-                        <div id="results-correct-count" class="text-2xl font-bold text-emerald-400 font-mono mt-1">0</div>
+                <!-- Status & Score Sub-Bar -->
+                <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span id="results-status-badge" class="font-bold text-slate-300">Holat: Yakunlandi</span>
                     </div>
-                    <div class="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                        <div class="text-xs text-slate-400">Noto'g'ri Javoblar</div>
-                        <div id="results-incorrect-count" class="text-2xl font-bold text-rose-400 font-mono mt-1">0</div>
+                    <div class="text-slate-400">
+                        Umumiy ball: <span id="results-total-score" class="font-bold font-mono text-white">0</span>
                     </div>
                 </div>
 
@@ -322,12 +353,48 @@
                     </div>
                 </div>
 
-                <!-- Play Again Button -->
-                <div class="pt-4 border-t border-slate-800">
+                <!-- Anonymous First Attempt Registration Conversion Banner -->
+                <div id="results-anon-banner" class="hidden p-5 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-purple-950/40 to-slate-900 border border-indigo-500/40 text-left space-y-3">
+                    <div class="flex items-center gap-2 text-indigo-300 text-sm font-bold">
+                        <span>🎉</span>
+                        <span>Tabriklaymiz! Siz bepul urinishingizni muvaffaqiyatli yakunladingiz.</span>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Natijangizni saqlab qolish, rasmiy liderlar jadvaliga kiritish va keyingi barcha viktorinalarni o'ynash uchun ro'yxatdan o'ting. Ushbu natija avtomatik ravishda yangi akkauntingizga biriktiriladi!
+                    </p>
+                    <button
+                        type="button"
+                        onclick="openAuthModal('register')"
+                        class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-2 cursor-pointer transition-all"
+                    >
+                        <span>Akkaunt Yaratish va Natijani Saqlash</span>
+                        <span>→</span>
+                    </button>
+                </div>
+
+                <!-- Action Buttons: Review Answers & Leaderboard & Play Again -->
+                <div class="space-y-3 pt-2">
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        <button
+                            type="button"
+                            onclick="openReviewModal()"
+                            class="w-full py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                        >
+                            <span>📋 Javoblarni Ko'rish</span>
+                        </button>
+                        <button
+                            type="button"
+                            onclick="openLeaderboardModal(state.currentQuizId)"
+                            class="w-full py-3.5 px-4 rounded-xl bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/40 text-amber-300 font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                        >
+                            <span>🏆 Liderlar Jadvali</span>
+                        </button>
+                    </div>
+
                     <button
                         type="button"
                         onclick="goToQuizSelection()"
-                        class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer"
+                        class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer"
                     >
                         <span>Yana Boshqa Viktorinani O'ynash</span>
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -339,6 +406,189 @@
         </section>
 
     </main>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 1: AUTHENTICATION (LOGIN & REGISTRATION & GOOGLE GIS) -->
+    <!-- ================================================================= -->
+    <div id="modal-auth" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+            <!-- Modal Header with Tabs -->
+            <div class="flex items-center justify-between border-b border-slate-800 px-6 pt-5 pb-3">
+                <div class="flex gap-4">
+                    <button id="auth-tab-login" onclick="switchAuthTab('login')" class="text-sm font-bold pb-2 border-b-2 border-indigo-500 text-white transition-colors cursor-pointer">
+                        Kirish
+                    </button>
+                    <button id="auth-tab-register" onclick="switchAuthTab('register')" class="text-sm font-bold pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors cursor-pointer">
+                        Ro'yxatdan o'tish
+                    </button>
+                </div>
+                <button onclick="closeAuthModal()" class="text-slate-400 hover:text-white font-mono text-xl cursor-pointer">✕</button>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <!-- Auth Error Banner -->
+                <div id="auth-error-banner" class="hidden p-3 rounded-xl bg-rose-950/50 border border-rose-800 text-rose-300 text-xs font-semibold"></div>
+
+                <!-- Registration Migration Info (if session active) -->
+                <div id="auth-claim-notice" class="hidden p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-indigo-200 text-xs leading-relaxed">
+                    ✨ Ro'yxatdan o'tganingizdan so'ng, hozirgi viktorina natijangiz avtomatik tarzda yangi akkauntingizga biriktiriladi!
+                </div>
+
+                <!-- Login Form -->
+                <form id="auth-login-form" class="space-y-4" onsubmit="handleLoginSubmit(event)">
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-slate-300">Foydalanuvchi nomi yoki Email</label>
+                        <input type="text" id="login-username" required autocomplete="username" placeholder="Foydalanuvchi nomi" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-slate-300">Parol</label>
+                        <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+                    </div>
+                    <button type="submit" id="login-submit-btn" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+                        Tizimga kirish
+                    </button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="auth-register-form" class="space-y-4 hidden" onsubmit="handleRegisterSubmit(event)">
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-slate-300">Foydalanuvchi nomi (kamida 3 belgi)</label>
+                        <input type="text" id="register-username" required autocomplete="username" minlength="3" maxlength="50" placeholder="taxallus" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-slate-300">Email (ixtiyoriy)</label>
+                        <input type="email" id="register-email" autocomplete="email" placeholder="nomingiz@misol.uz" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-slate-300">Parol (kamida 6 belgi)</label>
+                        <input type="password" id="register-password" required autocomplete="new-password" minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+                    </div>
+                    <button type="submit" id="register-submit-btn" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+                        Ro'yxatdan o'tish
+                    </button>
+                </form>
+
+                <!-- Google GIS Sign-In -->
+                <div class="pt-2 border-t border-slate-800 space-y-3">
+                    <div class="relative flex py-1 items-center">
+                        <div class="flex-grow border-t border-slate-800"></div>
+                        <span class="flex-shrink mx-3 text-[11px] text-slate-500 font-medium uppercase tracking-wider">Yoki Google bilan</span>
+                        <div class="flex-grow border-t border-slate-800"></div>
+                    </div>
+                    <div id="google-signin-container" class="flex justify-center">
+                        <!-- Loaded dynamically via GIS SDK if available -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 2: ANSWER REVIEW (JAVOBLARNI KO'RISH) -->
+    <!-- ================================================================= -->
+    <div id="modal-review" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+            <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-950/60">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">📋</span>
+                    <h3 class="font-bold text-base sm:text-lg text-white">Javoblar Tahlili va To'g'ri Javoblar</h3>
+                </div>
+                <button onclick="closeReviewModal()" class="text-slate-400 hover:text-white font-mono text-xl cursor-pointer">✕</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-5">
+                <!-- Review Summary Bar -->
+                <div id="review-summary-bar" class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
+                    <div>
+                        <span class="text-slate-400">To'g'ri javoblar:</span>
+                        <strong id="review-correct-ratio" class="font-mono text-sm text-emerald-400 ml-1">0/0</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Faol o'yin vaqti:</span>
+                        <strong id="review-active-time" class="font-mono text-sm text-indigo-300 ml-1">00:00</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Umumiy ball:</span>
+                        <strong id="review-total-score" class="font-mono text-sm text-white ml-1">0</strong>
+                    </div>
+                </div>
+
+                <!-- Mantiqqasqon Hidden Rule if present -->
+                <div id="review-hidden-rule-box" class="hidden p-4 rounded-xl bg-amber-950/30 border border-amber-500/40 text-amber-200 text-xs space-y-1">
+                    <div class="font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                        <span>💡</span>
+                        <span>Mantiqiy Bog'liqlik (Yashirin Qoida)</span>
+                    </div>
+                    <p id="review-hidden-rule-text" class="text-sm font-semibold"></p>
+                </div>
+
+                <!-- List of Questions -->
+                <div id="review-questions-list" class="space-y-4">
+                    <!-- Dynamically rendered -->
+                </div>
+            </div>
+
+            <div class="border-t border-slate-800 p-4 bg-slate-950/60 flex justify-end">
+                <button onclick="closeReviewModal()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors cursor-pointer">
+                    Yopish
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 3: LEADERBOARD (RASMIY LIDERLAR JADVALI) -->
+    <!-- ================================================================= -->
+    <div id="modal-leaderboard" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+            <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-950/60">
+                <div class="space-y-0.5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">🏆</span>
+                        <h3 id="leaderboard-quiz-title" class="font-bold text-base sm:text-lg text-white">Liderlar Jadvali</h3>
+                        <span id="leaderboard-version-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">v1</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Har bir ro'yxatdan o'tgan o'yinchining eng yaxshi natijasi (To'g'ri javoblar va eng kam faol vaqt bo'yicha).</p>
+                </div>
+                <button onclick="closeLeaderboardModal()" class="text-slate-400 hover:text-white font-mono text-xl cursor-pointer">✕</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-4">
+                <div id="leaderboard-loading" class="p-8 text-center space-y-3">
+                    <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p class="text-xs text-slate-400">Reyting hisoblanmoqda...</p>
+                </div>
+
+                <div id="leaderboard-empty" class="hidden p-8 text-center border border-dashed border-slate-800 rounded-xl space-y-2">
+                    <p class="text-sm font-semibold text-slate-300">Hozircha natijalar mavjud emas</p>
+                    <p class="text-xs text-slate-500">Birinchi bo'lib ushbu viktorinani o'ynang va jadval peshqadamiga aylaning!</p>
+                </div>
+
+                <div id="leaderboard-table-container" class="hidden overflow-hidden rounded-xl border border-slate-800">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-4 w-12 text-center">#</th>
+                                <th class="py-3 px-4">O'yinchi</th>
+                                <th class="py-3 px-4 text-center">Natija</th>
+                                <th class="py-3 px-4 text-center">Faol Vaqt</th>
+                                <th class="py-3 px-4 text-right">Sana</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-rows" class="divide-y divide-slate-800/60 font-medium">
+                            <!-- Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-800 p-4 bg-slate-950/60 flex justify-end">
+                <button onclick="closeLeaderboardModal()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors cursor-pointer">
+                    Yopish
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-400">
@@ -354,6 +604,9 @@
         const API_BASE = '/api';
 
         const state = {
+            currentUser: null,
+            currentQuizId: null,
+            currentVersionNumber: 1,
             sessionToken: null,
             currentRoundType: 'standard',
             currentQuestion: null,
@@ -363,7 +616,240 @@
             isSubmitting: false,
         };
 
-        // Navigation Controller
+        // =====================================================================
+        // AUTHENTICATION & PROFILE CONTROLLER
+        // =====================================================================
+        async function checkAuth() {
+            try {
+                const res = await fetch(`${API_BASE}/auth/me`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.authenticated && data.user) {
+                        state.currentUser = data.user;
+                        document.getElementById('header-guest-controls').classList.add('hidden');
+                        const userCtrl = document.getElementById('header-user-controls');
+                        userCtrl.classList.remove('hidden');
+                        userCtrl.classList.add('flex');
+                        document.getElementById('header-user-name').innerText = data.user.display_name || data.user.email;
+                        return data.user;
+                    }
+                }
+            } catch (e) {
+                console.warn('Auth status check failed:', e);
+            }
+            state.currentUser = null;
+            document.getElementById('header-guest-controls').classList.remove('hidden');
+            const userCtrl = document.getElementById('header-user-controls');
+            userCtrl.classList.add('hidden');
+            userCtrl.classList.remove('flex');
+            document.getElementById('header-user-name').innerText = '';
+            return null;
+        }
+
+        function openAuthModal(tab = 'login') {
+            switchAuthTab(tab);
+            const banner = document.getElementById('auth-error-banner');
+            banner.classList.add('hidden');
+            banner.innerText = '';
+
+            const claimNotice = document.getElementById('auth-claim-notice');
+            if (state.sessionToken) {
+                claimNotice.classList.remove('hidden');
+            } else {
+                claimNotice.classList.add('hidden');
+            }
+
+            document.getElementById('modal-auth').classList.remove('hidden');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('modal-auth').classList.add('hidden');
+        }
+
+        function switchAuthTab(tab) {
+            const btnLogin = document.getElementById('auth-tab-login');
+            const btnRegister = document.getElementById('auth-tab-register');
+            const formLogin = document.getElementById('auth-login-form');
+            const formRegister = document.getElementById('auth-register-form');
+            const banner = document.getElementById('auth-error-banner');
+            banner.classList.add('hidden');
+
+            if (tab === 'login') {
+                btnLogin.className = 'text-sm font-bold pb-2 border-b-2 border-indigo-500 text-white transition-colors cursor-pointer';
+                btnRegister.className = 'text-sm font-bold pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors cursor-pointer';
+                formLogin.classList.remove('hidden');
+                formRegister.classList.add('hidden');
+            } else {
+                btnRegister.className = 'text-sm font-bold pb-2 border-b-2 border-indigo-500 text-white transition-colors cursor-pointer';
+                btnLogin.className = 'text-sm font-bold pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors cursor-pointer';
+                formRegister.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+            }
+        }
+
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            const banner = document.getElementById('auth-error-banner');
+            const submitBtn = document.getElementById('login-submit-btn');
+            const usernameInput = document.getElementById('login-username');
+            const passwordInput = document.getElementById('login-password');
+
+            const emailOrUser = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            banner.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Kirilmoqda...';
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailOrUser, password: password })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Kirishda xatolik yuz berdi');
+                }
+
+                await checkAuth();
+                closeAuthModal();
+                passwordInput.value = '';
+            } catch (err) {
+                banner.innerText = err.message;
+                banner.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Tizimga kirish';
+            }
+        }
+
+        async function handleRegisterSubmit(e) {
+            e.preventDefault();
+            const banner = document.getElementById('auth-error-banner');
+            const submitBtn = document.getElementById('register-submit-btn');
+            const usernameInput = document.getElementById('register-username');
+            const emailInput = document.getElementById('register-email');
+            const passwordInput = document.getElementById('register-password');
+
+            const username = usernameInput.value.trim();
+            let email = emailInput.value.trim();
+            if (!email) {
+                email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@zakowhat.uz`;
+            }
+            const password = passwordInput.value;
+
+            banner.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Yaratilmoqda...';
+
+            try {
+                const payload = {
+                    display_name: username,
+                    email: email,
+                    password: password,
+                    session_token: state.sessionToken || null
+                };
+
+                const res = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
+                }
+
+                const data = await res.json();
+                await checkAuth();
+                closeAuthModal();
+                passwordInput.value = '';
+
+                // Hide anonymous conversion banner if registration claimed the attempt
+                const anonBanner = document.getElementById('results-anon-banner');
+                if (anonBanner) anonBanner.classList.add('hidden');
+
+                if (data.attempt_claimed) {
+                    alert('🎉 Tabriklaymiz! Sizning yakunlangan natijangiz yangi akkauntingizga muvaffaqiyatli biriktirildi va liderlar jadvaliga kiritildi!');
+                }
+            } catch (err) {
+                banner.innerText = err.message;
+                banner.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Ro\'yxatdan o\'tish';
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await fetch(`${API_BASE}/auth/logout`, { method: 'POST' });
+            } catch (e) {
+                console.warn('Logout request failed:', e);
+            }
+            state.currentUser = null;
+            await checkAuth();
+        }
+
+        async function initGoogleGis() {
+            try {
+                const res = await fetch(`${API_BASE}/auth/config`);
+                if (!res.ok) return;
+                const config = await res.json();
+                if (!config.google_client_id) return;
+
+                if (window.google && window.google.accounts && window.google.accounts.id) {
+                    window.google.accounts.id.initialize({
+                        client_id: config.google_client_id,
+                        callback: handleGoogleCredentialResponse
+                    });
+                    const container = document.getElementById('google-signin-container');
+                    if (container) {
+                        window.google.accounts.id.renderButton(container, {
+                            theme: 'outline',
+                            size: 'large',
+                            width: 280,
+                            text: 'continue_with'
+                        });
+                    }
+                }
+            } catch (e) {
+                console.debug('Google GIS not available or configured:', e);
+            }
+        }
+
+        async function handleGoogleCredentialResponse(response) {
+            try {
+                const res = await fetch(`${API_BASE}/auth/google`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        credential: response.credential,
+                        session_token: state.sessionToken || null
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Google orqali kirishda xatolik yuz berdi');
+                }
+
+                await checkAuth();
+                closeAuthModal();
+
+                const anonBanner = document.getElementById('results-anon-banner');
+                if (anonBanner) anonBanner.classList.add('hidden');
+            } catch (err) {
+                alert('Google Sign-In: ' + err.message);
+            }
+        }
+
+        // =====================================================================
+        // NAVIGATION CONTROLLER
+        // =====================================================================
         function showScreen(screenId) {
             ['screen-selection', 'screen-gameplay', 'screen-reveal', 'screen-results'].forEach(id => {
                 const el = document.getElementById(id);
@@ -417,20 +903,29 @@
                             </div>
                             <p class="text-sm text-slate-400 max-w-xl">${escapeHtml(q.description || "O'zbek intellektual viktorina turniri")}</p>
                             <div class="flex flex-wrap gap-2 pt-1 text-xs text-slate-400">
-                                <span class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">🎯 4 Raund</span>
-                                <span class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">⛓️ Zanjir</span>
-                                <span class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">💡 Mantiqasqon</span>
+                                <span class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">🎯 ${escapeHtml(q.game_mode || 'Standart')}</span>
+                                <span class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">📊 v${q.version_number}</span>
                             </div>
                         </div>
-                        <button
-                            onclick="startQuiz(${q.quiz_id})"
-                            class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 cursor-pointer self-start sm:self-center"
-                        >
-                            <span>Boshlash</span>
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                        </button>
+                        <div class="flex items-center gap-2 self-start sm:self-center">
+                            <button
+                                onclick="openLeaderboardModal(${q.quiz_id}, ${q.version_number}, '${escapeHtml(q.title)}')"
+                                class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs transition-all border border-slate-700 flex items-center gap-1.5 cursor-pointer"
+                                title="Liderlar jadvali"
+                            >
+                                <span>🏆</span>
+                                <span class="hidden sm:inline">Reyting</span>
+                            </button>
+                            <button
+                                onclick="startQuiz(${q.quiz_id})"
+                                class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <span>Boshlash</span>
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 `).join('');
             } catch (err) {
@@ -447,8 +942,15 @@
         // STAGE 2: START QUIZ SESSION
         // =====================================================================
         async function startQuiz(quizId) {
+            state.currentQuizId = quizId;
             try {
                 const res = await fetch(`${API_BASE}/play/start/${quizId}`, { method: 'POST' });
+                if (res.status === 403) {
+                    const err = await res.json();
+                    alert(err.detail || "Siz bir martalik bepul sinov urinishingizdan foydalandingiz. Barcha viktorinalarni cheksiz o'ynash va reytingda qatnashish uchun ro'yxatdan o'ting!");
+                    openAuthModal('register');
+                    return;
+                }
                 if (!res.ok) {
                     const err = await res.json();
                     throw new Error(err.detail || 'O\'yinni boshlab bo\'lmadi');
@@ -708,8 +1210,8 @@
                 const data = await res.json();
 
                 document.getElementById('results-total-score').innerText = data.total_score;
-                document.getElementById('results-correct-count').innerText = data.total_correct;
-                document.getElementById('results-incorrect-count').innerText = data.total_incorrect;
+                document.getElementById('results-correct-ratio').innerText = `${data.total_correct} / ${data.total_questions}`;
+                document.getElementById('results-active-time').innerText = data.formatted_time || '00:00';
 
                 const breakdownEl = document.getElementById('results-rounds-breakdown');
                 breakdownEl.innerHTML = data.rounds.map(r => `
@@ -726,10 +1228,195 @@
                     </div>
                 `).join('');
 
+                // Display anonymous registration conversion banner if applicable
+                const anonBanner = document.getElementById('results-anon-banner');
+                if (data.is_anonymous && !state.currentUser) {
+                    anonBanner.classList.remove('hidden');
+                } else {
+                    anonBanner.classList.add('hidden');
+                }
+
                 showScreen('screen-results');
             } catch (err) {
                 alert('Natijalar xatoligi: ' + err.message);
             }
+        }
+
+        // =====================================================================
+        // MODAL 2: ANSWER REVIEW (JAVOBLARNI KO'RISH)
+        // =====================================================================
+        async function openReviewModal() {
+            if (!state.sessionToken) {
+                alert('Sessiya topilmadi');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/play/${state.sessionToken}/review`);
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Javoblarni yuklab bo\'lmadi');
+                }
+                const data = await res.json();
+
+                document.getElementById('review-correct-ratio').innerText = `${data.total_correct}`;
+                document.getElementById('review-active-time').innerText = data.formatted_time || '00:00';
+                document.getElementById('review-total-score').innerText = data.total_score;
+
+                const hiddenRuleBox = document.getElementById('review-hidden-rule-box');
+                const hiddenRuleText = document.getElementById('review-hidden-rule-text');
+                let foundHiddenRule = null;
+
+                const listEl = document.getElementById('review-questions-list');
+                let questionsHtml = '';
+
+                data.rounds.forEach(r => {
+                    if (r.config && r.config.hidden_rule) {
+                        foundHiddenRule = r.config.hidden_rule;
+                    }
+
+                    r.questions.forEach(q => {
+                        questionsHtml += `
+                            <div class="p-4 rounded-xl bg-slate-950 border ${q.is_correct ? 'border-emerald-900/50' : 'border-rose-950/60'} space-y-2.5">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-slate-400 font-mono">#${q.sequence}</span>
+                                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider capitalize">${r.round_type.replace('_', ' ')}</span>
+                                    </div>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${q.is_correct ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
+                                        ${q.is_correct ? `+${q.points_awarded} ball` : '0 ball'}
+                                    </span>
+                                </div>
+                                <div class="text-sm font-semibold text-white leading-relaxed">${escapeHtml(q.text)}</div>
+                                <div class="grid sm:grid-cols-2 gap-2 text-xs pt-1">
+                                    <div class="p-2.5 rounded-lg bg-slate-900/80">
+                                        <div class="text-slate-400 text-[11px] mb-0.5">Sizning javobingiz:</div>
+                                        <div class="font-bold ${q.is_correct ? 'text-emerald-300' : 'text-rose-300'}">${escapeHtml(q.submitted_answer || "(Javob berilmadi)")}</div>
+                                    </div>
+                                    <div class="p-2.5 rounded-lg bg-slate-900/80">
+                                        <div class="text-slate-400 text-[11px] mb-0.5">To'g'ri qabul qilingan javob:</div>
+                                        <div class="font-bold text-indigo-300">${escapeHtml(q.correct_answers.join(' / '))}</div>
+                                    </div>
+                                </div>
+                                ${q.explanation ? `
+                                    <div class="p-2.5 rounded-lg bg-indigo-950/20 border border-indigo-500/20 text-[11px] text-indigo-200">
+                                        <strong class="text-indigo-300">Izoh:</strong> ${escapeHtml(q.explanation)}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    });
+                });
+
+                listEl.innerHTML = questionsHtml;
+
+                if (foundHiddenRule) {
+                    hiddenRuleText.innerText = foundHiddenRule;
+                    hiddenRuleBox.classList.remove('hidden');
+                } else {
+                    hiddenRuleBox.classList.add('hidden');
+                }
+
+                document.getElementById('modal-review').classList.remove('hidden');
+            } catch (err) {
+                alert('Javoblarni ko\'rishda xatolik: ' + err.message);
+            }
+        }
+
+        function closeReviewModal() {
+            document.getElementById('modal-review').classList.add('hidden');
+        }
+
+        // =====================================================================
+        // MODAL 3: LEADERBOARD CONTROLLER
+        // =====================================================================
+        async function openLeaderboardModal(quizId = null, versionNumber = null, title = null) {
+            const targetQuizId = quizId || state.currentQuizId;
+            if (!targetQuizId) return;
+
+            const modal = document.getElementById('modal-leaderboard');
+            const loading = document.getElementById('leaderboard-loading');
+            const empty = document.getElementById('leaderboard-empty');
+            const tableContainer = document.getElementById('leaderboard-table-container');
+            const rowsEl = document.getElementById('leaderboard-rows');
+
+            modal.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            empty.classList.add('hidden');
+            tableContainer.classList.add('hidden');
+
+            document.getElementById('leaderboard-quiz-title').innerText = title || 'Liderlar Jadvali';
+
+            try {
+                let url = `${API_BASE}/quizzes/${targetQuizId}/leaderboard`;
+                if (versionNumber) {
+                    url = `${API_BASE}/quizzes/${targetQuizId}/versions/${versionNumber}/leaderboard`;
+                }
+
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Liderlar jadvalini yuklab bo\'lmadi');
+                const data = await res.json();
+
+                document.getElementById('leaderboard-quiz-title').innerText = data.quiz_title || title || 'Liderlar Jadvali';
+                document.getElementById('leaderboard-version-badge').innerText = 'v' + data.version_number;
+
+                loading.classList.add('hidden');
+
+                if (!data.leaderboard || data.leaderboard.length === 0) {
+                    empty.classList.remove('hidden');
+                    tableContainer.classList.add('hidden');
+                    return;
+                }
+
+                tableContainer.classList.remove('hidden');
+                empty.classList.add('hidden');
+
+                rowsEl.innerHTML = data.leaderboard.map(item => {
+                    let rankBadge = `<span class="font-mono text-slate-400 font-bold">${item.rank}</span>`;
+                    if (item.rank === 1) rankBadge = `<span class="text-base" title="1-o'rin">🥇</span>`;
+                    else if (item.rank === 2) rankBadge = `<span class="text-base" title="2-o'rin">🥈</span>`;
+                    else if (item.rank === 3) rankBadge = `<span class="text-base" title="3-o'rin">🥉</span>`;
+
+                    const isMe = state.currentUser && (state.currentUser.id === item.user_id);
+                    const rowClass = isMe ? 'bg-indigo-950/40 text-indigo-200' : 'hover:bg-slate-950/40 text-slate-300';
+
+                    let dateStr = '—';
+                    if (item.completed_at) {
+                        try {
+                            const d = new Date(item.completed_at);
+                            dateStr = d.toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        } catch (e) {}
+                    }
+
+                    return `
+                        <tr class="${rowClass} transition-colors">
+                            <td class="py-3 px-4 text-center font-bold">${rankBadge}</td>
+                            <td class="py-3 px-4 font-semibold text-white flex items-center gap-2">
+                                <span>${escapeHtml(item.display_name)}</span>
+                                ${isMe ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-300 font-bold">Siz</span>` : ''}
+                            </td>
+                            <td class="py-3 px-4 text-center font-mono font-bold text-emerald-400">
+                                ${item.correct_count} <span class="text-slate-500 text-[10px] font-normal">/ ${item.total_questions}</span>
+                            </td>
+                            <td class="py-3 px-4 text-center font-mono font-semibold text-indigo-300">
+                                ${item.formatted_time}
+                            </td>
+                            <td class="py-3 px-4 text-right text-slate-400 text-[11px] font-mono">
+                                ${dateStr}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                loading.classList.add('hidden');
+                empty.classList.remove('hidden');
+                empty.innerHTML = `<p class="text-xs text-rose-400 font-semibold">${escapeHtml(err.message)}</p>`;
+            }
+        }
+
+        function closeLeaderboardModal() {
+            document.getElementById('modal-leaderboard').classList.add('hidden');
         }
 
         function goToQuizSelection() {
@@ -762,8 +1449,21 @@
         });
 
         // Initialize on Load
-        window.addEventListener('DOMContentLoaded', () => {
-            loadQuizzes();
+        window.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            initGoogleGis();
+
+            // Check for direct play links: /play/{id} or ?quiz={id}
+            const urlParams = new URLSearchParams(window.location.search);
+            const directQuizId = urlParams.get('quiz');
+            const pathMatch = window.location.pathname.match(/^\/play\/(\d+)$/);
+            const targetQuizId = directQuizId || (pathMatch ? pathMatch[1] : null);
+
+            await loadQuizzes();
+
+            if (targetQuizId) {
+                await startQuiz(parseInt(targetQuizId, 10));
+            }
         });
     </script>
 </body>

@@ -1330,13 +1330,18 @@ def start_preview_simulation(draft_id: int, db: Session = Depends(get_db)):
 # PUBLISHING ENDPOINT
 # =========================================================
 
+class PublishDraftRequest(BaseModel):
+    visibility: Optional[str] = "public"
+
+
 @router.post("/{draft_id}/publish", status_code=status.HTTP_200_OK)
-def publish_draft(draft_id: int, db: Session = Depends(get_db)):
+def publish_draft(draft_id: int, payload: Optional[PublishDraftRequest] = None, db: Session = Depends(get_db)):
     """
     Explicit atomic publishing endpoint.
     - Idempotency guard: rejects subsequent publish attempts on already published versions.
     - Runs complete server-side publish-readiness validation; invalid drafts are rejected.
     - Atomically compiles self-contained published_manifest and sets status='published'.
+    - Supports visibility: 'public' (default, discoverable) or 'unlisted' (playable by direct link only).
     """
     version = db.query(QuizVersion).filter(QuizVersion.id == draft_id).first()
     if not version:
@@ -1371,6 +1376,10 @@ def publish_draft(draft_id: int, db: Session = Depends(get_db)):
 
     # Atomic publication transaction
     manifest = compile_published_manifest(version, db)
+    vis = (payload.visibility if payload and payload.visibility else "public").strip().lower()
+    if vis not in ("public", "unlisted"):
+        vis = "public"
+    manifest["visibility"] = vis
     now_utc = datetime.now(timezone.utc)
 
     version.published_manifest = manifest
@@ -1388,6 +1397,7 @@ def publish_draft(draft_id: int, db: Session = Depends(get_db)):
         "title": version.quiz.title,
         "game_mode": version.game_mode,
         "status": version.status,
+        "visibility": manifest.get("visibility", "public"),
         "published_at": version.published_at.isoformat() if version.published_at else None,
         "total_rounds": len(manifest.get("rounds", [])),
         "total_questions": sum(len(r.get("questions", [])) for r in manifest.get("rounds", [])),

@@ -1,12 +1,14 @@
 import string
+import secrets
 from datetime import datetime, timezone
 from typing import List, Optional, Any, Dict
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAnswer, SoloAttempt, AnswerRecord
+from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAnswer, SoloAttempt, AnswerRecord, User
 from services.gameplay import normalize_uzbek_latin, verify_zanjir_chain, is_true_false_match
+from api.auth import get_current_user_optional, is_secure_cookie
 
 router = APIRouter(prefix="/api/play", tags=["play"])
 
@@ -165,7 +167,13 @@ def format_question_response(
 # =========================================================
 
 @router.post("/start/{quiz_id}", status_code=status.HTTP_201_CREATED)
-def start_solo_attempt(quiz_id: int, db: Session = Depends(get_db)):
+def start_solo_attempt(
+    quiz_id: int,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
     if not quiz:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
@@ -188,16 +196,56 @@ def start_solo_attempt(quiz_id: int, db: Session = Depends(get_db)):
     if not questions:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="First round has no questions")
 
+    # Determine registered user vs anonymous visitor
+    user_id = current_user.id if current_user else None
+    anon_id = None
+    set_anon_cookie = False
+
+    if not user_id:
+        # Anonymous user: enforce exactly ONE attempt per visitor
+        anon_cookie = request.cookies.get("zakowhat_anon_id")
+        anon_header = request.headers.get("X-Anon-Id")
+        # Per Correction 2: Cookie is authoritative in browser context. Header only if no cookie (API/test clients).
+        anon_id = anon_cookie or anon_header
+        if not anon_id:
+            anon_id = "anon_" + secrets.token_urlsafe(24)
+            set_anon_cookie = True
+
+        # Check if an attempt was already started with this anon_id
+        existing = db.query(SoloAttempt).filter(SoloAttempt.anon_id == anon_id).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Bepul urinishdan foydalanildi. O'ynashni davom ettirish uchun ro'yxatdan o'ting yoki tizimga kiring.",
+            )
+
+    now = datetime.now(timezone.utc)
     attempt = SoloAttempt(
         quiz_version_id=latest_published.id,
+        user_id=user_id,
+        anon_id=anon_id if not user_id else None,
         current_round_index=0,
         current_question_index=0,
         total_score=0,
+        total_correct=0,
+        active_time_seconds=0,
+        question_opened_at=now,
         status="in_progress",
     )
     db.add(attempt)
     db.commit()
     db.refresh(attempt)
+
+    if set_anon_cookie and not user_id:
+        response.set_cookie(
+            key="zakowhat_anon_id",
+            value=anon_id,
+            httponly=True,
+            samesite="lax",
+            secure=is_secure_cookie(),
+            path="/",
+            max_age=365 * 24 * 3600,
+        )
 
     return {
         "session_token": attempt.session_token,
@@ -356,10 +404,30 @@ def submit_answer(session_token: str, submission: AnswerSubmission, db: Session 
         points = q_points if is_correct else 0
 
     # =========================================================
-    # AUDIT LOG (AnswerRecord)
+    # AUDIT LOG (AnswerRecord) & ACTIVE TIMING
     # =========================================================
     q_id = current_q.get("question_id")
     rq_id = current_q.get("round_question_id")
+
+    now = datetime.now(timezone.utc)
+    time_taken = 0
+    if attempt.question_opened_at:
+        q_opened = attempt.question_opened_at
+        if q_opened.tzinfo is None:
+            q_opened = q_opened.replace(tzinfo=timezone.utc)
+        delta = max(0.0, (now - q_opened).total_seconds())
+        # Check round-specific time limit if configured
+        time_limit = current_round.get("config", {}).get("time_limit_seconds")
+        if time_limit and float(time_limit) > 0:
+            delta = min(delta, float(time_limit))
+        time_taken = int(round(delta))
+        attempt.active_time_seconds += time_taken
+
+    meta = {"time_taken_seconds": time_taken}
+    if is_wager:
+        meta["is_wager"] = True
+    if is_blank:
+        meta["is_blank"] = True
 
     record = AnswerRecord(
         attempt_id=attempt.id,
@@ -368,7 +436,8 @@ def submit_answer(session_token: str, submission: AnswerSubmission, db: Session 
         submitted_text=raw_answer,
         is_correct=is_correct,
         points_awarded=points,
-        record_metadata={"is_wager": is_wager, "is_blank": is_blank} if (is_wager or is_blank) else None,
+        answered_at=now,
+        record_metadata=meta,
     )
     db.add(record)
     attempt.total_score += points
@@ -377,6 +446,7 @@ def submit_answer(session_token: str, submission: AnswerSubmission, db: Session 
     # Check if current round completed
     if attempt.current_question_index >= len(questions):
         attempt.status = "round_reveal"
+        attempt.question_opened_at = None  # Pauses active timer during reveal
         db.commit()
 
         is_last_round = attempt.current_round_index >= (len(rounds) - 1)
@@ -390,6 +460,7 @@ def submit_answer(session_token: str, submission: AnswerSubmission, db: Session 
             "next_state": None,
         }
 
+    attempt.question_opened_at = datetime.now(timezone.utc)
     db.commit()
     next_q = questions[attempt.current_question_index]
     return {
@@ -485,17 +556,30 @@ def continue_to_next_round(session_token: str, db: Session = Depends(get_db)):
     if is_last_round:
         attempt.status = "completed"
         attempt.completed_at = datetime.now(timezone.utc)
+        attempt.question_opened_at = None
+        # Authoritative server-side calculation of total_correct
+        attempt.total_correct = (
+            db.query(AnswerRecord)
+            .filter(AnswerRecord.attempt_id == attempt.id, AnswerRecord.is_correct == True)
+            .count()
+        )
         db.commit()
+        mins = attempt.active_time_seconds // 60
+        secs = attempt.active_time_seconds % 60
         return {
             "status": "completed",
             "quiz_completed": True,
             "total_score": attempt.total_score,
+            "total_correct": attempt.total_correct,
+            "active_time_seconds": attempt.active_time_seconds,
+            "formatted_time": f"{mins:02d}:{secs:02d}",
             "message": "Quiz completed! Fetch /results for summary.",
         }
 
     attempt.current_round_index += 1
     attempt.current_question_index = 0
     attempt.status = "in_progress"
+    attempt.question_opened_at = datetime.now(timezone.utc)  # Resumes active question timer!
     db.commit()
 
     next_round = rounds[attempt.current_round_index]
@@ -559,14 +643,93 @@ def get_final_results(session_token: str, db: Session = Depends(get_db)):
             "incorrect_count": r_incorrect,
         })
 
+    mins = attempt.active_time_seconds // 60
+    secs = attempt.active_time_seconds % 60
+
     return {
         "status": "completed",
         "is_preview": (attempt.timer_mode == "preview"),
+        "is_anonymous": (attempt.user_id is None),
         "game_mode": getattr(version, "game_mode", "modern_multiround"),
         "total_score": attempt.total_score,
-        "total_correct": total_correct,
+        "total_correct": attempt.total_correct if attempt.total_correct else total_correct,
         "total_incorrect": total_incorrect,
+        "total_questions": total_correct + total_incorrect,
+        "active_time_seconds": attempt.active_time_seconds,
+        "formatted_time": f"{mins:02d}:{secs:02d}",
         "started_at": attempt.started_at.isoformat(),
         "completed_at": attempt.completed_at.isoformat() if attempt.completed_at else None,
         "rounds": round_summaries,
+    }
+
+
+@router.get("/{session_token}/review", status_code=status.HTTP_200_OK)
+def get_answer_review(session_token: str, db: Session = Depends(get_db)):
+    """
+    Returns full question-by-question review with explanations and answers
+    ONLY for completed attempts.
+    For Mantiqqasqon, the hidden_rule is safely revealed here since the quiz is completed.
+    """
+    attempt = db.query(SoloAttempt).filter(SoloAttempt.session_token == session_token).first()
+    if not attempt:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    if attempt.status != "completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Javoblar tahlili faqat viktorina to'liq yakunlangandan keyin ko'rsatiladi."
+        )
+
+    version = attempt.quiz_version
+    rounds = get_manifest_or_db_rounds(version, db)
+    all_records = db.query(AnswerRecord).filter(AnswerRecord.attempt_id == attempt.id).all()
+    record_map = {r.question_id: r for r in all_records}
+
+    review_rounds = []
+    for r in rounds:
+        questions_review = []
+        for q in r.get("questions", []):
+            qid = q.get("question_id")
+            rec = record_map.get(qid)
+            correct_answers = [a.get("answer_text") for a in q.get("accepted_answers", [])]
+            primary_ans = next((a.get("answer_text") for a in q.get("accepted_answers", []) if a.get("is_primary")), None)
+            if not primary_ans and correct_answers:
+                primary_ans = correct_answers[0]
+
+            questions_review.append({
+                "question_id": qid,
+                "round_question_id": q.get("round_question_id"),
+                "sequence": q.get("sequence"),
+                "text": q.get("text"),
+                "question_type": q.get("question_type", "text"),
+                "options": q.get("options"),
+                "explanation": q.get("explanation"),
+                "submitted_answer": rec.submitted_text if rec else None,
+                "is_correct": rec.is_correct if rec else False,
+                "points_awarded": rec.points_awarded if rec else 0,
+                "time_taken_seconds": (rec.record_metadata or {}).get("time_taken_seconds", 0) if rec else 0,
+                "primary_answer": primary_ans,
+                "correct_answers": correct_answers,
+            })
+
+        review_rounds.append({
+            "round_id": r.get("round_id"),
+            "round_sequence": r.get("sequence"),
+            "round_type": r.get("round_type"),
+            "config": r.get("config", {}),  # Safely reveals hidden_rule now that attempt is complete
+            "questions": questions_review,
+        })
+
+    mins = attempt.active_time_seconds // 60
+    secs = attempt.active_time_seconds % 60
+
+    return {
+        "status": "completed",
+        "quiz_id": version.quiz_id,
+        "version_number": version.version_number,
+        "total_score": attempt.total_score,
+        "total_correct": attempt.total_correct,
+        "active_time_seconds": attempt.active_time_seconds,
+        "formatted_time": f"{mins:02d}:{secs:02d}",
+        "rounds": review_rounds,
     }

@@ -3,9 +3,8 @@ from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
 from database import get_db
-from models import Quiz, QuizVersion, Round, Question, RoundQuestion
+from models import Quiz, QuizVersion, Round, Question, RoundQuestion, SoloAttempt, User
 
 router = APIRouter(prefix="/api/quizzes", tags=["quizzes"])
 
@@ -184,6 +183,7 @@ def compile_published_manifest(version: QuizVersion, db: Session) -> dict:
         "description": version.quiz.description if version.quiz else None,
         "version_number": version.version_number,
         "game_mode": version.game_mode or "modern_multiround",
+        "visibility": (version.published_manifest or {}).get("visibility", "public") if version.published_manifest else "public",
         "published_at": datetime.now(timezone.utc).isoformat(),
         "rounds": rounds_data,
     }
@@ -201,12 +201,18 @@ def list_quizzes(db: Session = Depends(get_db)):
             .first()
         )
         if latest_published:
+            manifest = latest_published.published_manifest or {}
+            # Unlisted quizzes are hidden from discovery (Arena list), accessible only by direct link
+            if manifest.get("visibility") == "unlisted":
+                continue
+
             results.append({
                 "quiz_id": quiz.id,
                 "title": quiz.title,
                 "description": quiz.description,
                 "game_mode": latest_published.game_mode,
                 "version_number": latest_published.version_number,
+                "visibility": manifest.get("visibility", "public"),
             })
     return results
 
@@ -528,3 +534,129 @@ def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):
         "published_at": latest_version.published_at.isoformat() if latest_version.published_at else None,
         "rounds": rounds_data,
     }
+
+
+# =========================================================
+# LEADERBOARD ENDPOINTS
+# =========================================================
+
+def fetch_version_leaderboard(version: QuizVersion, db: Session) -> dict:
+    """
+    Computes per-quiz-version leaderboard:
+    - Strictly scoped to this specific published version (never mixes across versions).
+    - Only registered players (user_id is not None).
+    - Only completed attempts (status == 'completed').
+    - Excludes preview attempts.
+    - Exactly ONE entry per player: their BEST completed attempt for this version.
+    - Ranking criteria:
+        1. Higher number of correct answers first (total_correct DESC).
+        2. Lower active gameplay time first (active_time_seconds ASC).
+        3. Earlier completion timestamp tie-breaker (completed_at ASC).
+    """
+    attempts = (
+        db.query(SoloAttempt)
+        .filter(
+            SoloAttempt.quiz_version_id == version.id,
+            SoloAttempt.status == "completed",
+            SoloAttempt.user_id.isnot(None),
+            SoloAttempt.timer_mode != "preview",
+        )
+        .all()
+    )
+
+    # Group by user_id to pick each user's best attempt
+    user_best: Dict[int, SoloAttempt] = {}
+    for att in attempts:
+        uid = att.user_id
+        if uid not in user_best:
+            user_best[uid] = att
+        else:
+            cur = user_best[uid]
+            # Compare: higher total_correct first, lower active_time_seconds second
+            if att.total_correct > cur.total_correct:
+                user_best[uid] = att
+            elif att.total_correct == cur.total_correct:
+                if att.active_time_seconds < cur.active_time_seconds:
+                    user_best[uid] = att
+                elif att.active_time_seconds == cur.active_time_seconds:
+                    t_att = att.completed_at.timestamp() if att.completed_at else 0
+                    t_cur = cur.completed_at.timestamp() if cur.completed_at else 0
+                    if t_att < t_cur:
+                        user_best[uid] = att
+
+    # Sort best attempts across all users
+    sorted_attempts = sorted(
+        user_best.values(),
+        key=lambda a: (
+            -a.total_correct,
+            a.active_time_seconds,
+            a.completed_at.timestamp() if a.completed_at else 0,
+        ),
+    )
+
+    # Compute total questions for this version
+    manifest = version.published_manifest or {}
+    manifest_rounds = manifest.get("rounds", [])
+    if manifest_rounds:
+        total_questions = sum(len(r.get("questions", [])) for r in manifest_rounds)
+    else:
+        total_questions = sum(len(r.round_questions) for r in version.rounds)
+
+    leaderboard_rows = []
+    for rank, att in enumerate(sorted_attempts, start=1):
+        name = att.user.display_name if att.user else f"Foydalanuvchi #{att.user_id}"
+        mins = att.active_time_seconds // 60
+        secs = att.active_time_seconds % 60
+        leaderboard_rows.append({
+            "rank": rank,
+            "user_id": att.user_id,
+            "display_name": name,
+            "correct_count": att.total_correct,
+            "total_questions": total_questions,
+            "active_time_seconds": att.active_time_seconds,
+            "formatted_time": f"{mins:02d}:{secs:02d}",
+            "completed_at": att.completed_at.isoformat() if att.completed_at else None,
+        })
+
+    return {
+        "quiz_id": version.quiz_id,
+        "quiz_title": version.quiz.title if version.quiz else None,
+        "version_number": version.version_number,
+        "version_id": version.id,
+        "total_questions": total_questions,
+        "total_participants": len(leaderboard_rows),
+        "leaderboard": leaderboard_rows,
+    }
+
+
+@router.get("/{quiz_id}/leaderboard", status_code=status.HTTP_200_OK)
+def get_quiz_leaderboard(quiz_id: int, db: Session = Depends(get_db)):
+    """Leaderboard for the latest published version of a quiz."""
+    latest_published = (
+        db.query(QuizVersion)
+        .filter(QuizVersion.quiz_id == quiz_id, QuizVersion.status == "published")
+        .order_by(QuizVersion.version_number.desc())
+        .first()
+    )
+    if not latest_published:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nashr qilingan versiya topilmadi")
+
+    return fetch_version_leaderboard(latest_published, db)
+
+
+@router.get("/{quiz_id}/versions/{version_number}/leaderboard", status_code=status.HTTP_200_OK)
+def get_version_leaderboard(quiz_id: int, version_number: int, db: Session = Depends(get_db)):
+    """Leaderboard for a specific published version of a quiz."""
+    version = (
+        db.query(QuizVersion)
+        .filter(
+            QuizVersion.quiz_id == quiz_id,
+            QuizVersion.version_number == version_number,
+            QuizVersion.status == "published",
+        )
+        .first()
+    )
+    if not version:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nashr qilingan versiya topilmadi")
+
+    return fetch_version_leaderboard(version, db)

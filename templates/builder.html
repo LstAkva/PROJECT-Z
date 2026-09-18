@@ -492,6 +492,17 @@
                     <ul id="pub-confirm-warnings-list" class="list-disc list-inside space-y-0.5 text-[11px]"></ul>
                 </div>
 
+                <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                    <label for="pub-confirm-visibility" class="text-slate-300 font-semibold text-[11px] flex items-center gap-1">
+                        <span>👁️</span>
+                        <span>Ko'rinish holati (Visibility):</span>
+                    </label>
+                    <select id="pub-confirm-visibility" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs outline-none focus:border-indigo-500">
+                        <option value="public">Jamoat uchun ochiq (Public) — Arenada ko'rinadi va qidiriladi</option>
+                        <option value="unlisted">Faqat havola orqali (Unlisted) — Arenada ko'rinmaydi, faqat havola bilan o'ynaladi</option>
+                    </select>
+                </div>
+
                 <div class="p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-slate-300 space-y-1 text-[11px] leading-relaxed">
                     <p class="font-bold text-indigo-300">ℹ️ Muhim ma'lumot:</p>
                     <p>Kviz nashr qilingandan so'ng uning tuzilishi va savollari to'liq mustaqil <strong>published_manifest</strong> holatida muzlatiladi (immutable) va darhol barcha o'yinchilar uchun ochiladi.</p>
@@ -1908,7 +1919,13 @@
             btn.innerHTML = '<span>Nashr qilinmoqda...</span>';
 
             try {
-                const res = await fetch(`/api/drafts/${currentDraft.version_id}/publish`, { method: 'POST' });
+                const visibilityEl = document.getElementById('pub-confirm-visibility');
+                const visibility = visibilityEl ? visibilityEl.value : 'public';
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}/publish`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ visibility: visibility })
+                });
                 if (res.status === 409) {
                     alert("Bu kviz allaqachon nashr qilingan.");
                     closePublishConfirmModal();

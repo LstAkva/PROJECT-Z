@@ -110,6 +110,22 @@ class AcceptedAnswer(Base):
     
     question = relationship("Question", back_populates="accepted_answers")
 
+# --- ПОЛЬЗОВАТЕЛИ И АУТЕНТИФИКАЦИЯ ---
+
+class User(Base):
+    """Зарегистрированный пользователь / игрок платформы."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=True)  # None для Google OAuth пользователей
+    display_name = Column(String(100), nullable=False)
+    auth_provider = Column(String(50), default="local", nullable=False)  # 'local' или 'google'
+    google_id = Column(String(255), unique=True, index=True, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    solo_attempts = relationship("SoloAttempt", back_populates="user")
+
 # --- ИГРОВАЯ СЕССИЯ И ОТВЕТЫ ИГРОКА ---
 
 class SoloAttempt(Base):
@@ -118,18 +134,24 @@ class SoloAttempt(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     quiz_version_id = Column(Integer, ForeignKey("quiz_versions.id"), nullable=False)
-    user_id = Column(Integer, nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    anon_id = Column(String(64), nullable=True, index=True)
     session_token = Column(String(64), unique=True, index=True, nullable=False, default=lambda: secrets.token_urlsafe(32))
     timer_mode = Column(String, default="standard", nullable=False)
     status = Column(String, default="in_progress", nullable=False)  # in_progress, round_reveal, completed
     current_round_index = Column(Integer, default=0, nullable=False)
     current_question_index = Column(Integer, default=0, nullable=False)
     total_score = Column(Integer, default=0, nullable=False)
+    total_correct = Column(Integer, default=0, nullable=False)
+    active_time_seconds = Column(Integer, default=0, nullable=False)
+    question_opened_at = Column(DateTime, nullable=True)
     started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     completed_at = Column(DateTime, nullable=True)
 
     quiz_version = relationship("QuizVersion", back_populates="solo_attempts")
+    user = relationship("User", back_populates="solo_attempts")
     answers = relationship("AnswerRecord", back_populates="attempt", cascade="all, delete-orphan")
+
 
 class AnswerRecord(Base):
     """Запись каждого ответа, который ввел игрок."""

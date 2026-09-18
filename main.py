@@ -5,14 +5,25 @@ from api.quizzes import router as quizzes_router
 from api.play import router as play_router
 from api.questions import router as questions_router
 from api.drafts import router as drafts_router
+from contextlib import asynccontextmanager
+from api.auth import router as auth_router, get_secret_key
 
-app = FastAPI(title="ZakoWhat API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Validates SECRET_KEY configuration (fails loudly in production if missing)
+    get_secret_key()
+    yield
+
+
+app = FastAPI(title="ZakoWhat API", lifespan=lifespan)
 templates = Jinja2Templates(directory="templates")
 
 app.include_router(quizzes_router)
 app.include_router(play_router)
 app.include_router(questions_router)
 app.include_router(drafts_router)
+app.include_router(auth_router)
 
 @app.get("/health")
 def health_check():
@@ -23,7 +34,8 @@ def health_check():
     }
 
 @app.get("/")
-def read_root(request: Request):
+@app.get("/play/{quiz_id}")
+def read_root(request: Request, quiz_id: int = None):
     return templates.TemplateResponse(request=request, name="index.html")
 
 @app.get("/bank")
@@ -35,4 +47,5 @@ def read_bank(request: Request):
 @app.get("/builder/{draft_id}")
 @app.get("/create")
 def read_builder(request: Request, draft_id: int = None):
-    return templates.TemplateResponse(request=request, name="builder.html")
+    return templates.TemplateResponse(request=request, name="builder.html")
+
