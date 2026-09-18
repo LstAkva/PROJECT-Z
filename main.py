@@ -34,6 +34,7 @@ def health_check():
     }
 
 @app.get("/")
+@app.get("/quiz/{quiz_id}")
 @app.get("/play/{quiz_id}")
 def read_root(request: Request, quiz_id: int = None):
     return templates.TemplateResponse(request=request, name="index.html")
@@ -48,4 +49,4 @@ def read_bank(request: Request):
 @app.get("/create")
 def read_builder(request: Request, draft_id: int = None):
     return templates.TemplateResponse(request=request, name="builder.html")
-
+

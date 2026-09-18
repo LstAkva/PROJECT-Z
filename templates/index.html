@@ -117,26 +117,138 @@
     <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
 
         <!-- ================================================================= -->
-        <!-- SCREEN 1: QUIZ SELECTION -->
+        <!-- ================================================================= -->
+        <!-- SCREEN 1: ZAKOWHAT ARENA (DISCOVERY & QUIZZES) -->
         <!-- ================================================================= -->
         <section id="screen-selection" class="space-y-8 animate-fade-in">
-            <div class="text-center space-y-3 max-w-2xl mx-auto">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-semibold text-indigo-400">
-                    <span>🏆 O'zbekiston intellektual chempionati</span>
+            <!-- Arena Header -->
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800 pb-6">
+                    <div class="space-y-2">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-semibold text-indigo-400">
+                            <span>🏛️ ZakoWhat Arena</span>
+                            <span class="w-1 h-1 rounded-full bg-indigo-500"></span>
+                            <span class="text-slate-400">Intellektual Maydon</span>
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                            Rasmiy Viktorina Turnirlari
+                        </h1>
+                        <p class="text-slate-400 text-xs sm:text-sm max-w-xl leading-relaxed">
+                            O'z bilimingizni sinab ko'ring, saralangan turnirlarda qatnashing va versiya bo'yicha yetakchilar reytingida peshqadamga aylaning.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2 self-start sm:self-auto">
+                        <a href="/bank" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition-colors flex items-center gap-1.5">
+                            <span>📚</span>
+                            <span>Savollar Banki</span>
+                        </a>
+                        <a href="/create" class="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-xs font-semibold text-indigo-300 transition-colors flex items-center gap-1.5">
+                            <span>✍️</span>
+                            <span>Kviz Yaratish</span>
+                        </a>
+                    </div>
                 </div>
-                <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                    O'yinni Tanlang va Boshlang
-                </h1>
-                <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
-                    Standart bilim sinovi, To'g'ri/Noto'g'ri, Mantiqasqon va Zanjir raundlaridan iborat rasmiy musobaqa maydoni.
-                </p>
+
+                <!-- Arena Search and Filters Toolbar -->
+                <div class="space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <!-- Search Input -->
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
+                                🔍
+                            </span>
+                            <input
+                                id="arena-search-input"
+                                type="text"
+                                placeholder="Viktorina nomi yoki tavsifi bo'yicha qidirish..."
+                                oninput="handleSearchInput(event)"
+                                class="w-full pl-10 pr-9 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                            >
+                            <button
+                                id="arena-search-clear"
+                                onclick="clearSearchInput()"
+                                class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer text-xs"
+                                title="Tozalash"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <!-- Game Mode Filter Dropdown -->
+                        <div class="sm:w-56">
+                            <select
+                                id="arena-mode-filter"
+                                onchange="handleModeChange(event)"
+                                class="w-full py-2.5 px-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer"
+                            >
+                                <option value="all">Barcha formatlar</option>
+                                <option value="modern_multiround">Zamonaviy Multi-raund</option>
+                                <option value="classic_zakovat">Klassik Zakovat (12+12)</option>
+                                <option value="svoyak">Svoяk</option>
+                                <option value="blitz">Tezkor Blitz</option>
+                                <option value="standard">Standart</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Category Pills Wrap -->
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none text-xs">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+                            Turkumlar:
+                        </span>
+                        <div id="arena-category-pills" class="flex items-center gap-1.5 flex-wrap">
+                            <!-- Category Pills rendered dynamically -->
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Quiz List Container -->
-            <div id="quiz-list-container" class="space-y-4">
-                <div class="p-8 rounded-2xl border border-slate-800 bg-slate-900/50 text-center space-y-3">
-                    <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p class="text-sm text-slate-400">Mavjud viktorinalar yuklanmoqda...</p>
+            <!-- Arena Loading Area -->
+            <div id="arena-loading" class="p-12 rounded-2xl border border-slate-800 bg-slate-900/40 text-center space-y-3">
+                <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="text-sm text-slate-400">Arenadagi viktorinalar yuklanmoqda...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="arena-empty" class="hidden p-12 rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 text-center space-y-3 animate-fade-in">
+                <div class="text-3xl">📭</div>
+                <p id="arena-empty-title" class="text-slate-300 text-base font-bold">Mos keluvchi viktorinalar topilmadi</p>
+                <p id="arena-empty-desc" class="text-xs text-slate-400 max-w-md mx-auto">Qidiruv yoki filtrlash parametrlarini o'zgartirib ko'ring yoki barcha filtrlarni tozalang.</p>
+                <div class="pt-2">
+                    <button onclick="clearAllFilters()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition-colors cursor-pointer">
+                        Filtrlarni tozalash
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Quizzes List Container -->
+            <div id="arena-content" class="space-y-8 hidden">
+                <!-- Featured Quiz Section (shown if any featured/primary quiz exists) -->
+                <div id="arena-featured-section" class="hidden space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span>⭐</span>
+                            <span>Tanlangan Turnir</span>
+                        </h2>
+                    </div>
+                    <div id="arena-featured-card">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Recent Quizzes List -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span>📋</span>
+                            <span>Barcha Viktorinalar</span>
+                            <span id="arena-quizzes-count" class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">0</span>
+                        </h2>
+                    </div>
+                    <div id="arena-quizzes-grid" class="space-y-4">
+                        <!-- Cards rendered dynamically -->
+                    </div>
                 </div>
             </div>
         </section>
@@ -590,6 +702,118 @@
         </div>
     </div>
 
+    <!-- ================================================================= -->
+    <!-- MODAL 4: QUIZ DETAIL (O'YIN TAFSILOTLARI VA KIRISH) -->
+    <!-- ================================================================= -->
+    <div id="modal-quiz-detail" onclick="if (event.target === this) closeQuizDetailModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+            <!-- Detail Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-950/60">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span id="detail-category-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Umumiy</span>
+                        <span id="detail-mode-badge" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">Format</span>
+                        <span id="detail-version-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300 border border-slate-700 font-mono">v1</span>
+                    </div>
+                    <h3 id="detail-title" class="font-extrabold text-lg sm:text-xl text-white leading-snug">Turnir Nomi</h3>
+                </div>
+                <button onclick="closeQuizDetailModal()" class="text-slate-400 hover:text-white font-mono text-xl cursor-pointer p-1">✕</button>
+            </div>
+
+            <!-- Detail Body -->
+            <div class="p-6 overflow-y-auto space-y-6">
+                <!-- Description -->
+                <p id="detail-description" class="text-xs sm:text-sm text-slate-300 leading-relaxed"></p>
+
+                <!-- Metric Strip -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-0.5">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">🎯 Raundlar</div>
+                        <div id="detail-metric-rounds" class="text-sm font-bold text-white font-mono">0 ta</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-0.5">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">❓ Savollar</div>
+                        <div id="detail-metric-questions" class="text-sm font-bold text-white font-mono">0 ta</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-0.5">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">⏱️ Taxminiy Vaqt</div>
+                        <div id="detail-metric-duration" class="text-sm font-bold text-indigo-300 font-mono">~0 daq</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-0.5">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">🛡️ Qoidalar</div>
+                        <div class="text-[11px] font-bold text-emerald-400">1 urinish (anonim)</div>
+                    </div>
+                </div>
+
+                <!-- Rounds Structure Breakdown -->
+                <div class="space-y-2.5">
+                    <div class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>📑</span>
+                        <span>Raundlar Tuzilishi</span>
+                    </div>
+                    <div id="detail-rounds-list" class="space-y-2">
+                        <!-- Round items rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Leaderboard Preview Section -->
+                <div class="space-y-3 pt-2 border-t border-slate-800/80">
+                    <div class="flex items-center justify-between">
+                        <div class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <span>🏆</span>
+                            <span>Ushbu Versiya Peshqadamlari</span>
+                        </div>
+                        <button id="detail-btn-view-full-leaderboard" class="text-xs text-amber-300 hover:text-amber-200 font-semibold cursor-pointer flex items-center gap-1">
+                            <span>To'liq reyting</span>
+                            <span>→</span>
+                        </button>
+                    </div>
+
+                    <!-- Top Player Highlight (if exists) -->
+                    <div id="detail-top-player-chip" class="hidden p-3 rounded-xl bg-amber-950/20 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300">
+                        <!-- Dynamically filled -->
+                    </div>
+
+                    <!-- Leaderboard Preview Table or Empty State -->
+                    <div id="detail-lb-preview-table-container" class="hidden overflow-hidden rounded-xl border border-slate-800">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                                <tr>
+                                    <th class="py-2.5 px-3 w-10 text-center">#</th>
+                                    <th class="py-2.5 px-3">O'yinchi</th>
+                                    <th class="py-2.5 px-3 text-center">Natija</th>
+                                    <th class="py-2.5 px-3 text-right">Vaqt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detail-lb-preview-rows" class="divide-y divide-slate-800/60 font-medium">
+                                <!-- Preview rows -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty Leaderboard State -->
+                    <div id="detail-lb-preview-empty" class="p-4 rounded-xl border border-dashed border-slate-800 bg-slate-950/40 text-center space-y-1">
+                        <p class="text-xs font-semibold text-slate-300">Hozircha hech kim natija qayd etmagan</p>
+                        <p class="text-[11px] text-slate-400">Siz ushbu viktorinani o'ynab, birinchi bo'lib peshqadamlik jadvaliga kirishingiz mumkin!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Footer with Prominent Play Action -->
+            <div class="border-t border-slate-800 p-4 bg-slate-950/80 flex items-center justify-between gap-3">
+                <button onclick="closeQuizDetailModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors cursor-pointer">
+                    Orqaga
+                </button>
+                <button id="detail-btn-play-now" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2 cursor-pointer">
+                    <span>O'yinni boshlash</span>
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-400">
         <div class="max-w-5xl mx-auto px-4">
@@ -614,6 +838,11 @@
             timerInterval: null,
             timeLeft: 60,
             isSubmitting: false,
+            searchQuery: '',
+            currentMode: 'all',
+            currentCategory: 'all',
+            searchDebounceTimer: null,
+            detailQuizId: null,
         };
 
         // =====================================================================
@@ -870,71 +1099,486 @@
         // =====================================================================
         // STAGE 1: LOAD QUIZZES
         // =====================================================================
+        // =====================================================================
+        // ARENA CONTROLLER: CATEGORIES, SEARCH, FILTERS & CARDS
+        // =====================================================================
+        async function loadCategories() {
+            try {
+                const res = await fetch(`${API_BASE}/quizzes/categories`);
+                if (!res.ok) return;
+                const data = await res.json();
+                const categories = data.categories || [];
+                const pillsContainer = document.getElementById('arena-category-pills');
+                if (!pillsContainer) return;
+
+                let pillsHtml = `
+                    <button
+                        onclick="handleCategoryChange('all')"
+                        data-category="all"
+                        class="arena-category-btn px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${state.currentCategory === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-950 hover:bg-slate-800 text-slate-400 border border-slate-800'}"
+                    >
+                        Barchasi
+                    </button>
+                `;
+
+                categories.forEach(cat => {
+                    const isActive = state.currentCategory === cat;
+                    pillsHtml += `
+                        <button
+                            onclick="handleCategoryChange(this.getAttribute('data-category'))"
+                            data-category="${escapeHtml(cat)}"
+                            class="arena-category-btn px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer ${isActive ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'bg-slate-950 hover:bg-slate-800 text-slate-400 border border-slate-800'}"
+                        >
+                            ${escapeHtml(cat)}
+                        </button>
+                    `;
+                });
+
+                pillsContainer.innerHTML = pillsHtml;
+            } catch (err) {
+                console.warn('Failed to load categories:', err);
+            }
+        }
+
+        function handleCategoryChange(category) {
+            state.currentCategory = category;
+            const buttons = document.querySelectorAll('.arena-category-btn');
+            buttons.forEach(btn => {
+                const cat = btn.getAttribute('data-category');
+                if (cat === category) {
+                    btn.className = 'arena-category-btn px-3 py-1 rounded-full text-xs font-bold bg-indigo-600 text-white shadow-sm transition-colors cursor-pointer';
+                } else {
+                    btn.className = 'arena-category-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-950 hover:bg-slate-800 text-slate-400 border border-slate-800 transition-colors cursor-pointer';
+                }
+            });
+            loadQuizzes();
+        }
+
+        function handleModeChange(event) {
+            state.currentMode = event.target.value;
+            loadQuizzes();
+        }
+
+        function handleSearchInput(event) {
+            const query = event.target.value;
+            const clearBtn = document.getElementById('arena-search-clear');
+            if (clearBtn) {
+                if (query.trim()) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+
+            if (state.searchDebounceTimer) {
+                clearTimeout(state.searchDebounceTimer);
+            }
+            state.searchDebounceTimer = setTimeout(() => {
+                state.searchQuery = query.trim();
+                loadQuizzes();
+            }, 250);
+        }
+
+        function clearSearchInput() {
+            const input = document.getElementById('arena-search-input');
+            if (input) input.value = '';
+            const clearBtn = document.getElementById('arena-search-clear');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            state.searchQuery = '';
+            loadQuizzes();
+        }
+
+        function clearAllFilters() {
+            clearSearchInput();
+            state.currentMode = 'all';
+            const modeSelect = document.getElementById('arena-mode-filter');
+            if (modeSelect) modeSelect.value = 'all';
+            handleCategoryChange('all');
+        }
+
         async function loadQuizzes() {
-            const container = document.getElementById('quiz-list-container');
-            container.innerHTML = `
-                <div class="p-8 rounded-2xl border border-slate-800 bg-slate-900/50 text-center space-y-3">
-                    <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p class="text-sm text-slate-400">Viktorinalar yuklanmoqda...</p>
-                </div>
-            `;
+            const loadingEl = document.getElementById('arena-loading');
+            const emptyEl = document.getElementById('arena-empty');
+            const contentEl = document.getElementById('arena-content');
+            const featuredSection = document.getElementById('arena-featured-section');
+            const featuredCard = document.getElementById('arena-featured-card');
+            const gridEl = document.getElementById('arena-quizzes-grid');
+            const countEl = document.getElementById('arena-quizzes-count');
+
+            if (loadingEl) loadingEl.classList.remove('hidden');
+            if (emptyEl) emptyEl.classList.add('hidden');
+            if (contentEl) contentEl.classList.add('hidden');
+
+            const currentReqId = (state.loadQuizzesRequestId || 0) + 1;
+            state.loadQuizzesRequestId = currentReqId;
 
             try {
-                const res = await fetch(`${API_BASE}/quizzes`);
+                let url = `${API_BASE}/quizzes?`;
+                if (state.searchQuery) url += `q=${encodeURIComponent(state.searchQuery)}&`;
+                if (state.currentMode && state.currentMode !== 'all') url += `game_mode=${encodeURIComponent(state.currentMode)}&`;
+                if (state.currentCategory && state.currentCategory !== 'all') url += `category=${encodeURIComponent(state.currentCategory)}&`;
+
+                const res = await fetch(url);
                 if (!res.ok) throw new Error('Viktorinalarni yuklab bo\'lmadi');
                 const quizzes = await res.json();
 
-                if (!quizzes || quizzes.length === 0) {
-                    container.innerHTML = `
-                        <div class="p-8 rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 text-center space-y-3">
-                            <p class="text-slate-400 text-base font-semibold">Hozircha ochiq viktorinalar mavjud emas.</p>
-                            <p class="text-xs text-slate-400">Tez orada yangi turnirlar kiritiladi.</p>
-                        </div>
-                    `;
+                // Drop response if a newer query was already dispatched
+                if (state.loadQuizzesRequestId !== currentReqId) {
                     return;
                 }
 
-                container.innerHTML = quizzes.map(q => `
-                    <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/70 hover:border-indigo-500/50 hover:bg-slate-900 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div class="space-y-1.5">
-                            <div class="flex items-center gap-2">
-                                <h3 class="text-lg font-bold text-white">${escapeHtml(q.title)}</h3>
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">v${q.version_number}</span>
+                if (loadingEl) loadingEl.classList.add('hidden');
+
+                if (!quizzes || quizzes.length === 0) {
+                    if (emptyEl) {
+                        const isFiltered = Boolean(state.searchQuery || state.currentMode !== 'all' || state.currentCategory !== 'all');
+                        document.getElementById('arena-empty-title').innerText = isFiltered
+                            ? 'Qidiruv yoki filtrlash bo\'yicha viktorinalar topilmadi'
+                            : 'Hozircha ochiq viktorinalar mavjud emas';
+                        document.getElementById('arena-empty-desc').innerText = isFiltered
+                            ? 'Boshqa so\'z kiritib ko\'ring yoki filtrlarni tozalang.'
+                            : 'Tez orada yangi qiziqarli turnirlar e\'lon qilinadi.';
+                        emptyEl.classList.remove('hidden');
+                    }
+                    return;
+                }
+
+                if (countEl) countEl.innerText = quizzes.length;
+                if (contentEl) contentEl.classList.remove('hidden');
+
+                // Featured Quiz Rendering (only when in default view: no search, all categories, all modes)
+                const isDefaultView = !state.searchQuery && state.currentCategory === 'all' && state.currentMode === 'all';
+                if (isDefaultView && quizzes.length > 0 && featuredSection && featuredCard) {
+                    const f = quizzes[0];
+                    featuredSection.classList.remove('hidden');
+
+                    let fTopPlayerHtml = `
+                        <div class="flex items-center gap-2 p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-400">
+                            <span>🏆</span>
+                            <span>Hali hech kim natija qayd etmagan — birinchi bo'lib peshqadamlikni egallang!</span>
+                        </div>
+                    `;
+                    if (f.top_player) {
+                        fTopPlayerHtml = `
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs text-amber-300">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">👑</span>
+                                    <span class="text-slate-300">Joriy Peshqadam:</span>
+                                    <strong class="text-white font-bold">${escapeHtml(f.top_player.display_name)}</strong>
+                                </div>
+                                <div class="flex items-center gap-3 font-mono">
+                                    <span class="text-emerald-400 font-bold">${f.top_player.correct_count} / ${f.top_player.total_questions} to'g'ri</span>
+                                    <span class="text-amber-400/80">⏱️ ${f.top_player.formatted_time}</span>
+                                </div>
                             </div>
-                            <p class="text-sm text-slate-400 max-w-xl">${escapeHtml(q.description || "O'zbek intellektual viktorina turniri")}</p>
-                            <div class="flex flex-wrap gap-2 pt-1 text-xs text-slate-400">
-                                <span class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">🎯 ${escapeHtml(q.game_mode || 'Standart')}</span>
-                                <span class="inline-flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">📊 v${q.version_number}</span>
+                        `;
+                    }
+
+                    featuredCard.innerHTML = `
+                        <div class="p-6 sm:p-7 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-900 border border-indigo-500/30 shadow-xl space-y-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                                        ${escapeHtml(f.category || 'Umumiy')}
+                                    </span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">
+                                        ${escapeHtml(f.game_mode || 'Standart')}
+                                    </span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300 border border-slate-700 font-mono">
+                                        v${f.version_number}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-3 text-xs text-slate-400 font-medium">
+                                    <span>🎯 ${f.total_rounds} raund</span>
+                                    <span>•</span>
+                                    <span>❓ ${f.total_questions} ta savol</span>
+                                    <span>•</span>
+                                    <span>⏱️ ~${f.estimated_duration_minutes} daqiqa</span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <h3 onclick="openQuizDetail(${f.quiz_id})" class="text-xl sm:text-2xl font-black text-white hover:text-indigo-300 transition-colors cursor-pointer leading-snug">
+                                    ${escapeHtml(f.title)}
+                                </h3>
+                                <p class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                                    ${escapeHtml(f.description || "O'zbek intellektual viktorina turniri")}
+                                </p>
+                            </div>
+
+                            ${fTopPlayerHtml}
+
+                            <div class="flex items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
+                                <button
+                                    data-quiz-id="${f.quiz_id}"
+                                    data-version="${f.version_number}"
+                                    data-title="${escapeHtml(f.title)}"
+                                    onclick="openLeaderboardModal(this.dataset.quizId, this.dataset.version, this.dataset.title)"
+                                    class="px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300 font-semibold text-xs transition-colors border border-slate-700 flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <span>🏆</span>
+                                    <span>Liderlar Jadvali</span>
+                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button
+                                        onclick="openQuizDetail(${f.quiz_id})"
+                                        class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors cursor-pointer"
+                                    >
+                                        Batafsil
+                                    </button>
+                                    <button
+                                        onclick="openQuizDetail(${f.quiz_id})"
+                                        class="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                        <span>O'ynash</span>
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 self-start sm:self-center">
-                            <button
-                                onclick="openLeaderboardModal(${q.quiz_id}, ${q.version_number}, '${escapeHtml(q.title)}')"
-                                class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs transition-all border border-slate-700 flex items-center gap-1.5 cursor-pointer"
-                                title="Liderlar jadvali"
-                            >
+                    `;
+                } else if (featuredSection) {
+                    featuredSection.classList.add('hidden');
+                }
+
+                // Quizzes List / Grid
+                if (gridEl) {
+                    gridEl.innerHTML = quizzes.map(q => {
+                        let topPlayerHtml = `
+                            <div class="flex items-center gap-2 p-2 rounded-lg bg-slate-950/40 border border-slate-800 text-[11px] text-slate-400">
                                 <span>🏆</span>
-                                <span class="hidden sm:inline">Reyting</span>
-                            </button>
-                            <button
-                                onclick="startQuiz(${q.quiz_id})"
-                                class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <span>Boshlash</span>
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
+                                <span>Hali peshqadam yo'q • Birinchi bo'ling</span>
+                            </div>
+                        `;
+                        if (q.top_player) {
+                            topPlayerHtml = `
+                                <div class="flex items-center justify-between p-2 rounded-lg bg-amber-950/20 border border-amber-500/20 text-[11px] text-amber-300">
+                                    <div class="flex items-center gap-1.5 truncate mr-2">
+                                        <span>🥇</span>
+                                        <span class="text-slate-400">#1:</span>
+                                        <strong class="text-white truncate">${escapeHtml(q.top_player.display_name)}</strong>
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0 font-mono text-[10px]">
+                                        <span class="text-emerald-400 font-bold">${q.top_player.correct_count}/${q.top_player.total_questions}</span>
+                                        <span class="text-amber-400/80">• ${q.top_player.formatted_time}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        return `
+                            <div class="p-5 sm:p-6 rounded-2xl border border-slate-800 bg-slate-900/70 hover:border-indigo-500/40 hover:bg-slate-900 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div class="space-y-2 flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                                            ${escapeHtml(q.category || 'Umumiy')}
+                                        </span>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">
+                                            ${escapeHtml(q.game_mode || 'Standart')}
+                                        </span>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300 border border-slate-700 font-mono">
+                                            v${q.version_number}
+                                        </span>
+                                    </div>
+
+                                    <h3 onclick="openQuizDetail(${q.quiz_id})" class="text-base sm:text-lg font-bold text-white hover:text-indigo-300 transition-colors cursor-pointer truncate">
+                                        ${escapeHtml(q.title)}
+                                    </h3>
+
+                                    <p class="text-xs text-slate-400 line-clamp-2 max-w-xl">
+                                        ${escapeHtml(q.description || "O'zbek intellektual viktorina turniri")}
+                                    </p>
+
+                                    <div class="flex items-center gap-3 text-[11px] text-slate-400 font-medium pt-0.5">
+                                        <span>🎯 ${q.total_rounds} raund</span>
+                                        <span>•</span>
+                                        <span>❓ ${q.total_questions} savol</span>
+                                        <span>•</span>
+                                        <span>⏱️ ~${q.estimated_duration_minutes} daqiqa</span>
+                                    </div>
+
+                                    ${topPlayerHtml}
+                                </div>
+
+                                <div class="flex items-center gap-2 self-start sm:self-center shrink-0">
+                                    <button
+                                        onclick="openQuizDetail(${q.quiz_id})"
+                                        class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors cursor-pointer"
+                                    >
+                                        Batafsil
+                                    </button>
+                                    <button
+                                        data-quiz-id="${q.quiz_id}"
+                                        data-version="${q.version_number}"
+                                        data-title="${escapeHtml(q.title)}"
+                                        onclick="openLeaderboardModal(this.dataset.quizId, this.dataset.version, this.dataset.title)"
+                                        class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs transition-colors border border-slate-700 flex items-center gap-1 cursor-pointer"
+                                        title="Liderlar jadvali"
+                                    >
+                                        <span>🏆</span>
+                                        <span class="hidden md:inline">Reyting</span>
+                                    </button>
+                                    <button
+                                        onclick="openQuizDetail(${q.quiz_id})"
+                                        class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-indigo-600/25 flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                        <span>O'ynash</span>
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
             } catch (err) {
-                container.innerHTML = `
-                    <div class="p-6 rounded-2xl border border-rose-900/50 bg-rose-950/20 text-center space-y-3">
-                        <p class="text-sm text-rose-300 font-semibold">Xatolik yuz berdi: ${escapeHtml(err.message)}</p>
-                        <button onclick="loadQuizzes()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white">Qayta urinish</button>
-                    </div>
-                `;
+                if (state.loadQuizzesRequestId !== currentReqId) return;
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (emptyEl) {
+                    document.getElementById('arena-empty-title').innerText = 'Xatolik yuz berdi';
+                    document.getElementById('arena-empty-desc').innerText = err.message;
+                    emptyEl.classList.remove('hidden');
+                }
+            }
+        }
+
+        // =====================================================================
+        // QUIZ DETAIL CONTROLLER
+        // =====================================================================
+        async function openQuizDetail(quizId) {
+            state.detailQuizId = quizId;
+            const modal = document.getElementById('modal-quiz-detail');
+            if (!modal) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/quizzes/${quizId}`);
+                if (!res.ok) {
+                    const err = await res.json();
+                    const errorMsg = typeof err.detail === 'string'
+                        ? err.detail
+                        : (Array.isArray(err.detail) ? err.detail.map(d => d.msg).join(', ') : 'Viktorina tafsilotlarini yuklab bo\'lmadi');
+                    throw new Error(errorMsg);
+                }
+                const data = await res.json();
+
+                // Sync URL to /quiz/{id}
+                if (!window.location.pathname.startsWith('/play/')) {
+                    window.history.replaceState({}, '', `/quiz/${quizId}`);
+                }
+
+                // Populate Header & Meta
+                document.getElementById('detail-title').innerText = data.title;
+                document.getElementById('detail-category-badge').innerText = data.category || 'Umumiy';
+                document.getElementById('detail-mode-badge').innerText = data.game_mode || 'Standart';
+                document.getElementById('detail-version-badge').innerText = 'v' + data.version_number;
+                document.getElementById('detail-description').innerText = data.description || 'Turnir haqida ma\'lumot kiritilmagan.';
+
+                // Metrics
+                document.getElementById('detail-metric-rounds').innerText = `${data.total_rounds} ta raund`;
+                document.getElementById('detail-metric-questions').innerText = `${data.total_questions} ta savol`;
+                document.getElementById('detail-metric-duration').innerText = `~${data.estimated_duration_minutes} daq`;
+
+                // Rounds Breakdown List
+                const roundsListEl = document.getElementById('detail-rounds-list');
+                if (roundsListEl) {
+                    roundsListEl.innerHTML = (data.rounds || []).map(r => `
+                        <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-300 font-mono font-bold flex items-center justify-center text-[11px]">
+                                    ${r.sequence}
+                                </span>
+                                <span class="font-semibold text-white">${escapeHtml(r.name || r.round_type)}</span>
+                            </div>
+                            <span class="text-slate-400 font-mono text-[11px]">${(r.questions || []).length} ta savol</span>
+                        </div>
+                    `).join('');
+                }
+
+                // Leaderboard Preview
+                const topPlayerChip = document.getElementById('detail-top-player-chip');
+                const lbTableContainer = document.getElementById('detail-lb-preview-table-container');
+                const lbEmpty = document.getElementById('detail-lb-preview-empty');
+                const lbRows = document.getElementById('detail-lb-preview-rows');
+
+                if (data.top_player && topPlayerChip) {
+                    topPlayerChip.classList.remove('hidden');
+                    topPlayerChip.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="text-base">👑</span>
+                            <span class="text-slate-300 font-medium">Joriy #1 Peshqadam:</span>
+                            <strong class="text-white font-bold">${escapeHtml(data.top_player.display_name)}</strong>
+                        </div>
+                        <div class="flex items-center gap-2 font-mono">
+                            <span class="text-emerald-400 font-bold">${data.top_player.correct_count}/${data.top_player.total_questions} to'g'ri</span>
+                            <span class="text-amber-400/80">• ${data.top_player.formatted_time}</span>
+                        </div>
+                    `;
+                } else if (topPlayerChip) {
+                    topPlayerChip.classList.add('hidden');
+                }
+
+                if (data.leaderboard_preview && data.leaderboard_preview.length > 0) {
+                    if (lbTableContainer) lbTableContainer.classList.remove('hidden');
+                    if (lbEmpty) lbEmpty.classList.add('hidden');
+
+                    if (lbRows) {
+                        lbRows.innerHTML = data.leaderboard_preview.map(item => {
+                            let rankBadge = `<span class="font-mono text-slate-400 font-bold">${item.rank}</span>`;
+                            if (item.rank === 1) rankBadge = `<span>🥇</span>`;
+                            else if (item.rank === 2) rankBadge = `<span>🥈</span>`;
+                            else if (item.rank === 3) rankBadge = `<span>🥉</span>`;
+
+                            const isMe = state.currentUser && (state.currentUser.id === item.user_id);
+                            return `
+                                <tr class="${isMe ? 'bg-indigo-950/40 text-indigo-200' : 'hover:bg-slate-950/40 text-slate-300'}">
+                                    <td class="py-2 px-3 text-center font-bold">${rankBadge}</td>
+                                    <td class="py-2 px-3 font-semibold text-white flex items-center gap-2">
+                                        <span>${escapeHtml(item.display_name)}</span>
+                                        ${isMe ? `<span class="text-[9px] px-1 py-0.5 rounded bg-indigo-500/30 text-indigo-300 font-bold">Siz</span>` : ''}
+                                    </td>
+                                    <td class="py-2 px-3 text-center font-mono font-bold text-emerald-400">
+                                        ${item.correct_count} <span class="text-slate-500 text-[10px] font-normal">/ ${item.total_questions}</span>
+                                    </td>
+                                    <td class="py-2 px-3 text-right font-mono font-semibold text-indigo-300">
+                                        ${item.formatted_time}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                } else {
+                    if (lbTableContainer) lbTableContainer.classList.add('hidden');
+                    if (lbEmpty) lbEmpty.classList.remove('hidden');
+                }
+
+                // Button Actions
+                const btnFullLb = document.getElementById('detail-btn-view-full-leaderboard');
+                if (btnFullLb) {
+                    btnFullLb.onclick = () => {
+                        closeQuizDetailModal();
+                        openLeaderboardModal(data.quiz_id, data.version_number, data.title);
+                    };
+                }
+
+                const btnPlay = document.getElementById('detail-btn-play-now');
+                if (btnPlay) {
+                    btnPlay.onclick = () => {
+                        closeQuizDetailModal();
+                        startQuiz(data.quiz_id);
+                    };
+                }
+
+                modal.classList.remove('hidden');
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function closeQuizDetailModal() {
+            const modal = document.getElementById('modal-quiz-detail');
+            if (modal) modal.classList.add('hidden');
+            if (window.location.pathname.startsWith('/quiz/')) {
+                window.history.replaceState({}, '', '/');
             }
         }
 
@@ -1452,17 +2096,28 @@
         window.addEventListener('DOMContentLoaded', async () => {
             await checkAuth();
             initGoogleGis();
-
-            // Check for direct play links: /play/{id} or ?quiz={id}
-            const urlParams = new URLSearchParams(window.location.search);
-            const directQuizId = urlParams.get('quiz');
-            const pathMatch = window.location.pathname.match(/^\/play\/(\d+)$/);
-            const targetQuizId = directQuizId || (pathMatch ? pathMatch[1] : null);
-
+            await loadCategories();
             await loadQuizzes();
 
-            if (targetQuizId) {
-                await startQuiz(parseInt(targetQuizId, 10));
+            // Check for direct links: /quiz/{id}, /play/{id}, or ?quiz={id}
+            const urlParams = new URLSearchParams(window.location.search);
+            const directQuizId = urlParams.get('quiz');
+            const shouldAutoPlay = urlParams.get('play') === '1';
+
+            const quizMatch = window.location.pathname.match(/^\/quiz\/(\d+)$/);
+            const playMatch = window.location.pathname.match(/^\/play\/(\d+)$/);
+
+            if (quizMatch) {
+                await openQuizDetail(parseInt(quizMatch[1], 10));
+            } else if (playMatch) {
+                await startQuiz(parseInt(playMatch[1], 10));
+            } else if (directQuizId) {
+                const qid = parseInt(directQuizId, 10);
+                if (shouldAutoPlay) {
+                    await startQuiz(qid);
+                } else {
+                    await openQuizDetail(qid);
+                }
             }
         });
     </script>

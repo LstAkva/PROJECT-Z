@@ -183,14 +183,129 @@ def compile_published_manifest(version: QuizVersion, db: Session) -> dict:
         "description": version.quiz.description if version.quiz else None,
         "version_number": version.version_number,
         "game_mode": version.game_mode or "modern_multiround",
+        "category": (version.published_manifest or {}).get("category") or "Umumiy",
         "visibility": (version.published_manifest or {}).get("visibility", "public") if version.published_manifest else "public",
         "published_at": datetime.now(timezone.utc).isoformat(),
         "rounds": rounds_data,
     }
 
 
+# =========================================================
+# LEADERBOARD COMPUTATION HELPER
+def normalize_uzbek_text(text: Optional[str]) -> str:
+    """Normalizes Uzbek apostrophe variants (ʻ, ‘, ’, `) to standard ASCII single quote for search/matching."""
+    if not text:
+        return ""
+    return (
+        text.lower()
+        .replace("‘", "'")
+        .replace("’", "'")
+        .replace("ʻ", "'")
+        .replace("`", "'")
+    )
+
+
+def fetch_version_leaderboard(version: QuizVersion, db: Session) -> dict:
+    """
+    Computes per-quiz-version leaderboard:
+    - Strictly scoped to this specific published version (never mixes across versions).
+    - Only registered players (user_id is not None).
+    - Only completed attempts (status == 'completed').
+    - Excludes preview attempts.
+    - Exactly ONE entry per player: their BEST completed attempt for this version.
+    - Ranking criteria:
+        1. Higher number of correct answers first (total_correct DESC).
+        2. Lower active gameplay time first (active_time_seconds ASC).
+        3. Earlier completion timestamp tie-breaker (completed_at ASC).
+    """
+    attempts = (
+        db.query(SoloAttempt)
+        .options(joinedload(SoloAttempt.user))
+        .filter(
+            SoloAttempt.quiz_version_id == version.id,
+            SoloAttempt.status == "completed",
+            SoloAttempt.user_id.isnot(None),
+            SoloAttempt.timer_mode != "preview",
+        )
+        .all()
+    )
+
+    # Group by user_id to pick each user's best attempt
+    user_best: Dict[int, SoloAttempt] = {}
+    for att in attempts:
+        uid = att.user_id
+        if uid not in user_best:
+            user_best[uid] = att
+        else:
+            cur = user_best[uid]
+            # Compare: higher total_correct first, lower active_time_seconds second
+            if att.total_correct > cur.total_correct:
+                user_best[uid] = att
+            elif att.total_correct == cur.total_correct:
+                if att.active_time_seconds < cur.active_time_seconds:
+                    user_best[uid] = att
+                elif att.active_time_seconds == cur.active_time_seconds:
+                    t_att = att.completed_at.timestamp() if att.completed_at else 0
+                    t_cur = cur.completed_at.timestamp() if cur.completed_at else 0
+                    if t_att < t_cur:
+                        user_best[uid] = att
+
+    # Sort best attempts across all users
+    sorted_attempts = sorted(
+        user_best.values(),
+        key=lambda a: (
+            -a.total_correct,
+            a.active_time_seconds,
+            a.completed_at.timestamp() if a.completed_at else 0,
+        ),
+    )
+
+    # Compute total questions for this version
+    manifest = version.published_manifest or {}
+    manifest_rounds = manifest.get("rounds", [])
+    if manifest_rounds:
+        total_questions = sum(len(r.get("questions", [])) for r in manifest_rounds)
+    else:
+        total_questions = sum(len(r.round_questions) for r in version.rounds)
+
+    leaderboard_rows = []
+    for rank, att in enumerate(sorted_attempts, start=1):
+        name = att.user.display_name if att.user else f"Foydalanuvchi #{att.user_id}"
+        mins = att.active_time_seconds // 60
+        secs = att.active_time_seconds % 60
+        leaderboard_rows.append({
+            "rank": rank,
+            "user_id": att.user_id,
+            "display_name": name,
+            "correct_count": att.total_correct,
+            "total_questions": total_questions,
+            "active_time_seconds": att.active_time_seconds,
+            "formatted_time": f"{mins:02d}:{secs:02d}",
+            "completed_at": att.completed_at.isoformat() if att.completed_at else None,
+        })
+
+    return {
+        "quiz_id": version.quiz_id,
+        "quiz_title": version.quiz.title if version.quiz else None,
+        "version_number": version.version_number,
+        "version_id": version.id,
+        "total_questions": total_questions,
+        "total_participants": len(leaderboard_rows),
+        "leaderboard": leaderboard_rows,
+    }
+
+
+# =========================================================
+# ARENA / DISCOVERY ENDPOINTS
+# =========================================================
+
 @router.get("", status_code=status.HTTP_200_OK)
-def list_quizzes(db: Session = Depends(get_db)):
+def list_quizzes(
+    q: Optional[str] = None,
+    game_mode: Optional[str] = None,
+    category: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
     quizzes = db.query(Quiz).all()
     results = []
     for quiz in quizzes:
@@ -200,21 +315,124 @@ def list_quizzes(db: Session = Depends(get_db)):
             .order_by(QuizVersion.version_number.desc())
             .first()
         )
-        if latest_published:
-            manifest = latest_published.published_manifest or {}
-            # Unlisted quizzes are hidden from discovery (Arena list), accessible only by direct link
-            if manifest.get("visibility") == "unlisted":
+        if not latest_published:
+            continue
+
+        manifest = latest_published.published_manifest or {}
+        # Unlisted quizzes are hidden from discovery (Arena list), accessible only by direct link
+        if manifest.get("visibility") == "unlisted":
+            continue
+
+        item_category = manifest.get("category") or "Umumiy"
+        item_game_mode = latest_published.game_mode or "modern_multiround"
+
+        # Search filter
+        if q and q.strip():
+            term = normalize_uzbek_text(q.strip())
+            title_norm = normalize_uzbek_text(quiz.title)
+            desc_norm = normalize_uzbek_text(quiz.description)
+            if not (term in title_norm or term in desc_norm):
                 continue
 
-            results.append({
-                "quiz_id": quiz.id,
-                "title": quiz.title,
-                "description": quiz.description,
-                "game_mode": latest_published.game_mode,
-                "version_number": latest_published.version_number,
-                "visibility": manifest.get("visibility", "public"),
-            })
+        # Game mode filter
+        if game_mode and game_mode.strip().lower() not in ("all", "barchasi", ""):
+            if item_game_mode.lower() != game_mode.strip().lower():
+                continue
+
+        # Category filter
+        if category and category.strip().lower() not in ("all", "barchasi", ""):
+            if item_category.lower() != category.strip().lower():
+                continue
+
+        # Compute rounds summary and question counts
+        manifest_rounds = manifest.get("rounds", [])
+        if manifest_rounds:
+            total_questions = sum(len(r.get("questions", [])) for r in manifest_rounds)
+            total_rounds = len(manifest_rounds)
+            rounds_summary = [
+                {
+                    "sequence": r.get("sequence"),
+                    "round_type": r.get("round_type"),
+                    "name": CANONICAL_ROUND_TYPES.get(r.get("round_type"), {}).get("name", r.get("round_type")),
+                    "questions_count": len(r.get("questions", []))
+                }
+                for r in manifest_rounds
+            ]
+        else:
+            total_questions = sum(len(r.round_questions) for r in latest_published.rounds)
+            total_rounds = len(latest_published.rounds)
+            rounds_summary = [
+                {
+                    "sequence": r.sequence,
+                    "round_type": r.round_type,
+                    "name": CANONICAL_ROUND_TYPES.get(r.round_type, {}).get("name", r.round_type),
+                    "questions_count": len(r.round_questions)
+                }
+                for r in latest_published.rounds
+            ]
+
+        # Top player from existing version-scoped leaderboard
+        lb_data = fetch_version_leaderboard(latest_published, db)
+        top_player = lb_data["leaderboard"][0] if lb_data["leaderboard"] else None
+
+        results.append({
+            "quiz_id": quiz.id,
+            "version_id": latest_published.id,
+            "title": quiz.title,
+            "description": quiz.description,
+            "game_mode": item_game_mode,
+            "category": item_category,
+            "version_number": latest_published.version_number,
+            "visibility": manifest.get("visibility", "public"),
+            "published_at": latest_published.published_at.isoformat() if latest_published.published_at else None,
+            "total_rounds": total_rounds,
+            "total_questions": total_questions,
+            "estimated_duration_minutes": max(1, round(total_questions * 1.25)),
+            "rounds_summary": rounds_summary,
+            "top_player": top_player,
+        })
+
+    # Sort recent quizzes first
+    results.sort(
+        key=lambda x: (x.get("published_at") or "", x["quiz_id"]),
+        reverse=True
+    )
     return results
+
+
+@router.get("/categories", status_code=status.HTTP_200_OK)
+def get_categories(db: Session = Depends(get_db)):
+    """Returns unique categories from published public quizzes with standard fallback categories."""
+    base_categories = [
+        "Umumiy",
+        "Zakovat",
+        "Tarix",
+        "Fan va Texnologiya",
+        "Adabiyot va San'at",
+        "Mantiq va Qiziqarli",
+    ]
+    seen = set(base_categories)
+    custom_categories = []
+
+    quizzes = db.query(Quiz).all()
+    for quiz in quizzes:
+        latest_published = (
+            db.query(QuizVersion)
+            .filter(QuizVersion.quiz_id == quiz.id, QuizVersion.status == "published")
+            .order_by(QuizVersion.version_number.desc())
+            .first()
+        )
+        if not latest_published:
+            continue
+        manifest = latest_published.published_manifest or {}
+        if manifest.get("visibility") == "unlisted":
+            continue
+        cat = manifest.get("category")
+        if cat and cat not in seen:
+            seen.add(cat)
+            custom_categories.append(cat)
+
+    return {"categories": base_categories + sorted(custom_categories)}
 
 
 @router.get("/canonical-rounds", status_code=status.HTTP_200_OK)
@@ -414,7 +632,7 @@ def publish_quiz_version(quiz_id: int, version_number: int, db: Session = Depend
 
 @router.get("/{quiz_id}", status_code=status.HTTP_200_OK)
 def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):
-    """Returns the ordered structure of a quiz for display and play, without accepted answers."""
+    """Returns the ordered structure of a quiz for display and play, with leaderboard preview."""
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
     if not quiz:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
@@ -428,9 +646,11 @@ def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):
     if not latest_version:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No published version found for this quiz")
 
+    manifest = latest_version.published_manifest or {}
+
     # If published_manifest is present, read directly from immutable snapshot
-    if latest_version.published_manifest and "rounds" in latest_version.published_manifest:
-        manifest_rounds = latest_version.published_manifest["rounds"]
+    if manifest and "rounds" in manifest:
+        manifest_rounds = manifest["rounds"]
         rounds_data = []
         for mr in manifest_rounds:
             clean_questions = []
@@ -450,183 +670,113 @@ def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):
                 "id": mr.get("round_id"),
                 "sequence": mr.get("sequence"),
                 "round_type": mr.get("round_type"),
+                "name": CANONICAL_ROUND_TYPES.get(mr.get("round_type"), {}).get("name", mr.get("round_type")),
                 "config": sanitize_round_config(mr.get("config", {})),
                 "questions": clean_questions,
             })
-
-        return {
-            "quiz_id": quiz.id,
-            "title": quiz.title,
-            "description": quiz.description,
-            "game_mode": latest_version.game_mode,
-            "version_number": latest_version.version_number,
-            "published_at": latest_version.published_at.isoformat() if latest_version.published_at else None,
-            "rounds": rounds_data,
-        }
-
-    # Live relational fallback (for legacy versions before manifest was introduced)
-    rounds = (
-        db.query(Round)
-        .filter(Round.quiz_version_id == latest_version.id)
-        .order_by(Round.sequence.asc())
-        .all()
-    )
-
-    rounds_data = []
-    for r in rounds:
-        rqs = (
-            db.query(RoundQuestion)
-            .filter(RoundQuestion.round_id == r.id)
-            .order_by(RoundQuestion.sequence.asc())
+    else:
+        # Live relational fallback (for legacy versions before manifest was introduced)
+        rounds = (
+            db.query(Round)
+            .filter(Round.quiz_version_id == latest_version.id)
+            .order_by(Round.sequence.asc())
             .all()
         )
-        if rqs:
-            q_list = []
-            for rq in rqs:
-                q = rq.question
-                pts = (
-                    rq.points_override
-                    if rq.points_override is not None
-                    else (q.default_points if q.default_points is not None else q.points)
-                )
-                q_list.append({
-                    "id": q.id,
-                    "round_question_id": rq.id,
-                    "sequence": rq.sequence,
-                    "text": q.text,
-                    "media_provider": q.media_provider,
-                    "media_url": q.media_url,
-                    "question_type": q.question_type or "text",
-                    "options": q.options,
-                    "points": pts if pts is not None else 1,
-                })
-        else:
-            sorted_questions = sorted(r.questions, key=lambda q: q.sequence or 0)
-            q_list = [
-                {
-                    "id": q.id,
-                    "round_question_id": None,
-                    "sequence": q.sequence,
-                    "text": q.text,
-                    "media_provider": q.media_provider,
-                    "media_url": q.media_url,
-                    "question_type": q.question_type or "text",
-                    "options": q.options,
-                    "points": q.points,
-                }
-                for q in sorted_questions
-            ]
+        rounds_data = []
+        for r in rounds:
+            rqs = (
+                db.query(RoundQuestion)
+                .filter(RoundQuestion.round_id == r.id)
+                .order_by(RoundQuestion.sequence.asc())
+                .all()
+            )
+            if rqs:
+                q_list = []
+                for rq in rqs:
+                    q = rq.question
+                    pts = (
+                        rq.points_override
+                        if rq.points_override is not None
+                        else (q.default_points if q.default_points is not None else q.points)
+                    )
+                    q_list.append({
+                        "id": q.id,
+                        "round_question_id": rq.id,
+                        "sequence": rq.sequence,
+                        "text": q.text,
+                        "media_provider": q.media_provider,
+                        "media_url": q.media_url,
+                        "question_type": q.question_type or "text",
+                        "options": q.options,
+                        "points": pts if pts is not None else 1,
+                    })
+            else:
+                sorted_questions = sorted(r.questions, key=lambda q: q.sequence or 0)
+                q_list = [
+                    {
+                        "id": q.id,
+                        "round_question_id": None,
+                        "sequence": q.sequence,
+                        "text": q.text,
+                        "media_provider": q.media_provider,
+                        "media_url": q.media_url,
+                        "question_type": q.question_type or "text",
+                        "options": q.options,
+                        "points": q.points,
+                    }
+                    for q in sorted_questions
+                ]
 
-        rounds_data.append({
-            "id": r.id,
-            "sequence": r.sequence,
-            "round_type": r.round_type,
-            "config": sanitize_round_config(r.config or {}),
-            "questions": q_list,
-        })
+            rounds_data.append({
+                "id": r.id,
+                "sequence": r.sequence,
+                "round_type": r.round_type,
+                "name": CANONICAL_ROUND_TYPES.get(r.round_type, {}).get("name", r.round_type),
+                "config": sanitize_round_config(r.config or {}),
+                "questions": q_list,
+            })
+
+    # Fetch version-scoped leaderboard for preview & #1 player
+    lb_data = fetch_version_leaderboard(latest_version, db)
+    top_player = lb_data["leaderboard"][0] if lb_data["leaderboard"] else None
+    leaderboard_preview = lb_data["leaderboard"][:5]
+
+    total_questions = sum(len(r.get("questions", [])) for r in rounds_data)
+    est_duration = max(1, round(total_questions * 1.25))
+
+    rounds_summary = [
+        {
+            "sequence": r.get("sequence"),
+            "round_type": r.get("round_type"),
+            "name": r.get("name"),
+            "questions_count": len(r.get("questions", [])),
+        }
+        for r in rounds_data
+    ]
 
     return {
         "quiz_id": quiz.id,
+        "version_id": latest_version.id,
         "title": quiz.title,
         "description": quiz.description,
         "game_mode": latest_version.game_mode,
+        "category": manifest.get("category") or "Umumiy",
+        "visibility": manifest.get("visibility", "public"),
         "version_number": latest_version.version_number,
         "published_at": latest_version.published_at.isoformat() if latest_version.published_at else None,
+        "total_rounds": len(rounds_data),
+        "total_questions": total_questions,
+        "estimated_duration_minutes": est_duration,
+        "top_player": top_player,
+        "leaderboard_preview": leaderboard_preview,
         "rounds": rounds_data,
+        "rounds_summary": rounds_summary,
     }
 
 
 # =========================================================
 # LEADERBOARD ENDPOINTS
 # =========================================================
-
-def fetch_version_leaderboard(version: QuizVersion, db: Session) -> dict:
-    """
-    Computes per-quiz-version leaderboard:
-    - Strictly scoped to this specific published version (never mixes across versions).
-    - Only registered players (user_id is not None).
-    - Only completed attempts (status == 'completed').
-    - Excludes preview attempts.
-    - Exactly ONE entry per player: their BEST completed attempt for this version.
-    - Ranking criteria:
-        1. Higher number of correct answers first (total_correct DESC).
-        2. Lower active gameplay time first (active_time_seconds ASC).
-        3. Earlier completion timestamp tie-breaker (completed_at ASC).
-    """
-    attempts = (
-        db.query(SoloAttempt)
-        .filter(
-            SoloAttempt.quiz_version_id == version.id,
-            SoloAttempt.status == "completed",
-            SoloAttempt.user_id.isnot(None),
-            SoloAttempt.timer_mode != "preview",
-        )
-        .all()
-    )
-
-    # Group by user_id to pick each user's best attempt
-    user_best: Dict[int, SoloAttempt] = {}
-    for att in attempts:
-        uid = att.user_id
-        if uid not in user_best:
-            user_best[uid] = att
-        else:
-            cur = user_best[uid]
-            # Compare: higher total_correct first, lower active_time_seconds second
-            if att.total_correct > cur.total_correct:
-                user_best[uid] = att
-            elif att.total_correct == cur.total_correct:
-                if att.active_time_seconds < cur.active_time_seconds:
-                    user_best[uid] = att
-                elif att.active_time_seconds == cur.active_time_seconds:
-                    t_att = att.completed_at.timestamp() if att.completed_at else 0
-                    t_cur = cur.completed_at.timestamp() if cur.completed_at else 0
-                    if t_att < t_cur:
-                        user_best[uid] = att
-
-    # Sort best attempts across all users
-    sorted_attempts = sorted(
-        user_best.values(),
-        key=lambda a: (
-            -a.total_correct,
-            a.active_time_seconds,
-            a.completed_at.timestamp() if a.completed_at else 0,
-        ),
-    )
-
-    # Compute total questions for this version
-    manifest = version.published_manifest or {}
-    manifest_rounds = manifest.get("rounds", [])
-    if manifest_rounds:
-        total_questions = sum(len(r.get("questions", [])) for r in manifest_rounds)
-    else:
-        total_questions = sum(len(r.round_questions) for r in version.rounds)
-
-    leaderboard_rows = []
-    for rank, att in enumerate(sorted_attempts, start=1):
-        name = att.user.display_name if att.user else f"Foydalanuvchi #{att.user_id}"
-        mins = att.active_time_seconds // 60
-        secs = att.active_time_seconds % 60
-        leaderboard_rows.append({
-            "rank": rank,
-            "user_id": att.user_id,
-            "display_name": name,
-            "correct_count": att.total_correct,
-            "total_questions": total_questions,
-            "active_time_seconds": att.active_time_seconds,
-            "formatted_time": f"{mins:02d}:{secs:02d}",
-            "completed_at": att.completed_at.isoformat() if att.completed_at else None,
-        })
-
-    return {
-        "quiz_id": version.quiz_id,
-        "quiz_title": version.quiz.title if version.quiz else None,
-        "version_number": version.version_number,
-        "version_id": version.id,
-        "total_questions": total_questions,
-        "total_participants": len(leaderboard_rows),
-        "leaderboard": leaderboard_rows,
-    }
 
 
 @router.get("/{quiz_id}/leaderboard", status_code=status.HTTP_200_OK)

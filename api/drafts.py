@@ -1332,6 +1332,7 @@ def start_preview_simulation(draft_id: int, db: Session = Depends(get_db)):
 
 class PublishDraftRequest(BaseModel):
     visibility: Optional[str] = "public"
+    category: Optional[str] = None
 
 
 @router.post("/{draft_id}/publish", status_code=status.HTTP_200_OK)
@@ -1342,6 +1343,7 @@ def publish_draft(draft_id: int, payload: Optional[PublishDraftRequest] = None, 
     - Runs complete server-side publish-readiness validation; invalid drafts are rejected.
     - Atomically compiles self-contained published_manifest and sets status='published'.
     - Supports visibility: 'public' (default, discoverable) or 'unlisted' (playable by direct link only).
+    - Supports category: sets manifest category for Arena filtering.
     """
     version = db.query(QuizVersion).filter(QuizVersion.id == draft_id).first()
     if not version:
@@ -1380,6 +1382,12 @@ def publish_draft(draft_id: int, payload: Optional[PublishDraftRequest] = None, 
     if vis not in ("public", "unlisted"):
         vis = "public"
     manifest["visibility"] = vis
+
+    cat = (payload.category.strip() if payload and payload.category and payload.category.strip() else None)
+    if not cat:
+        cat = manifest.get("category") or "Umumiy"
+    manifest["category"] = cat
+
     now_utc = datetime.now(timezone.utc)
 
     version.published_manifest = manifest
@@ -1398,6 +1406,7 @@ def publish_draft(draft_id: int, payload: Optional[PublishDraftRequest] = None, 
         "game_mode": version.game_mode,
         "status": version.status,
         "visibility": manifest.get("visibility", "public"),
+        "category": manifest.get("category", "Umumiy"),
         "published_at": version.published_at.isoformat() if version.published_at else None,
         "total_rounds": len(manifest.get("rounds", [])),
         "total_questions": sum(len(r.get("questions", [])) for r in manifest.get("rounds", [])),
