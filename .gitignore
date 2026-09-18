@@ -1,3 +1,5 @@
 venv/
 __pycache__/
 .env
+scratch/chrome_profile/
+scratch/dom.html

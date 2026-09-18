@@ -33,7 +33,14 @@ def get_manifest_or_db_rounds(version: QuizVersion, db: Session) -> List[Dict[st
     if version.published_manifest and "rounds" in version.published_manifest:
         return version.published_manifest["rounds"]
 
-    # Fallback to DB
+    # Published quizzes MUST use published_manifest; never fall back to mutable DB
+    if version.status == "published":
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Nashr qilingan kviz manifesti mavjud emas yoki buzilgan",
+        )
+
+    # Fallback to DB only for draft versions (e.g. during creator preview simulation)
     rounds = (
         db.query(Round)
         .filter(Round.quiz_version_id == version.id)
@@ -554,6 +561,7 @@ def get_final_results(session_token: str, db: Session = Depends(get_db)):
 
     return {
         "status": "completed",
+        "is_preview": (attempt.timer_mode == "preview"),
         "game_mode": getattr(version, "game_mode", "modern_multiround"),
         "total_score": attempt.total_score,
         "total_correct": total_correct,

@@ -22,12 +22,24 @@ def list_questions(
     """
     Paginated Question Bank explorer.
     Never loads all records at once; uses database-level pagination.
+    Only returns Question Bank items (ready, needs_review).
+    Strictly excludes in-progress draft/builder questions.
     """
-    query = db.query(Question)
+    # Question Bank isolation: Only ready / needs_review items, exclude draft/builder questions
+    query = db.query(Question).filter(Question.status.in_(["ready", "needs_review"]))
 
     # 1. Status filter
     if status_filter and status_filter.lower() != "all":
-        query = query.filter(Question.status == status_filter.lower())
+        s_val = status_filter.lower()
+        if s_val not in ("ready", "needs_review"):
+            return {
+                "items": [],
+                "total": 0,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": 1,
+            }
+        query = query.filter(Question.status == s_val)
 
     # 2. Category filter
     if category and category.lower() != "all":
@@ -115,19 +127,22 @@ def get_filter_options(db: Session = Depends(get_db)):
     """
     Returns available distinct statuses, categories, round types, and sources
     to dynamically populate filter dropdowns in the Question Bank UI.
+    Excludes in-progress draft/builder content.
     """
+    base_q = db.query(Question).filter(Question.status.in_(["ready", "needs_review"]))
+
     # Distinct categories
     categories = [
-        c[0] for c in db.query(Question.category)
+        c[0] for c in base_q.with_entities(Question.category)
         .filter(Question.category.isnot(None))
         .distinct()
         .all()
         if c[0]
     ]
 
-    # Distinct statuses
+    # Distinct statuses (only Question Bank statuses)
     statuses = [
-        s[0] for s in db.query(Question.status)
+        s[0] for s in base_q.with_entities(Question.status)
         .distinct()
         .all()
         if s[0]
@@ -135,7 +150,12 @@ def get_filter_options(db: Session = Depends(get_db)):
 
     # Extract distinct sources from source_meta
     sources_set = set()
-    sample_sm = db.query(Question.source_meta).filter(Question.source_meta.isnot(None)).limit(1500).all()
+    sample_sm = (
+        base_q.with_entities(Question.source_meta)
+        .filter(Question.source_meta.isnot(None))
+        .limit(1500)
+        .all()
+    )
     for row in sample_sm:
         sm = row[0] or {}
         src = sm.get("source_name") or sm.get("channel_name") or sm.get("source_file")
@@ -157,14 +177,16 @@ def get_question_detail(question_id: int, db: Session = Depends(get_db)):
     """
     Full read-only detail of a Question Bank item, including all accepted answers,
     media, explanation, and provenance.
+    Strictly isolated from draft/builder questions.
     """
     q = (
         db.query(Question)
         .options(joinedload(Question.accepted_answers))
         .filter(Question.id == question_id)
+        .filter(Question.status.in_(["ready", "needs_review"]))
         .first()
     )
-    if not q:
+    if not q or (q.source_meta or {}).get("created_in_builder"):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Savol topilmadi")
 
     sm = q.source_meta or {}

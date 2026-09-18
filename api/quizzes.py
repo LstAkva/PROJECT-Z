@@ -180,6 +180,8 @@ def compile_published_manifest(version: QuizVersion, db: Session) -> dict:
     return {
         "version_id": version.id,
         "quiz_id": version.quiz_id,
+        "title": version.quiz.title if version.quiz else None,
+        "description": version.quiz.description if version.quiz else None,
         "version_number": version.version_number,
         "game_mode": version.game_mode or "modern_multiround",
         "published_at": datetime.now(timezone.utc).isoformat(),

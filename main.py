@@ -4,6 +4,7 @@ from database import test_database_connection
 from api.quizzes import router as quizzes_router
 from api.play import router as play_router
 from api.questions import router as questions_router
+from api.drafts import router as drafts_router
 
 app = FastAPI(title="ZakoWhat API")
 templates = Jinja2Templates(directory="templates")
@@ -11,6 +12,7 @@ templates = Jinja2Templates(directory="templates")
 app.include_router(quizzes_router)
 app.include_router(play_router)
 app.include_router(questions_router)
+app.include_router(drafts_router)
 
 @app.get("/health")
 def health_check():
@@ -27,4 +29,10 @@ def read_root(request: Request):
 @app.get("/bank")
 @app.get("/admin")
 def read_bank(request: Request):
-    return templates.TemplateResponse(request=request, name="bank.html")
+    return templates.TemplateResponse(request=request, name="bank.html")
+
+@app.get("/builder")
+@app.get("/builder/{draft_id}")
+@app.get("/create")
+def read_builder(request: Request, draft_id: int = None):
+    return templates.TemplateResponse(request=request, name="builder.html")

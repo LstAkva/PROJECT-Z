@@ -33,6 +33,8 @@ def secure_quiz(db_session):
     db_session.flush()
     db_session.add(AcceptedAnswer(question_id=q2.id, answer_text="SECRET_ANSWER_2", is_primary=True))
 
+    from api.quizzes import compile_published_manifest
+    version.published_manifest = compile_published_manifest(version, db_session)
     db_session.commit()
     return quiz
 

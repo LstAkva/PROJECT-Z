@@ -1,0 +1,2019 @@
+<!DOCTYPE html>
+<html lang="uz" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZakoWhat — Kviz Konstruktori (Quiz Builder)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Cinzel"', 'serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f7ff',
+                            100: '#ebf0fe',
+                            500: '#4f46e5',
+                            600: '#4338ca',
+                            700: '#3730a3',
+                            900: '#1e1b4b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-gradient {
+            background: radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.12) 0%, rgba(15, 23, 42, 0) 65%);
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="min-h-full flex flex-col font-sans selection:bg-indigo-500 selection:text-white custom-gradient pb-24">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <a href="/" class="flex items-center gap-3 cursor-pointer group">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-display font-bold text-white shadow-lg shadow-indigo-600/30 group-hover:bg-indigo-500 transition-colors">
+                        Z
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-display tracking-widest text-lg font-bold text-white leading-none">ZAKOWHAT</span>
+                        <span class="text-[10px] tracking-wider uppercase text-slate-400 font-semibold mt-0.5">Konstruktor</span>
+                    </div>
+                </a>
+
+                <nav class="hidden md:flex items-center gap-1 border-l border-slate-800 pl-6">
+                    <a href="/" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors">
+                        Viktorinalar / Arena
+                    </a>
+                    <a href="/builder" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-300 bg-indigo-950/60 border border-indigo-500/30">
+                        Kviz Konstruktori
+                    </a>
+                    <a href="/bank" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors">
+                        Savollar Banki
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Draft Status & Action Buttons -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div id="save-status-pill" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-medium text-slate-400">
+                    <span id="save-status-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+                    <span id="save-status-text">Yuklanmoqda...</span>
+                </div>
+
+                <button onclick="openPreviewModal()" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-sky-300 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span class="hidden sm:inline">Ko'rish</span>
+                </button>
+
+                <button id="btn-publish-header" onclick="startPublishFlow()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <span>Nashr qilish</span>
+                </button>
+
+                <button onclick="openDraftsListModal()" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    </svg>
+                    <span class="hidden sm:inline">Qoralamalar</span>
+                </button>
+
+                <button onclick="createNewDraftPrompt()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span class="hidden sm:inline">Yangi Kviz</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        <!-- Published Banner (Shown when quiz is published) -->
+        <div id="published-banner" class="hidden p-4 rounded-2xl bg-gradient-to-r from-emerald-950/70 via-slate-900 to-indigo-950/70 border border-emerald-500/40 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-lg">
+                    ✓
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                        Ushbu kviz nashr qilingan (Published)
+                        <span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Muzlatilgan</span>
+                    </h4>
+                    <p class="text-xs text-slate-300 mt-0.5">Kviz savollari va tuzilishi o'zgarmas holatda saqlangan. Barcha o'yinchilar arenada ishtirok etishlari mumkin.</p>
+                </div>
+            </div>
+            <a href="/" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-1.5 self-start sm:self-center">
+                <span>Arenada O'ynash</span>
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+            </a>
+        </div>
+
+        <!-- Draft Metadata Card -->
+        <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+                <div class="flex-1">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                        Kviz Nomi
+                    </label>
+                    <input 
+                        type="text" 
+                        id="draft-title-input" 
+                        placeholder="Masalan: Bahorgi Intellektual Kubok #1" 
+                        class="w-full text-lg sm:text-xl font-bold bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3.5 py-2 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-sans"
+                        onchange="markDirty(); autoSaveDraftMeta();"
+                    >
+                </div>
+
+                <div class="w-full sm:w-56 shrink-0">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                        O'yin Formati
+                    </label>
+                    <select 
+                        id="draft-mode-select" 
+                        class="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500"
+                        onchange="markDirty(); autoSaveDraftMeta();"
+                    >
+                        <option value="modern_multiround">Zamonaviy Multi-Raund (6 tur)</option>
+                        <option value="classic_zakovat">Klassik Zakovat (12+12)</option>
+                        <option value="svoyak">Svoяk / Mavzuli</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    Tavsif (Ixtiyoriy)
+                </label>
+                <input 
+                    type="text" 
+                    id="draft-desc-input" 
+                    placeholder="Kviz mavzusi, qoidalari yoki sana haqida qisqacha ma'lumot..." 
+                    class="w-full text-xs bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3.5 py-2 text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    onchange="markDirty(); autoSaveDraftMeta();"
+                >
+            </div>
+
+            <!-- Draft Stats & Validation Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs text-slate-400">
+                <div class="flex items-center gap-4">
+                    <span>Raundlar: <strong id="stat-rounds-count" class="font-mono text-white">0</strong></span>
+                    <span>Jami savollar: <strong id="stat-questions-count" class="font-mono text-white">0</strong></span>
+                    <span class="text-slate-600">•</span>
+                    <span class="font-mono text-[11px] text-slate-500">ID: <span id="stat-version-id">—</span></span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="validateDraft()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-indigo-300 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer">
+                        <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Tekshirish</span>
+                    </button>
+
+                    <button onclick="openPreviewModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-sky-300 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer">
+                        <svg class="w-3.5 h-3.5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <span>Ko'rish</span>
+                    </button>
+
+                    <button id="btn-publish-stats" onclick="startPublishFlow()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5 cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span>Nashr qilish</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rounds Container -->
+        <div id="rounds-container" class="space-y-4">
+            <!-- Rounds rendered dynamically here -->
+        </div>
+
+        <!-- Add Round Action Card -->
+        <div id="add-round-card" class="p-4 rounded-2xl border-2 border-dashed border-slate-800/90 hover:border-indigo-500/50 bg-slate-900/30 transition-all text-center">
+            <button onclick="openAddRoundModal()" class="w-full py-4 flex flex-col items-center justify-center gap-2 group cursor-pointer">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600/20 group-hover:bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:text-indigo-300 transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="font-bold text-sm text-slate-200 group-hover:text-white block">Yangi Raund Qo'shish</span>
+                    <span class="text-xs text-slate-500">Gulmisiz, Zanjir, Mantiqqasqon, Aldama meni, Rasmiyatchilik, Vabank</span>
+                </div>
+            </button>
+        </div>
+
+    </main>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: ADD ROUND -->
+    <!-- ========================================================= -->
+    <div id="modal-add-round" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-base text-white">Raund Turini Tanlang</h3>
+                <button onclick="closeAddRoundModal()" class="text-slate-400 hover:text-white text-lg font-mono">✕</button>
+            </div>
+
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Kviz tarkibiga qo'shmoqchi bo'lgan rasmiy raund turini tanlang. Savollar tanlangan raund qoidalariga moslashtiriladi.
+            </p>
+
+            <div id="round-types-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
+                <!-- Dynamically loaded from /api/quizzes/canonical-rounds -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: QUESTION AUTHORING (DYNAMIC) -->
+    <!-- ========================================================= -->
+    <div id="modal-question-editor" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60 shrink-0">
+                <div>
+                    <h3 id="editor-modal-title" class="font-bold text-base text-white">Savol Yaratish</h3>
+                    <p id="editor-modal-subtitle" class="text-xs text-indigo-400 mt-0.5">Raund turi: ...</p>
+                </div>
+                <button onclick="closeQuestionEditorModal()" class="text-slate-400 hover:text-white font-mono text-lg p-1">✕</button>
+            </div>
+
+            <form id="question-editor-form" onsubmit="handleSaveQuestion(event)" class="p-6 space-y-5 overflow-y-auto flex-1">
+                <input type="hidden" id="editor-round-id">
+                <input type="hidden" id="editor-round-type">
+                <input type="hidden" id="editor-rq-id">
+
+                <!-- Question Text -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Savol Matni <span class="text-rose-400">*</span>
+                    </label>
+                    <textarea 
+                        id="editor-question-text" 
+                        rows="3" 
+                        required 
+                        placeholder="Savol matnini bu yerga kiriting..." 
+                        class="w-full text-xs leading-relaxed bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-3 text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    ></textarea>
+                </div>
+
+                <!-- Dynamic Form Fields Area based on Round Type -->
+                <div id="dynamic-form-fields" class="space-y-4">
+                    <!-- Injected dynamically based on round type -->
+                </div>
+
+                <!-- Points and Optional Fields -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800/80">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                            Ball (Points)
+                        </label>
+                        <input 
+                            type="number" 
+                            id="editor-points" 
+                            value="1" 
+                            min="1" 
+                            max="100" 
+                            class="w-full text-xs font-mono font-bold bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-amber-400 focus:outline-none"
+                        >
+                    </div>
+
+                    <div id="editor-media-container" class="hidden">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                            Rasm / Media Havolasi (URL)
+                        </label>
+                        <input 
+                            type="url" 
+                            id="editor-media-url" 
+                            placeholder="https://example.com/rasm.jpg" 
+                            class="w-full text-xs bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-200 focus:outline-none"
+                            oninput="updateMediaPreview(this.value)"
+                        >
+                    </div>
+                </div>
+
+                <div id="editor-media-preview-box" class="hidden p-2 rounded-xl bg-slate-950 border border-slate-800 text-center">
+                    <img id="editor-media-img" src="" alt="Media preview" class="max-h-40 rounded-lg mx-auto object-contain">
+                </div>
+
+                <!-- Error Message -->
+                <div id="editor-error-msg" class="p-3 rounded-xl bg-rose-950/60 border border-rose-800/60 text-xs text-rose-300 hidden"></div>
+
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800 shrink-0">
+                    <button type="button" onclick="closeQuestionEditorModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-colors">
+                        Bekor qilish
+                    </button>
+                    <button type="submit" id="btn-save-question" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 transition-all">
+                        Savolni Saqlash
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: DRAFTS LIST -->
+    <!-- ========================================================= -->
+    <div id="modal-drafts-list" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-6 space-y-4 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
+                <div>
+                    <h3 class="font-bold text-base text-white">Mavjud Qoralamalar</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Tahrirlashni davom ettirish uchun qoralamani tanlang</p>
+                </div>
+                <button onclick="closeDraftsListModal()" class="text-slate-400 hover:text-white font-mono text-lg">✕</button>
+            </div>
+
+            <div id="drafts-items-list" class="space-y-2.5 overflow-y-auto flex-1 pr-1">
+                <!-- Loaded from /api/drafts -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: VALIDATION REPORT -->
+    <!-- ========================================================= -->
+    <div id="modal-validation" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-base text-white flex items-center gap-2">
+                    <span id="validation-icon"></span>
+                    Kviz Tekshiruvi Natijasi
+                </h3>
+                <button onclick="document.getElementById('modal-validation').classList.add('hidden')" class="text-slate-400 hover:text-white font-mono text-lg">✕</button>
+            </div>
+
+            <div id="validation-content" class="space-y-3 text-xs">
+                <!-- Errors and warnings -->
+            </div>
+
+            <div class="pt-2 text-right">
+                <button onclick="document.getElementById('modal-validation').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white">
+                    Tushunarli
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: PREVIEW -->
+    <!-- ========================================================= -->
+    <div id="modal-preview" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-sky-600/20 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </span>
+                    <div>
+                        <h3 id="preview-modal-title" class="font-bold text-base text-white">Kviz Ko'rinishi (Preview)</h3>
+                        <p id="preview-modal-subtitle" class="text-xs text-slate-400">O'yinchiga qanday ko'rinishi (javoblar yashirilgan)</p>
+                    </div>
+                </div>
+                <button onclick="closePreviewModal()" class="text-slate-400 hover:text-white font-mono text-lg">✕</button>
+            </div>
+
+            <!-- Preview Content -->
+            <div id="preview-content-container" class="space-y-4 overflow-y-auto flex-1 pr-1">
+                <!-- Injected via JS -->
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
+                <button onclick="closePreviewModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
+                    Yopish
+                </button>
+                <button onclick="startPreviewSimulator()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 flex items-center gap-2 cursor-pointer transition-all">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>O'ynab ko'rish (Simulyatsiya)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: INTERACTIVE PREVIEW SIMULATOR -->
+    <!-- ========================================================= -->
+    <div id="modal-simulator" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] flex flex-col">
+            <!-- Simulator Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        TEST REJIM
+                    </span>
+                    <h3 id="sim-quiz-title" class="font-bold text-sm text-white">Simulyatsiya</h3>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="sim-score-badge" class="px-2.5 py-1 rounded-lg bg-indigo-950/80 border border-indigo-500/40 text-xs font-mono font-bold text-indigo-300">
+                        Ball: 0
+                    </span>
+                    <button onclick="closePreviewSimulator()" class="text-slate-400 hover:text-white font-mono text-lg">✕</button>
+                </div>
+            </div>
+
+            <!-- Simulator Body Container -->
+            <div id="sim-body" class="space-y-4 overflow-y-auto flex-1 pr-1">
+                <!-- Dynamically injected: Question Screen, Round Reveal, or Final Results -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: PUBLISH CONFIRMATION -->
+    <!-- ========================================================= -->
+    <div id="modal-publish-confirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-base text-white flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-sm font-bold">
+                        🚀
+                    </span>
+                    Kvizni Nashr Qilish
+                </h3>
+                <button onclick="closePublishConfirmModal()" class="text-slate-400 hover:text-white font-mono text-lg">✕</button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Kviz nomi:</span>
+                        <strong id="pub-confirm-title" class="text-white font-semibold">—</strong>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">O'yin formati:</span>
+                        <strong id="pub-confirm-mode" class="text-indigo-300 font-mono">—</strong>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Tarkib:</span>
+                        <strong id="pub-confirm-stats" class="text-emerald-400 font-mono">—</strong>
+                    </div>
+                </div>
+
+                <div id="pub-confirm-warnings-box" class="hidden p-3 rounded-xl bg-amber-950/40 border border-amber-800/60 text-amber-300 space-y-1">
+                    <p class="font-bold">E'tibor bering (Ogohlantirishlar):</p>
+                    <ul id="pub-confirm-warnings-list" class="list-disc list-inside space-y-0.5 text-[11px]"></ul>
+                </div>
+
+                <div class="p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-slate-300 space-y-1 text-[11px] leading-relaxed">
+                    <p class="font-bold text-indigo-300">ℹ️ Muhim ma'lumot:</p>
+                    <p>Kviz nashr qilingandan so'ng uning tuzilishi va savollari to'liq mustaqil <strong>published_manifest</strong> holatida muzlatiladi (immutable) va darhol barcha o'yinchilar uchun ochiladi.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                <button onclick="closePublishConfirmModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
+                    Bekor qilish
+                </button>
+                <button id="btn-confirm-publish-submit" onclick="executePublish()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 flex items-center gap-1.5 cursor-pointer">
+                    <span>Ha, Nashr Qilish</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        let currentDraft = null;
+        let canonicalRounds = [];
+        let isDirty = false;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadCanonicalRounds();
+            
+            // Check if draft_id in URL or open newest draft / create new
+            const pathParts = window.location.pathname.split('/');
+            let draftIdFromUrl = null;
+            if (pathParts.length >= 3 && pathParts[1] === 'builder') {
+                const possibleId = parseInt(pathParts[2]);
+                if (!isNaN(possibleId)) draftIdFromUrl = possibleId;
+            }
+
+            if (draftIdFromUrl) {
+                await loadDraft(draftIdFromUrl);
+            } else {
+                // Check recent drafts
+                try {
+                    const res = await fetch('/api/drafts');
+                    const drafts = await res.json();
+                    if (drafts.length > 0) {
+                        await loadDraft(drafts[0].version_id);
+                    } else {
+                        await createNewDraft("Yangi Intellektual Kviz #1");
+                    }
+                } catch (e) {
+                    await createNewDraft("Yangi Intellektual Kviz #1");
+                }
+            }
+        });
+
+        // -------------------------------------------------------------
+        // CANONICAL ROUNDS
+        // -------------------------------------------------------------
+        async function loadCanonicalRounds() {
+            try {
+                const res = await fetch('/api/quizzes/canonical-rounds');
+                if (res.ok) {
+                    canonicalRounds = await res.json();
+                    renderAddRoundModalList();
+                }
+            } catch (err) {
+                console.error("Canonical rounds load failed:", err);
+            }
+        }
+
+        function renderAddRoundModalList() {
+            const grid = document.getElementById('round-types-grid');
+            let html = '';
+            canonicalRounds.forEach(r => {
+                html += `
+                    <div 
+                        onclick="handleAddRound('${r.id}')"
+                        class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-indigo-500/70 hover:bg-indigo-950/20 transition-all cursor-pointer group flex flex-col justify-between"
+                    >
+                        <div>
+                            <span class="font-bold text-xs text-white group-hover:text-indigo-300 transition-colors block">
+                                ${escapeHtml(r.name)}
+                            </span>
+                            <span class="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed block">
+                                ${escapeHtml(r.description || '')}
+                            </span>
+                        </div>
+                        <span class="text-[10px] font-mono text-indigo-400 mt-2 block font-semibold">+ Tanlash</span>
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        // -------------------------------------------------------------
+        // DRAFT MANAGEMENT
+        // -------------------------------------------------------------
+        async function loadDraft(draftId) {
+            setSaveStatus("Yuklanmoqda...", "loading");
+            try {
+                const res = await fetch(`/api/drafts/${draftId}`);
+                if (!res.ok) throw new Error("Qoralama topilmadi");
+                currentDraft = await res.json();
+
+                // Update URL silently
+                window.history.replaceState({}, '', `/builder/${draftId}`);
+
+                // Update UI fields
+                document.getElementById('draft-title-input').value = currentDraft.title || '';
+                document.getElementById('draft-desc-input').value = currentDraft.description || '';
+                document.getElementById('draft-mode-select').value = currentDraft.game_mode || 'modern_multiround';
+                document.getElementById('stat-rounds-count').textContent = currentDraft.rounds_count;
+                document.getElementById('stat-questions-count').textContent = currentDraft.total_questions;
+                document.getElementById('stat-version-id').textContent = currentDraft.version_id;
+
+                const isPublished = currentDraft.status === 'published';
+                const banner = document.getElementById('published-banner');
+                const btnPubHeader = document.getElementById('btn-publish-header');
+                const btnPubStats = document.getElementById('btn-publish-stats');
+                const addRoundCard = document.getElementById('add-round-card');
+                const titleInput = document.getElementById('draft-title-input');
+                const descInput = document.getElementById('draft-desc-input');
+                const modeSelect = document.getElementById('draft-mode-select');
+
+                if (isPublished) {
+                    if (banner) banner.classList.remove('hidden');
+                    if (titleInput) titleInput.disabled = true;
+                    if (descInput) descInput.disabled = true;
+                    if (modeSelect) modeSelect.disabled = true;
+                    if (addRoundCard) addRoundCard.classList.add('hidden');
+                    if (btnPubHeader) {
+                        btnPubHeader.disabled = true;
+                        btnPubHeader.className = "px-3 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-800 text-xs font-semibold text-emerald-300 flex items-center gap-1.5 cursor-not-allowed opacity-90";
+                        btnPubHeader.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>Nashr qilingan</span>';
+                    }
+                    if (btnPubStats) {
+                        btnPubStats.disabled = true;
+                        btnPubStats.className = "px-3 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-800 text-xs font-semibold text-emerald-300 flex items-center gap-1.5 cursor-not-allowed opacity-90";
+                        btnPubStats.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>Nashr qilingan</span>';
+                    }
+                    setSaveStatus("Nashr qilingan", "saved");
+                } else {
+                    if (banner) banner.classList.add('hidden');
+                    if (titleInput) titleInput.disabled = false;
+                    if (descInput) descInput.disabled = false;
+                    if (modeSelect) modeSelect.disabled = false;
+                    if (addRoundCard) addRoundCard.classList.remove('hidden');
+                    if (btnPubHeader) {
+                        btnPubHeader.disabled = false;
+                        btnPubHeader.className = "px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5 cursor-pointer";
+                        btnPubHeader.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg><span>Nashr qilish</span>';
+                    }
+                    if (btnPubStats) {
+                        btnPubStats.disabled = false;
+                        btnPubStats.className = "px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5 cursor-pointer";
+                        btnPubStats.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg><span>Nashr qilish</span>';
+                    }
+                    setSaveStatus("Saqlangan", "saved");
+                }
+
+                renderRounds();
+                isDirty = false;
+            } catch (err) {
+                alert("Qoralamani yuklashda xatolik: " + err.message);
+                setSaveStatus("Xatolik", "error");
+            }
+        }
+
+        async function createNewDraft(defaultTitle = "Yangi Kviz") {
+            setSaveStatus("Yaratilmoqda...", "loading");
+            try {
+                const res = await fetch('/api/drafts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: defaultTitle,
+                        game_mode: "modern_multiround"
+                    })
+                });
+                if (!res.ok) throw new Error("Kviz yaratishda xatolik");
+                const data = await res.json();
+                await loadDraft(data.version_id);
+            } catch (err) {
+                alert("Yangi kviz yaratishda xatolik: " + err.message);
+            }
+        }
+
+        async function createNewDraftPrompt() {
+            const title = prompt("Yangi kviz nomini kiriting:", "Yangi Intellektual Kviz");
+            if (title && title.trim()) {
+                await createNewDraft(title.trim());
+            }
+        }
+
+        async function autoSaveDraftMeta() {
+            if (!currentDraft) return;
+            const title = document.getElementById('draft-title-input').value.trim();
+            const desc = document.getElementById('draft-desc-input').value.trim();
+            const mode = document.getElementById('draft-mode-select').value;
+
+            if (!title) {
+                alert("Quiz nomi bo'sh bo'lishi mumkin emas");
+                return;
+            }
+
+            setSaveStatus("Saqlanmoqda...", "loading");
+            try {
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        description: desc || null,
+                        game_mode: mode
+                    })
+                });
+                if (!res.ok) throw new Error("Saqlashda xatolik");
+                setSaveStatus("Saqlangan", "saved");
+                isDirty = false;
+            } catch (err) {
+                setSaveStatus("Xatolik", "error");
+            }
+        }
+
+        function markDirty() {
+            isDirty = true;
+            setSaveStatus("Saqlanmagan", "dirty");
+        }
+
+        function setSaveStatus(text, state) {
+            const dot = document.getElementById('save-status-dot');
+            const txt = document.getElementById('save-status-text');
+            txt.textContent = text;
+
+            if (state === 'saved') {
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+            } else if (state === 'dirty') {
+                dot.className = "w-2 h-2 rounded-full bg-amber-400";
+            } else if (state === 'loading') {
+                dot.className = "w-2 h-2 rounded-full bg-indigo-400 animate-pulse";
+            } else {
+                dot.className = "w-2 h-2 rounded-full bg-rose-400";
+            }
+        }
+
+        // -------------------------------------------------------------
+        // ROUNDS RENDERING & ACTIONS
+        // -------------------------------------------------------------
+        function renderRounds() {
+            const container = document.getElementById('rounds-container');
+            if (!currentDraft || !currentDraft.rounds || currentDraft.rounds.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center rounded-2xl bg-slate-900/40 border border-slate-800/80 text-slate-500 space-y-2">
+                        <div class="w-10 h-10 rounded-xl bg-slate-800/80 flex items-center justify-center text-slate-400 mx-auto">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                            </svg>
+                        </div>
+                        <p class="text-xs font-medium text-slate-300">Ushbu kvizda hozircha hech qanday raund yo'q</p>
+                        <p class="text-[11px] text-slate-500">Quyidagi tugma orqali birinchi raundni qo'shing</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const isPublished = currentDraft && currentDraft.status === 'published';
+            let html = '';
+            currentDraft.rounds.forEach((round, rIndex) => {
+                const isFirst = rIndex === 0;
+                const isLast = rIndex === currentDraft.rounds.length - 1;
+
+                html += `
+                    <div class="rounded-2xl bg-slate-900/90 border border-slate-800 overflow-hidden shadow-lg" id="round-card-${round.round_id}">
+                        <!-- Round Header Bar -->
+                        <div class="p-4 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <span class="w-7 h-7 rounded-lg bg-indigo-950/80 border border-indigo-500/30 flex items-center justify-center text-xs font-mono font-bold text-indigo-300">
+                                    ${round.sequence}
+                                </span>
+                                <div>
+                                    <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                                        ${escapeHtml(round.name)}
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">
+                                            ${round.round_type}
+                                        </span>
+                                    </h4>
+                                    <span class="text-[11px] text-slate-400">
+                                        ${round.questions_count} ta savol
+                                    </span>
+                                </div>
+                            </div>
+
+                            ${!isPublished ? `
+                            <div class="flex items-center gap-1.5">
+                                <button 
+                                    onclick="moveRound(${round.round_id}, 'up')" 
+                                    ${isFirst ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:bg-slate-800"'}
+                                    class="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 cursor-pointer"
+                                    title="Yuqoriga ko'chirish"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                                    </svg>
+                                </button>
+                                <button 
+                                    onclick="moveRound(${round.round_id}, 'down')" 
+                                    ${isLast ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:bg-slate-800"'}
+                                    class="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 cursor-pointer"
+                                    title="Pastga ko'chirish"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                                <button 
+                                    onclick="handleDeleteRound(${round.round_id})" 
+                                    class="p-1.5 rounded-lg bg-rose-950/30 hover:bg-rose-900/50 border border-rose-800/40 text-rose-400 hover:text-rose-200 transition-colors cursor-pointer"
+                                    title="Raundni o'chirish"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            ` : '<span class="text-[10px] font-mono text-emerald-400 font-semibold bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded">MUZLATILGAN</span>'}
+                        </div>
+
+                        <!-- Questions List inside Round -->
+                        <div class="p-3 space-y-2">
+                            ${renderRoundQuestions(round)}
+                        </div>
+
+                        <!-- Add Question Button in Round Footer -->
+                        <div class="p-3 bg-slate-950/40 border-t border-slate-800/60 flex items-center justify-between">
+                            <span class="text-[11px] text-slate-500 font-mono">
+                                ${round.round_type === 'zanjir' ? 'Zanjir: oldingi javob oxiri = yangi javob boshi' : ''}
+                                ${round.round_type === 'gulmisiz_rayhonmisiz' ? 'Variantli: 4 ta variant (A, B, C, D)' : ''}
+                                ${round.round_type === 'aldama_meni' ? 'Fakt: Rost yoki Yolg\'on' : ''}
+                            </span>
+                            ${!isPublished ? `
+                            <button 
+                                onclick="openAddQuestionModal(${round.round_id}, '${round.round_type}')"
+                                class="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-xs font-semibold text-indigo-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Savol qo'shish
+                            </button>
+                            ` : '<span class="text-[11px] text-slate-500 italic">Savollar muzlatilgan</span>'}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderRoundQuestions(round) {
+            if (!round.questions || round.questions.length === 0) {
+                return `
+                    <div class="p-4 text-center rounded-xl bg-slate-950/40 border border-slate-800/40 text-slate-500 text-xs">
+                        Bu raundda hozircha savollar yo'q. "+ Savol qo'shish" tugmasini bosing.
+                    </div>
+                `;
+            }
+
+            let html = '';
+            round.questions.forEach((q, qIndex) => {
+                const isFirst = qIndex === 0;
+                const isLast = qIndex === round.questions.length - 1;
+
+                let optionsPreview = '';
+                if (q.options && q.options.length > 0) {
+                    optionsPreview = `
+                        <div class="flex flex-wrap gap-1.5 mt-1.5">
+                            ${q.options.map(opt => `
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono ${opt.key === q.primary_answer ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 font-bold' : 'bg-slate-950 text-slate-400 border border-slate-800'}">
+                                    ${opt.key}: ${escapeHtml(opt.text)}
+                                </span>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800/70 hover:border-slate-700 transition-colors flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3 min-w-0">
+                            <span class="w-6 h-6 rounded bg-slate-900 border border-slate-800 flex items-center justify-center font-mono font-bold text-[11px] text-indigo-400 shrink-0 mt-0.5">
+                                ${q.sequence}
+                            </span>
+                            <div class="min-w-0">
+                                <p class="text-xs font-medium text-slate-100 leading-relaxed break-words">
+                                    ${escapeHtml(q.text)}
+                                </p>
+                                ${optionsPreview}
+                                <div class="flex flex-wrap items-center gap-2 mt-1.5 text-[11px]">
+                                    <span class="font-mono font-bold text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/30">
+                                        ✓ ${escapeHtml(q.primary_answer || '')}
+                                    </span>
+                                    ${q.accepted_answers && q.accepted_answers.length > 0 ? `
+                                        <span class="text-slate-400 text-[10px]">
+                                            (+${q.accepted_answers.length} muqobil)
+                                        </span>
+                                    ` : ''}
+                                    <span class="font-mono text-amber-400 font-semibold bg-amber-950/30 px-1.5 py-0.5 rounded">
+                                        ${q.points} ball
+                                    </span>
+                                    ${q.media_url ? `<span class="text-sky-400 text-[10px]">📷 Rasm bor</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Question Action Buttons -->
+                        ${!isPublished ? `
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button 
+                                onclick="moveQuestion(${round.round_id}, ${q.round_question_id}, 'up')" 
+                                ${isFirst ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:bg-slate-800"'}
+                                class="p-1 rounded bg-slate-900 text-slate-400 cursor-pointer"
+                                title="Yuqoriga"
+                            >▲</button>
+                            <button 
+                                onclick="moveQuestion(${round.round_id}, ${q.round_question_id}, 'down')" 
+                                ${isLast ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:bg-slate-800"'}
+                                class="p-1 rounded bg-slate-900 text-slate-400 cursor-pointer"
+                                title="Pastga"
+                            >▼</button>
+                            <button 
+                                onclick="openEditQuestionModal(${round.round_id}, '${round.round_type}', ${q.round_question_id})"
+                                class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] font-medium transition-colors cursor-pointer"
+                            >Tahrirlash</button>
+                            <button 
+                                onclick="handleDeleteQuestion(${round.round_id}, ${q.round_question_id})"
+                                class="p-1 rounded text-rose-400 hover:bg-rose-950/40 text-xs cursor-pointer"
+                                title="O'chirish"
+                            >✕</button>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            return html;
+        }
+
+        // -------------------------------------------------------------
+        // ROUND OPERATIONS (ADD, MOVE, DELETE)
+        // -------------------------------------------------------------
+        function openAddRoundModal() {
+            document.getElementById('modal-add-round').classList.remove('hidden');
+        }
+
+        function closeAddRoundModal() {
+            document.getElementById('modal-add-round').classList.add('hidden');
+        }
+
+        async function handleAddRound(roundType) {
+            closeAddRoundModal();
+            setSaveStatus("Raund qo'shilmoqda...", "loading");
+            try {
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}/rounds`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ round_type: roundType })
+                });
+                if (!res.ok) throw new Error("Raund qo'shishda xatolik");
+                await loadDraft(currentDraft.version_id);
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+                setSaveStatus("Xatolik", "error");
+            }
+        }
+
+        async function moveRound(roundId, direction) {
+            const rounds = currentDraft.rounds;
+            const index = rounds.findIndex(r => r.round_id === roundId);
+            if (index === -1) return;
+
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+            if (targetIndex < 0 || targetIndex >= rounds.length) return;
+
+            const newIds = rounds.map(r => r.round_id);
+            const temp = newIds[index];
+            newIds[index] = newIds[targetIndex];
+            newIds[targetIndex] = temp;
+
+            setSaveStatus("Tartiblanmoqda...", "loading");
+            try {
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}/rounds/reorder`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ round_ids: newIds })
+                });
+                if (!res.ok) throw new Error("Raundlarni tartiblashda xatolik");
+                await loadDraft(currentDraft.version_id);
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        async function handleDeleteRound(roundId) {
+            if (!confirm("Haqiqatan ham bu raundni va undagi barcha savollarni o'chirmoqchimisiz?")) return;
+
+            setSaveStatus("O'chirilmoqda...", "loading");
+            try {
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}/rounds/${roundId}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) throw new Error("Raundni o'chirishda xatolik");
+                await loadDraft(currentDraft.version_id);
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        // -------------------------------------------------------------
+        // QUESTION OPERATIONS (ADD, EDIT, MOVE, DELETE)
+        // -------------------------------------------------------------
+        function openAddQuestionModal(roundId, roundType) {
+            document.getElementById('editor-round-id').value = roundId;
+            document.getElementById('editor-round-type').value = roundType;
+            document.getElementById('editor-rq-id').value = '';
+            document.getElementById('editor-modal-title').textContent = "Yangi Savol Qo'shish";
+            
+            const meta = canonicalRounds.find(r => r.id === roundType) || {};
+            document.getElementById('editor-modal-subtitle').textContent = `Raund: ${meta.name || roundType}`;
+            
+            // Reset fields
+            document.getElementById('editor-question-text').value = '';
+            document.getElementById('editor-points').value = (roundType === 'svoyak_theme' ? 10 : 1);
+            document.getElementById('editor-media-url').value = '';
+            document.getElementById('editor-media-preview-box').classList.add('hidden');
+            document.getElementById('editor-error-msg').classList.add('hidden');
+
+            renderDynamicQuestionForm(roundType, null);
+            document.getElementById('modal-question-editor').classList.remove('hidden');
+        }
+
+        function openEditQuestionModal(roundId, roundType, rqId) {
+            const round = currentDraft.rounds.find(r => r.round_id === roundId);
+            if (!round) return;
+            const q = round.questions.find(item => item.round_question_id === rqId);
+            if (!q) return;
+
+            document.getElementById('editor-round-id').value = roundId;
+            document.getElementById('editor-round-type').value = roundType;
+            document.getElementById('editor-rq-id').value = rqId;
+            document.getElementById('editor-modal-title').textContent = "Savolni Tahrirlash";
+            
+            const meta = canonicalRounds.find(r => r.id === roundType) || {};
+            document.getElementById('editor-modal-subtitle').textContent = `Raund: ${meta.name || roundType} (#${q.sequence}-savol)`;
+
+            document.getElementById('editor-question-text').value = q.text || '';
+            document.getElementById('editor-points').value = q.points || 1;
+            document.getElementById('editor-media-url').value = q.media_url || '';
+            if (q.media_url) {
+                updateMediaPreview(q.media_url);
+            } else {
+                document.getElementById('editor-media-preview-box').classList.add('hidden');
+            }
+            document.getElementById('editor-error-msg').classList.add('hidden');
+
+            renderDynamicQuestionForm(roundType, q);
+            document.getElementById('modal-question-editor').classList.remove('hidden');
+        }
+
+        function closeQuestionEditorModal() {
+            document.getElementById('modal-question-editor').classList.add('hidden');
+        }
+
+        function renderDynamicQuestionForm(roundType, existingQuestion) {
+            const container = document.getElementById('dynamic-form-fields');
+            const mediaContainer = document.getElementById('editor-media-container');
+
+            if (roundType === 'rasmiyatchilik') {
+                mediaContainer.classList.remove('hidden');
+            } else {
+                mediaContainer.classList.add('hidden');
+            }
+
+            // 1. Gulmisiz, rayhonmisiz? (MCQ)
+            if (roundType === 'gulmisiz_rayhonmisiz') {
+                const opts = existingQuestion && existingQuestion.options ? existingQuestion.options : [
+                    { key: 'A', text: '' },
+                    { key: 'B', text: '' },
+                    { key: 'C', text: '' },
+                    { key: 'D', text: '' }
+                ];
+                const prim = existingQuestion ? existingQuestion.primary_answer : 'A';
+
+                container.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                            4 ta Variant va To'g'ri Variantni belgilang <span class="text-rose-400">*</span>
+                        </label>
+                        <div class="space-y-2.5">
+                            ${['A', 'B', 'C', 'D'].map((key, idx) => `
+                                <div class="flex items-center gap-2.5 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                                    <input 
+                                        type="radio" 
+                                        name="correct_option_radio" 
+                                        value="${key}" 
+                                        ${prim === key ? 'checked' : ''}
+                                        class="w-4 h-4 text-indigo-600 bg-slate-900 border-slate-700 focus:ring-0 cursor-pointer ml-1"
+                                        title="To'g'ri javob sifatida belgilash"
+                                    >
+                                    <span class="font-mono font-bold text-xs text-indigo-400 w-5">${key}:</span>
+                                    <input 
+                                        type="text" 
+                                        id="mcq-option-${key}" 
+                                        value="${escapeHtml(opts[idx] ? opts[idx].text : '')}"
+                                        placeholder="${key}-variant matni..." 
+                                        class="w-full text-xs bg-transparent text-slate-100 focus:outline-none"
+                                        required
+                                    >
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 2. Aldama meni (Boolean True/False)
+            else if (roundType === 'aldama_meni') {
+                const prim = existingQuestion ? (existingQuestion.primary_answer || '').toLowerCase() : 'ha';
+                const isTrue = prim === 'ha' || prim === 'rost' || prim === 'true';
+
+                container.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                            Ushbu fakt / tasdiq: <span class="text-rose-400">*</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="p-3.5 rounded-xl border border-slate-800 bg-slate-950 hover:border-emerald-500/50 cursor-pointer flex items-center gap-3">
+                                <input type="radio" name="boolean_radio" value="ha" ${isTrue ? 'checked' : ''} class="text-emerald-500">
+                                <div>
+                                    <span class="block font-bold text-xs text-emerald-400">Rost (Ha)</span>
+                                    <span class="block text-[10px] text-slate-500">Fakt haqiqatga mos keladi</span>
+                                </div>
+                            </label>
+                            <label class="p-3.5 rounded-xl border border-slate-800 bg-slate-950 hover:border-rose-500/50 cursor-pointer flex items-center gap-3">
+                                <input type="radio" name="boolean_radio" value="yo'q" ${!isTrue ? 'checked' : ''} class="text-rose-500">
+                                <div>
+                                    <span class="block font-bold text-xs text-rose-400">Yolg'on (Yo'q)</span>
+                                    <span class="block text-[10px] text-slate-500">Fakt chalg'ituvchi yoki noto'g'ri</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                            Fakt Izohi / Nega rost yoki yolg'on?
+                        </label>
+                        <textarea 
+                            id="editor-explanation" 
+                            rows="2" 
+                            placeholder="Javob ochilganda o'yinchiga ko'rsatiladigan izoh..." 
+                            class="w-full text-xs bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-3 text-slate-100 focus:outline-none"
+                        >${escapeHtml(existingQuestion ? existingQuestion.explanation || '' : '')}</textarea>
+                    </div>
+                `;
+            }
+
+            // 3. Mantiqqasqon (Logic / Hidden Rule)
+            else if (roundType === 'mantiqqasqon') {
+                container.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                            Asosiy To'g'ri Javob <span class="text-rose-400">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="editor-primary-answer" 
+                            required 
+                            value="${escapeHtml(existingQuestion ? existingQuestion.primary_answer || '' : '')}"
+                            placeholder="To'g'ri javob..." 
+                            class="w-full text-xs bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-100 focus:outline-none"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                            Muqobil qabul qilinadigan javoblar (Vergul bilan)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="editor-alt-answers" 
+                            value="${escapeHtml(existingQuestion && existingQuestion.accepted_answers ? existingQuestion.accepted_answers.join(', ') : '')}"
+                            placeholder="Sinonimlar yoki boshqa variantlar..." 
+                            class="w-full text-xs bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-300 focus:outline-none"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-purple-300 mb-1.5">
+                            Yashirin Bog'liqlik / Mantiqiy Izoh (Faqat reveal bosqichida ko'rinadi)
+                        </label>
+                        <textarea 
+                            id="editor-explanation" 
+                            rows="2" 
+                            placeholder="Ushbu savol va javobning mantiqiy siri..." 
+                            class="w-full text-xs bg-slate-950 border border-purple-900/40 focus:border-purple-500 rounded-xl p-3 text-slate-100 focus:outline-none"
+                        >${escapeHtml(existingQuestion ? existingQuestion.explanation || '' : '')}</textarea>
+                    </div>
+                `;
+            }
+
+            // 4. Default: Zanjir, Rasmiyatchilik, Vabank, Svoyak, Classic
+            else {
+                const hint = roundType === 'zanjir' 
+                    ? `<p class="text-[11px] text-amber-400 bg-amber-950/20 p-2 rounded-lg border border-amber-900/30">
+                        ⚡ Zanjir qoidasi: javobning oxirgi harfi keyingi savol javobining birinchi harfi bo'ladi.
+                       </p>` 
+                    : '';
+
+                container.innerHTML = `
+                    ${hint}
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                            Asosiy To'g'ri Javob <span class="text-rose-400">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="editor-primary-answer" 
+                            required 
+                            value="${escapeHtml(existingQuestion ? existingQuestion.primary_answer || '' : '')}"
+                            placeholder="To'g'ri javob..." 
+                            class="w-full text-xs bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-100 focus:outline-none"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                            Muqobil qabul qilinadigan javoblar (Vergul bilan)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="editor-alt-answers" 
+                            value="${escapeHtml(existingQuestion && existingQuestion.accepted_answers ? existingQuestion.accepted_answers.join(', ') : '')}"
+                            placeholder="Sinonimlar yoki boshqa variantlar..." 
+                            class="w-full text-xs bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-300 focus:outline-none"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                            Izoh / Tushuntirish (Ixtiyoriy)
+                        </label>
+                        <textarea 
+                            id="editor-explanation" 
+                            rows="2" 
+                            placeholder="Javob ochilgandan keyin ko'rsatiladigan izoh..." 
+                            class="w-full text-xs bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-3 text-slate-100 focus:outline-none"
+                        >${escapeHtml(existingQuestion ? existingQuestion.explanation || '' : '')}</textarea>
+                    </div>
+                `;
+            }
+        }
+
+        function updateMediaPreview(url) {
+            const box = document.getElementById('editor-media-preview-box');
+            const img = document.getElementById('editor-media-img');
+            if (url && url.trim().startsWith('http')) {
+                img.src = url.trim();
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        async function handleSaveQuestion(e) {
+            e.preventDefault();
+            const roundId = parseInt(document.getElementById('editor-round-id').value);
+            const roundType = document.getElementById('editor-round-type').value;
+            const rqId = document.getElementById('editor-rq-id').value;
+            const text = document.getElementById('editor-question-text').value.trim();
+            const points = parseInt(document.getElementById('editor-points').value) || 1;
+            const mediaUrl = document.getElementById('editor-media-url').value.trim();
+            const errorMsg = document.getElementById('editor-error-msg');
+
+            errorMsg.classList.add('hidden');
+
+            const payload = {
+                text: text,
+                points: points,
+                media_url: mediaUrl || null
+            };
+
+            // Round-specific field collection
+            if (roundType === 'gulmisiz_rayhonmisiz') {
+                const options = [
+                    { key: 'A', text: document.getElementById('mcq-option-A').value.trim() },
+                    { key: 'B', text: document.getElementById('mcq-option-B').value.trim() },
+                    { key: 'C', text: document.getElementById('mcq-option-C').value.trim() },
+                    { key: 'D', text: document.getElementById('mcq-option-D').value.trim() }
+                ];
+                const selectedRadio = document.querySelector('input[name="correct_option_radio"]:checked');
+                if (!selectedRadio) {
+                    errorMsg.textContent = "To'g'ri variantni belgilang (A, B, C yoki D).";
+                    errorMsg.classList.remove('hidden');
+                    return;
+                }
+                payload.options = options;
+                payload.correct_option = selectedRadio.value;
+            } else if (roundType === 'aldama_meni') {
+                const selectedRadio = document.querySelector('input[name="boolean_radio"]:checked');
+                payload.correct_boolean = (selectedRadio && selectedRadio.value === 'ha');
+                const exp = document.getElementById('editor-explanation');
+                if (exp) payload.explanation = exp.value.trim();
+            } else {
+                const primAns = document.getElementById('editor-primary-answer').value.trim();
+                const altAnsStr = document.getElementById('editor-alt-answers').value.trim();
+                const exp = document.getElementById('editor-explanation');
+
+                payload.primary_answer = primAns;
+                if (altAnsStr) {
+                    payload.accepted_answers = altAnsStr.split(',').map(s => s.trim()).filter(Boolean);
+                }
+                if (exp && exp.value.trim()) {
+                    payload.explanation = exp.value.trim();
+                }
+            }
+
+            const isEdit = Boolean(rqId);
+            const url = isEdit 
+                ? `/api/drafts/${currentDraft.version_id}/rounds/${roundId}/questions/${rqId}`
+                : `/api/drafts/${currentDraft.version_id}/rounds/${roundId}/questions`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const submitBtn = document.getElementById('btn-save-question');
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Saqlanmoqda...";
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.detail || "Savolni saqlashda xatolik yuz berdi");
+                }
+                closeQuestionEditorModal();
+                await loadDraft(currentDraft.version_id);
+            } catch (err) {
+                errorMsg.textContent = err.message;
+                errorMsg.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Savolni Saqlash";
+            }
+        }
+
+        async function moveQuestion(roundId, rqId, direction) {
+            const round = currentDraft.rounds.find(r => r.round_id === roundId);
+            if (!round) return;
+            const index = round.questions.findIndex(q => q.round_question_id === rqId);
+            if (index === -1) return;
+
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+            if (targetIndex < 0 || targetIndex >= round.questions.length) return;
+
+            const newIds = round.questions.map(q => q.round_question_id);
+            const temp = newIds[index];
+            newIds[index] = newIds[targetIndex];
+            newIds[targetIndex] = temp;
+
+            setSaveStatus("Tartiblanmoqda...", "loading");
+            try {
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}/rounds/${roundId}/questions/reorder`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ round_question_ids: newIds })
+                });
+                if (!res.ok) throw new Error("Savollarni tartiblashda xatolik");
+                await loadDraft(currentDraft.version_id);
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        async function handleDeleteQuestion(roundId, rqId) {
+            if (!confirm("Haqiqatan ham bu savolni raunddan o'chirmoqchimisiz?")) return;
+
+            setSaveStatus("O'chirilmoqda...", "loading");
+            try {
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}/rounds/${roundId}/questions/${rqId}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) throw new Error("Savolni o'chirishda xatolik");
+                await loadDraft(currentDraft.version_id);
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        // -------------------------------------------------------------
+        // VALIDATION, PREVIEW & PUBLISHING FLOW
+        // -------------------------------------------------------------
+        function showValidationReport(report) {
+            const icon = document.getElementById('validation-icon');
+            const content = document.getElementById('validation-content');
+
+            if (report.valid && (!report.warnings || report.warnings.length === 0)) {
+                icon.textContent = "✅";
+                content.innerHTML = `
+                    <div class="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-300">
+                        <p class="font-bold mb-1">Ajoyib! Kviz to'liq va xatolarsiz tayyorlandi.</p>
+                        <p class="text-[11px] text-emerald-400">Jami ${report.total_rounds} ta raund va ${report.total_questions} ta savol to'g'ri sozlangan.</p>
+                    </div>
+                `;
+            } else {
+                icon.textContent = report.valid ? "⚠️" : "❌";
+                let html = '';
+                if (report.structured_errors && report.structured_errors.length > 0) {
+                    html += `
+                        <div class="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 space-y-2">
+                            <p class="font-bold flex items-center gap-1.5">
+                                <span>❌</span>
+                                <span>Quyidagi xatoliklarni to'g'irlash zarur (${report.structured_errors.length} ta):</span>
+                            </p>
+                            <div class="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                                ${report.structured_errors.map(err => {
+                                    let badge = 'KVIZ';
+                                    if (err.scope === 'round') badge = `Raund ${err.round_sequence || ''}`;
+                                    if (err.scope === 'question') badge = `Raund ${err.round_sequence || ''} • Savol ${err.question_sequence || ''}`;
+                                    return `
+                                        <div class="p-2 rounded-lg bg-slate-950/60 border border-rose-900/50 flex items-start gap-2">
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-900/60 text-rose-200 border border-rose-700/50 shrink-0">
+                                                ${badge}
+                                            </span>
+                                            <span class="text-xs text-rose-200 leading-snug">${escapeHtml(err.message)}</span>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else if (report.errors && report.errors.length > 0) {
+                    html += `
+                        <div class="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 space-y-1">
+                            <p class="font-bold">Quyidagi xatoliklarni to'g'irlash zarur:</p>
+                            <ul class="list-disc list-inside space-y-0.5 text-[11px]">
+                                ${report.errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                if (report.warnings && report.warnings.length > 0) {
+                    html += `
+                        <div class="p-3.5 rounded-xl bg-amber-950/40 border border-amber-800/60 text-amber-300 space-y-1">
+                            <p class="font-bold">E'tibor berish kerak bo'lgan ogohlantirishlar:</p>
+                            <ul class="list-disc list-inside space-y-0.5 text-[11px]">
+                                ${report.warnings.map(w => `<li>${escapeHtml(w)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+                content.innerHTML = html;
+            }
+
+            document.getElementById('modal-validation').classList.remove('hidden');
+        }
+
+        async function validateDraft() {
+            if (!currentDraft) return;
+            try {
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}/validate`, { method: 'POST' });
+                const report = await res.json();
+                showValidationReport(report);
+            } catch (err) {
+                alert("Tekshiruvda xatolik: " + err.message);
+            }
+        }
+
+        // --- PREVIEW ---
+        async function openPreviewModal() {
+            if (!currentDraft) return;
+            const modal = document.getElementById('modal-preview');
+            const container = document.getElementById('preview-content-container');
+            const titleEl = document.getElementById('preview-modal-title');
+            const subEl = document.getElementById('preview-modal-subtitle');
+            
+            container.innerHTML = '<div class="p-8 text-center text-slate-500 text-xs">Yuklanmoqda...</div>';
+            modal.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}/preview`);
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Ko'rish ma'lumotlarini yuklab bo'lmadi");
+                }
+                const data = await res.json();
+                titleEl.textContent = data.title || "Kviz Ko'rinishi";
+                subEl.textContent = `${data.game_mode} • ${data.total_rounds} ta raund • ${data.total_questions} ta savol`;
+
+                if (!data.rounds || data.rounds.length === 0) {
+                    container.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs border border-dashed border-slate-800 rounded-xl">Ushbu kvizda hali raundlar yo\'q.</div>';
+                    return;
+                }
+
+                let html = '';
+                data.rounds.forEach(r => {
+                    html += `
+                        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-md bg-indigo-950/80 border border-indigo-500/30 flex items-center justify-center text-xs font-mono font-bold text-indigo-300">
+                                        ${r.sequence}
+                                    </span>
+                                    <span class="font-bold text-sm text-white">${escapeHtml(r.name)}</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">
+                                        ${r.round_type}
+                                    </span>
+                                </div>
+                                <span class="text-xs text-slate-400 font-mono">${r.questions.length} ta savol</span>
+                            </div>
+
+                            <div class="space-y-2">
+                                ${r.questions.length === 0 ? '<p class="text-xs text-slate-500 italic">Savollar mavjud emas</p>' : ''}
+                                ${r.questions.map(q => `
+                                    <div class="p-3 rounded-lg bg-slate-900/60 border border-slate-800 text-xs space-y-1.5">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="font-mono text-slate-500 font-bold">#${q.sequence}</span>
+                                                <span class="font-medium text-slate-200">${escapeHtml(q.text)}</span>
+                                            </div>
+                                            <span class="font-mono text-[11px] font-bold text-amber-400 bg-amber-950/30 px-1.5 py-0.5 rounded shrink-0">
+                                                ${q.points} ball
+                                            </span>
+                                        </div>
+                                        ${q.media_url ? `
+                                            <div class="mt-1">
+                                                <img src="${escapeHtml(q.media_url)}" alt="Media" class="max-h-32 rounded object-contain bg-black/40 p-1">
+                                            </div>
+                                        ` : ''}
+                                        ${q.options && q.options.length > 0 ? `
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2 pt-2 border-t border-slate-800/60">
+                                                ${q.options.map(opt => `
+                                                    <div class="px-2.5 py-1.5 rounded bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center gap-2">
+                                                        <span class="font-mono font-bold text-indigo-400">${escapeHtml(opt.key)}:</span>
+                                                        <span>${escapeHtml(opt.text)}</span>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (err) {
+                container.innerHTML = `<div class="p-4 text-center text-rose-400 text-xs">Xatolik: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        function closePreviewModal() {
+            document.getElementById('modal-preview').classList.add('hidden');
+        }
+
+        // --- SIMULATOR ---
+        let simSessionToken = null;
+        let simCurrentState = null;
+
+        async function startPreviewSimulator() {
+            if (!currentDraft) return;
+            closePreviewModal();
+
+            const simModal = document.getElementById('modal-simulator');
+            const simBody = document.getElementById('sim-body');
+            const titleEl = document.getElementById('sim-quiz-title');
+            const scoreBadge = document.getElementById('sim-score-badge');
+
+            simBody.innerHTML = '<div class="p-8 text-center text-slate-500 text-xs">Simulyatsiya boshlanmoqda...</div>';
+            scoreBadge.textContent = 'Ball: 0';
+            simModal.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}/preview/start`, { method: 'POST' });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Simulyatsiyani boshlab bo'lmadi");
+                }
+                const data = await res.json();
+                simSessionToken = data.session_token;
+                titleEl.textContent = `Simulyatsiya: ${data.quiz_title || ''}`;
+                renderSimQuestion(data.current_state);
+            } catch (err) {
+                simBody.innerHTML = `
+                    <div class="p-4 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs text-center space-y-2">
+                        <p class="font-bold">Simulyatsiyani boshlab bo'lmadi:</p>
+                        <p>${escapeHtml(err.message)}</p>
+                        <button onclick="closePreviewSimulator()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs cursor-pointer">Yopish</button>
+                    </div>
+                `;
+            }
+        }
+
+        function closePreviewSimulator() {
+            document.getElementById('modal-simulator').classList.add('hidden');
+            simSessionToken = null;
+            simCurrentState = null;
+        }
+
+        function renderSimQuestion(stateObj) {
+            simCurrentState = stateObj;
+            const simBody = document.getElementById('sim-body');
+            const round = stateObj.round;
+            const question = stateObj.question;
+            const currentQIdx = (stateObj.round_question_index || 0) + 1;
+            const totalQ = stateObj.round_total_questions || 1;
+
+            let answersUi = '';
+            if (question.options && question.options.length > 0) {
+                answersUi = `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                        ${question.options.map(opt => `
+                            <button 
+                                type="button" 
+                                onclick="submitSimAnswer('${escapeHtml(opt.key)}')" 
+                                class="p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-indigo-500 hover:bg-indigo-950/30 text-left transition-all flex items-center gap-2 group cursor-pointer"
+                            >
+                                <span class="w-6 h-6 rounded bg-indigo-950 border border-indigo-500/40 text-indigo-300 font-mono font-bold text-xs flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                    ${escapeHtml(opt.key)}
+                                </span>
+                                <span class="text-xs text-slate-200 group-hover:text-white">${escapeHtml(opt.text)}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (round.round_type === 'aldama_meni') {
+                answersUi = `
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <button 
+                            type="button" 
+                            onclick="submitSimAnswer('ha')" 
+                            class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-800/60 hover:bg-emerald-600 hover:text-white text-emerald-300 font-bold text-sm text-center transition-all cursor-pointer"
+                        >
+                            ✓ Rost (Ha)
+                        </button>
+                        <button 
+                            type="button" 
+                            onclick="submitSimAnswer('yo\\'q')" 
+                            class="p-3.5 rounded-xl bg-rose-950/30 border border-rose-800/60 hover:bg-rose-600 hover:text-white text-rose-300 font-bold text-sm text-center transition-all cursor-pointer"
+                        >
+                            ✕ Yolg'on (Yo'q)
+                        </button>
+                    </div>
+                `;
+            } else {
+                answersUi = `
+                    <form onsubmit="event.preventDefault(); submitSimAnswer(document.getElementById('sim-text-answer').value);" class="space-y-3 pt-2">
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                id="sim-text-answer" 
+                                required 
+                                placeholder="Javobingizni kiriting..." 
+                                class="flex-1 text-xs bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-sans"
+                                autofocus
+                            >
+                            <button 
+                                type="submit" 
+                                class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+                            >
+                                Javob berish
+                            </button>
+                        </div>
+                    </form>
+                `;
+            }
+
+            simBody.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-500/30">
+                                ${round.round_type}
+                            </span>
+                            <span class="text-xs text-slate-400">Raund: ${round.sequence}</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs">
+                            <span class="text-slate-400">Savol: <strong class="text-white font-mono">${currentQIdx} / ${totalQ}</strong></span>
+                            <span class="text-amber-400 font-mono font-bold bg-amber-950/30 px-2 py-0.5 rounded">${question.points} ball</span>
+                        </div>
+                    </div>
+
+                    <div class="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                        <p class="text-sm font-semibold text-slate-100 leading-relaxed">${escapeHtml(question.text)}</p>
+                        ${question.media_url ? `
+                            <div class="text-center pt-2">
+                                <img src="${escapeHtml(question.media_url)}" alt="Savol rasmi" class="max-h-48 rounded-xl mx-auto object-contain bg-black/40 p-1">
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div id="sim-answer-area">
+                        ${answersUi}
+                    </div>
+
+                    <div id="sim-feedback-area" class="hidden"></div>
+                </div>
+            `;
+        }
+
+        async function submitSimAnswer(ans, isWager = false) {
+            if (!simSessionToken) return;
+            const answerArea = document.getElementById('sim-answer-area');
+            const feedbackArea = document.getElementById('sim-feedback-area');
+            const scoreBadge = document.getElementById('sim-score-badge');
+
+            if (answerArea) answerArea.classList.add('opacity-50', 'pointer-events-none');
+
+            try {
+                const res = await fetch(`/api/play/${simSessionToken}/answer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answer: ans, is_wager: isWager })
+                });
+                if (!res.ok) throw new Error("Javobni yuborib bo'lmadi");
+                const data = await res.json();
+
+                scoreBadge.textContent = `Ball: ${data.total_score}`;
+
+                const isCorrect = data.is_correct;
+                feedbackArea.className = `p-4 rounded-xl border ${isCorrect ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300' : 'bg-rose-950/40 border-rose-800/60 text-rose-300'} space-y-2 mt-3`;
+                feedbackArea.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-sm">${isCorrect ? '✅ To\'g\'ri javob!' : '❌ Noto\'g\'ri javob'}</span>
+                        <span class="font-mono text-xs font-bold">${data.points_awarded >= 0 ? '+' : ''}${data.points_awarded} ball</span>
+                    </div>
+                    <div class="pt-2 text-right">
+                        ${data.round_completed ? `
+                            <button onclick="handleSimReveal()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+                                Raund Javoblarini Ko'rish →
+                            </button>
+                        ` : `
+                            <button onclick="renderSimQuestion(simCurrentState.next_state)" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+                                Keyingi savol →
+                            </button>
+                        `}
+                    </div>
+                `;
+                if (!data.round_completed) {
+                    simCurrentState.next_state = data.next_state;
+                }
+                feedbackArea.classList.remove('hidden');
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+                if (answerArea) answerArea.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        async function handleSimReveal() {
+            if (!simSessionToken) return;
+            const simBody = document.getElementById('sim-body');
+            simBody.innerHTML = '<div class="p-8 text-center text-slate-500 text-xs">Raund natijalari yuklanmoqda...</div>';
+
+            try {
+                const res = await fetch(`/api/play/${simSessionToken}/reveal`);
+                if (!res.ok) throw new Error("Raund natijalarini yuklab bo'lmadi");
+                const rev = await res.json();
+
+                let questionsHtml = '';
+                (rev.questions || []).forEach(q => {
+                    questionsHtml += `
+                        <div class="p-3.5 rounded-xl bg-slate-950 border ${q.is_correct ? 'border-emerald-800/40' : 'border-rose-900/40'} text-xs space-y-1.5">
+                            <div class="flex items-start justify-between gap-2">
+                                <span class="text-slate-200 font-medium">#${q.sequence}. ${escapeHtml(q.text)}</span>
+                                <span class="font-mono text-[10px] font-bold ${q.is_correct ? 'text-emerald-400' : 'text-rose-400'} shrink-0">
+                                    ${q.is_correct ? '✓ To\'g\'ri' : '✕ Noto\'g\'ri'} (${q.points_awarded} b)
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 pt-1">
+                                <span class="text-slate-400">To'g'ri javob:</span>
+                                <span class="font-bold text-emerald-300 font-mono">${escapeHtml((q.correct_answers || []).join(' / '))}</span>
+                            </div>
+                            ${q.explanation ? `
+                                <p class="text-[11px] text-slate-400 italic pt-0.5">Izoh: ${escapeHtml(q.explanation)}</p>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+
+                let hiddenRuleHtml = '';
+                if (rev.config && rev.config.hidden_rule) {
+                    hiddenRuleHtml = `
+                        <div class="p-3.5 rounded-xl bg-amber-950/40 border border-amber-800/60 text-amber-300 text-xs space-y-1">
+                            <p class="font-bold flex items-center gap-1.5">
+                                <span>💡</span>
+                                <span>Yashirin qoida / Mantiqiy bog'liqlik:</span>
+                            </p>
+                            <p class="text-amber-200 text-xs leading-relaxed">${escapeHtml(rev.config.hidden_rule)}</p>
+                        </div>
+                    `;
+                }
+
+                simBody.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                            <h4 class="font-bold text-sm text-white">Raund Yakunlandi (Raund ${rev.round_sequence})</h4>
+                            <span class="font-mono text-xs text-indigo-300 font-bold">Raund bali: ${rev.round_score}</span>
+                        </div>
+
+                        ${hiddenRuleHtml}
+
+                        <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            ${questionsHtml}
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-800 text-right">
+                            <button onclick="handleSimContinue(${rev.has_next_round})" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+                                ${rev.has_next_round ? 'Keyingi Raundga O\'tish →' : 'Kviz Natijalarini Ko\'rish 🏆'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        async function handleSimContinue(hasNextRound) {
+            if (!simSessionToken) return;
+            try {
+                const res = await fetch(`/api/play/${simSessionToken}/continue`, { method: 'POST' });
+                if (!res.ok) throw new Error("Keyingi holatga o'tib bo'lmadi");
+                const contData = await res.json();
+
+                if (contData.quiz_completed) {
+                    const resultsRes = await fetch(`/api/play/${simSessionToken}/results`);
+                    const fin = await resultsRes.json();
+                    const simBody = document.getElementById('sim-body');
+                    simBody.innerHTML = `
+                        <div class="p-6 text-center space-y-4">
+                            <div class="w-14 h-14 rounded-2xl bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-3xl mx-auto">
+                                🏆
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-bold text-white">Kviz Simulyatsiyasi Yakunlandi!</h4>
+                                <p class="text-xs text-slate-400 mt-1">Ushbu simulyatsiya faqat sinov uchun bo'lib, umumiy reytingga ta'sir qilmaydi.</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 grid grid-cols-3 gap-2 text-center">
+                                <div>
+                                    <span class="block text-[11px] text-slate-500">Jami Ball</span>
+                                    <span class="font-mono text-xl font-bold text-indigo-400">${fin.total_score}</span>
+                                </div>
+                                <div>
+                                    <span class="block text-[11px] text-slate-500">To'g'ri</span>
+                                    <span class="font-mono text-xl font-bold text-emerald-400">${fin.total_correct}</span>
+                                </div>
+                                <div>
+                                    <span class="block text-[11px] text-slate-500">Noto'g'ri</span>
+                                    <span class="font-mono text-xl font-bold text-rose-400">${fin.total_incorrect}</span>
+                                </div>
+                            </div>
+                            <button onclick="closePreviewSimulator()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition-all cursor-pointer">
+                                Simulyatsiyani Yakunlash
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    renderSimQuestion(contData.current_state);
+                }
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        // --- PUBLISHING FLOW ---
+        async function startPublishFlow() {
+            if (!currentDraft) return;
+
+            if (currentDraft.status === 'published') {
+                alert("Ushbu kviz allaqachon nashr qilingan.");
+                return;
+            }
+
+            setSaveStatus("Tekshirilmoqda...", "loading");
+            try {
+                const valRes = await fetch(`/api/drafts/${currentDraft.version_id}/validate`, { method: 'POST' });
+                const report = await valRes.json();
+                setSaveStatus("Saqlangan", "saved");
+
+                if (!report.valid) {
+                    showValidationReport(report);
+                    return;
+                }
+
+                document.getElementById('pub-confirm-title').textContent = currentDraft.title || '—';
+                document.getElementById('pub-confirm-mode').textContent = currentDraft.game_mode || '—';
+                document.getElementById('pub-confirm-stats').textContent = `${report.total_rounds} ta raund, ${report.total_questions} ta savol`;
+
+                const warnBox = document.getElementById('pub-confirm-warnings-box');
+                const warnList = document.getElementById('pub-confirm-warnings-list');
+                if (report.warnings && report.warnings.length > 0) {
+                    warnList.innerHTML = report.warnings.map(w => `<li>${escapeHtml(w)}</li>`).join('');
+                    warnBox.classList.remove('hidden');
+                } else {
+                    warnBox.classList.add('hidden');
+                }
+
+                document.getElementById('modal-publish-confirm').classList.remove('hidden');
+            } catch (err) {
+                alert("Tekshiruvda xatolik yuz berdi: " + err.message);
+                setSaveStatus("Xatolik", "error");
+            }
+        }
+
+        function closePublishConfirmModal() {
+            document.getElementById('modal-publish-confirm').classList.add('hidden');
+        }
+
+        async function executePublish() {
+            if (!currentDraft) return;
+            const btn = document.getElementById('btn-confirm-publish-submit');
+            btn.disabled = true;
+            btn.innerHTML = '<span>Nashr qilinmoqda...</span>';
+
+            try {
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}/publish`, { method: 'POST' });
+                if (res.status === 409) {
+                    alert("Bu kviz allaqachon nashr qilingan.");
+                    closePublishConfirmModal();
+                    await loadDraft(currentDraft.version_id);
+                    return;
+                }
+                if (!res.ok) {
+                    const err = await res.json();
+                    const detailMsg = typeof err.detail === 'string' ? err.detail : (err.detail.message || "Nashr qilib bo'lmadi");
+                    throw new Error(detailMsg);
+                }
+                const data = await res.json();
+
+                closePublishConfirmModal();
+                await loadDraft(currentDraft.version_id);
+                alert(`Tabriklaymiz! "${data.title}" kvizi muvaffaqiyatli nashr qilindi va o'yinchilar uchun ochildi.`);
+            } catch (err) {
+                alert("Nashr qilishda xatolik: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Ha, Nashr Qilish</span>';
+            }
+        }
+
+        async function openDraftsListModal() {
+            const list = document.getElementById('drafts-items-list');
+            list.innerHTML = `<div class="p-4 text-center text-slate-500 text-xs">Qoralamalar yuklanmoqda...</div>`;
+            document.getElementById('modal-drafts-list').classList.remove('hidden');
+
+            try {
+                const res = await fetch('/api/drafts');
+                const drafts = await res.json();
+
+                if (drafts.length === 0) {
+                    list.innerHTML = `<div class="p-4 text-center text-slate-500 text-xs">Hozircha hech qanday qoralama mavjud emas.</div>`;
+                    return;
+                }
+
+                let html = '';
+                drafts.forEach(d => {
+                    const isCurrent = currentDraft && currentDraft.version_id === d.version_id;
+                    html += `
+                        <div class="p-3.5 rounded-xl bg-slate-950 border ${isCurrent ? 'border-indigo-500 bg-indigo-950/20' : 'border-slate-800 hover:border-slate-700'} flex items-center justify-between gap-3 transition-colors">
+                            <div class="cursor-pointer flex-1" onclick="loadDraft(${d.version_id}); closeDraftsListModal();">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-xs text-white hover:text-indigo-300 transition-colors">
+                                        ${escapeHtml(d.title)}
+                                    </span>
+                                    ${isCurrent ? '<span class="px-1.5 py-0.5 rounded text-[10px] bg-indigo-600 text-white font-bold">Faol</span>' : ''}
+                                </div>
+                                <div class="flex items-center gap-3 mt-1 text-[11px] text-slate-500">
+                                    <span>${d.rounds_count} ta raund</span>
+                                    <span>•</span>
+                                    <span>${d.total_questions} ta savol</span>
+                                    <span>•</span>
+                                    <span>${d.created_at ? new Date(d.created_at).toLocaleDateString('uz') : ''}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button onclick="loadDraft(${d.version_id}); closeDraftsListModal();" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-indigo-300">
+                                    Ochish
+                                </button>
+                                <button onclick="handleDeleteDraft(${d.version_id})" class="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-950/30">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                list.innerHTML = html;
+            } catch (err) {
+                list.innerHTML = `<div class="p-4 text-center text-rose-400 text-xs">Xatolik: ${err.message}</div>`;
+            }
+        }
+
+        function closeDraftsListModal() {
+            document.getElementById('modal-drafts-list').classList.add('hidden');
+        }
+
+        async function handleDeleteDraft(draftId) {
+            if (!confirm("Haqiqatan ham bu qoralamani o'chirmoqchimisiz?")) return;
+            try {
+                const res = await fetch(`/api/drafts/${draftId}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error("O'chirishda xatolik");
+                
+                if (currentDraft && currentDraft.version_id === draftId) {
+                    currentDraft = null;
+                    await createNewDraft("Yangi Kviz");
+                } else {
+                    await openDraftsListModal();
+                }
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
