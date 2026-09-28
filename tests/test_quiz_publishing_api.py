@@ -100,6 +100,63 @@ def test_classic_zakovat_validation_enforces_exact_2_rounds_12_questions(client,
     assert pub_ok.json()["status"] == "published"
 
 
+def test_classic_zakovat_validation_rejects_single_round_24_questions(client, db_session):
+    """
+    Requirement: Classic Zakovat requires the authentic 2 tur x 12 questions structure.
+    A single round of 24 questions is rejected with INVALID_ROUND_COUNT.
+    """
+    res = client.post("/api/drafts", json={"title": "Single Round 24 Q Pack", "game_mode": "classic_zakovat"})
+    draft_id = res.json()["version_id"]
+
+    r = client.post(f"/api/drafts/{draft_id}/rounds", json={"round_type": "zakovat_classic"}).json()
+    round_id = r["round_id"]
+
+    for i in range(1, 25):
+        client.post(f"/api/drafts/{draft_id}/rounds/{round_id}/questions", json={
+            "text": f"Savol {i}",
+            "primary_answer": f"Javob {i}",
+            "points": 1,
+        })
+
+    val = client.post(f"/api/drafts/{draft_id}/validate").json()
+    assert val["valid"] is False
+    assert any(e["code"] == "INVALID_ROUND_COUNT" for e in val["structured_errors"])
+
+    # Attempting to publish must fail
+    pub_fail = client.post(f"/api/drafts/{draft_id}/publish")
+    assert pub_fail.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_classic_zakovat_validation_rejects_invalid_round_counts(client, db_session):
+    """
+    Classic Zakovat must reject 3+ rounds, or 1 round of an unsupported round_type.
+    """
+    # Case A: 3 rounds
+    res = client.post("/api/drafts", json={"title": "3-Round Classic", "game_mode": "classic_zakovat"})
+    draft_id = res.json()["version_id"]
+    for i in range(1, 4):
+        client.post(f"/api/drafts/{draft_id}/rounds", json={"round_type": "zakovat_classic"})
+
+    val3 = client.post(f"/api/drafts/{draft_id}/validate").json()
+    assert val3["valid"] is False
+    assert any(e["code"] == "INVALID_ROUND_COUNT" for e in val3["structured_errors"])
+
+    # Case B: 1 round of invalid type (not zakovat_classic, e.g. rasmiyatchilik)
+    res_b = client.post("/api/drafts", json={"title": "1-Round Rasmiyatchilik Classic", "game_mode": "classic_zakovat"})
+    draft_id_b = res_b.json()["version_id"]
+    r_b = client.post(f"/api/drafts/{draft_id_b}/rounds", json={"round_type": "rasmiyatchilik"}).json()
+    for i in range(1, 25):
+        client.post(f"/api/drafts/{draft_id_b}/rounds/{r_b['round_id']}/questions", json={
+            "text": f"Rasmiyatchilik savol {i}",
+            "primary_answer": f"Javob {i}",
+            "points": 1,
+        })
+
+    val_b = client.post(f"/api/drafts/{draft_id_b}/validate").json()
+    assert val_b["valid"] is False
+    assert any(e["code"] == "INVALID_ROUND_COUNT" for e in val_b["structured_errors"])
+
+
 def test_mantiqqasqon_requires_hidden_rule_and_keeps_it_hidden(client, db_session):
     """
     Requirement: For mantiqqasqon, publish validation must require the hidden rule/logic

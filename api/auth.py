@@ -39,6 +39,30 @@ def is_secure_cookie() -> bool:
     return os.getenv("ENVIRONMENT", "development").lower() == "production"
 
 
+def get_authoritative_anon_id(request: Request) -> Optional[str]:
+    """
+    Resolves authoritative anonymous visitor identity.
+    Prioritizes server-issued HttpOnly zakowhat_anon_id cookie.
+    Client-supplied headers must NOT override or bypass the cookie.
+    Only allows X-Anon-Id header when explicitly configured in development/test/local environments,
+    or when TESTING=true. Fails closed: if ENVIRONMENT is unset, missing, or production,
+    headers are strictly rejected.
+    """
+    cookie_val = request.cookies.get("zakowhat_anon_id")
+    if cookie_val and cookie_val.strip():
+        return cookie_val.strip()
+
+    is_testing = os.getenv("TESTING", "").strip().lower() in ("true", "1")
+    env = os.getenv("ENVIRONMENT", "").strip().lower()
+    is_dev_or_test = is_testing or (env in ("development", "test", "local"))
+    if is_dev_or_test:
+        header_val = request.headers.get("X-Anon-Id")
+        if header_val and header_val.strip():
+            return header_val.strip()
+
+    return None
+
+
 def hash_password(password: str) -> str:
     """Hashes a plaintext password using bcrypt."""
     salt = bcrypt.gensalt(rounds=12)
@@ -215,7 +239,7 @@ def register(payload: RegisterRequest, request: Request, response: Response, db:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Biriktirilishi so'ralgan o'yin sessiyasi topilmadi",
             )
-        request_anon_id = request.cookies.get("zakowhat_anon_id") or request.headers.get("X-Anon-Id")
+        request_anon_id = get_authoritative_anon_id(request)
         if (
             not request_anon_id
             or attempt.anon_id != request_anon_id
@@ -379,7 +403,7 @@ def google_auth(payload: GoogleAuthRequest, request: Request, response: Response
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Biriktirilishi so'ralgan o'yin sessiyasi topilmadi",
             )
-        request_anon_id = request.cookies.get("zakowhat_anon_id") or request.headers.get("X-Anon-Id")
+        request_anon_id = get_authoritative_anon_id(request)
         if (
             not request_anon_id
             or attempt.anon_id != request_anon_id

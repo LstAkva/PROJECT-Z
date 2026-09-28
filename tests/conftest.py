@@ -1,3 +1,7 @@
+import os
+os.environ.setdefault("ENVIRONMENT", "test")
+os.environ.setdefault("DB_TARGET", "test")
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -26,6 +30,15 @@ def setup_test_database():
     Base.metadata.create_all(bind=test_engine)
     yield
     Base.metadata.drop_all(bind=test_engine)
+
+
+@pytest.fixture(autouse=True)
+def isolate_environment():
+    """Ensures environment variables (like OWNER_EMAIL, ADMIN_EMAILS) do not leak across tests."""
+    orig_env = os.environ.copy()
+    yield
+    os.environ.clear()
+    os.environ.update(orig_env)
 
 
 @pytest.fixture

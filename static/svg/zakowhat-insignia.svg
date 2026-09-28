@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" aria-label="ZakoWhat Girih Knot Insignia">
+  <defs>
+    <radialGradient id="insigniaOxblood" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#5E121E" />
+      <stop offset="60%" stop-color="#3B0A12" />
+      <stop offset="100%" stop-color="#26060B" />
+    </radialGradient>
+    <linearGradient id="brassLinear" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E6D09C" />
+      <stop offset="50%" stop-color="#C5A059" />
+      <stop offset="100%" stop-color="#8A6D33" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer 8-pointed faceted star with rich oxblood core -->
+  <polygon points="50.00,2.00 58.80,28.75 83.94,16.06 71.25,41.20 98.00,50.00 71.25,58.80 83.94,83.94 58.80,71.25 50.00,98.00 41.20,71.25 16.06,83.94 28.75,58.80 2.00,50.00 28.75,41.20 16.06,16.06 41.20,28.75" fill="url(#insigniaOxblood)" stroke="url(#brassLinear)" stroke-width="2.5" stroke-linejoin="round" />
+
+  <!-- Interlocking geometric strapwork squares -->
+  <polygon points="84.00,50.00 50.00,84.00 16.00,50.00 50.00,16.00" stroke="url(#brassLinear)" stroke-width="1.8" fill="none" opacity="0.9" />
+  <polygon points="74.04,74.04 25.96,74.04 25.96,25.96 74.04,25.96" stroke="url(#brassLinear)" stroke-width="1.8" fill="none" opacity="0.9" />
+
+  <!-- Inner architectural octagon & center knot aperture -->
+  <circle cx="50" cy="50" r="16" stroke="url(#brassLinear)" stroke-width="2" fill="#0A080C" />
+  
+  <!-- Central eye / aperture of deduction -->
+  <polygon points="50,39 61,50 50,61 39,50" fill="url(#brassLinear)" />
+  <circle cx="50" cy="50" r="3.5" fill="#0A080C" />
+</svg>

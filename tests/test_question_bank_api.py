@@ -44,9 +44,90 @@ def sample_question_bank(db_session):
     return [q1, q2, q3]
 
 
-def test_list_questions_pagination(client, sample_question_bank):
-    """Verify paginated listing of Question Bank questions."""
-    res = client.get("/api/questions?page=1&page_size=2")
+import uuid
+
+
+@pytest.fixture
+def owner_client(client, monkeypatch):
+    """Registers and authenticates a test client as an authorized owner."""
+    owner_email = f"test_owner_{uuid.uuid4().hex[:8]}@example.test"
+    monkeypatch.setenv("OWNER_EMAIL", owner_email)
+    client.cookies.clear()
+    res = client.post("/api/auth/register", json={
+        "email": owner_email,
+        "password": "ValidPassword123!",
+        "display_name": "Test Owner",
+    })
+    assert res.status_code == status.HTTP_201_CREATED
+    return client
+
+
+def test_question_bank_api_authorization_guards(client, monkeypatch):
+    """
+    Contract: Question Bank API is internal infrastructure.
+    - Unauthenticated users get 401 Unauthorized.
+    - Authenticated non-owner users get 403 Forbidden.
+    """
+    monkeypatch.setenv("OWNER_EMAIL", "authorized_owner@example.test")
+    client.cookies.clear()
+
+    # 1. Unauthenticated -> 401
+    res = client.get("/api/questions")
+    assert res.status_code == status.HTTP_401_UNAUTHORIZED
+    res = client.get("/api/questions/filters")
+    assert res.status_code == status.HTTP_401_UNAUTHORIZED
+    res = client.get("/api/questions/1")
+    assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    # 2. Authenticated non-owner -> 403
+    client.post("/api/auth/register", json={
+        "email": "regular_player@example.test",
+        "password": "ValidPassword123!",
+        "display_name": "Normal Player",
+    })
+    res = client.get("/api/questions")
+    assert res.status_code == status.HTTP_403_FORBIDDEN
+    res = client.get("/api/questions/filters")
+    assert res.status_code == status.HTTP_403_FORBIDDEN
+    res = client.get("/api/questions/1")
+    assert res.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_question_bank_and_builder_page_route_protection(client, monkeypatch):
+    """
+    Contract: Direct browser access to /bank, /admin, /builder, /create
+    redirects unauthenticated and normal users to /owner.
+    """
+    monkeypatch.setenv("OWNER_EMAIL", "authorized_owner@example.test")
+    client.cookies.clear()
+
+    # Unauthenticated -> redirect to /owner (303)
+    res = client.get("/bank", follow_redirects=False)
+    assert res.status_code == status.HTTP_303_SEE_OTHER
+    assert res.headers["location"] == "/owner"
+
+    res = client.get("/builder", follow_redirects=False)
+    assert res.status_code == status.HTTP_303_SEE_OTHER
+    assert res.headers["location"] == "/owner"
+
+    # Normal user -> redirect to /owner (303)
+    client.post("/api/auth/register", json={
+        "email": "regular_player2@example.test",
+        "password": "ValidPassword123!",
+        "display_name": "Normal Player 2",
+    })
+    res = client.get("/bank", follow_redirects=False)
+    assert res.status_code == status.HTTP_303_SEE_OTHER
+    assert res.headers["location"] == "/owner"
+
+    res = client.get("/builder", follow_redirects=False)
+    assert res.status_code == status.HTTP_303_SEE_OTHER
+    assert res.headers["location"] == "/owner"
+
+
+def test_list_questions_pagination(owner_client, sample_question_bank):
+    """Verify paginated listing of Question Bank questions for owner."""
+    res = owner_client.get("/api/questions?page=1&page_size=2")
     assert res.status_code == status.HTTP_200_OK
     data = res.json()
     assert data["total"] == 3
@@ -56,9 +137,9 @@ def test_list_questions_pagination(client, sample_question_bank):
     assert len(data["items"]) == 2
 
 
-def test_list_questions_search(client, sample_question_bank):
+def test_list_questions_search(owner_client, sample_question_bank):
     """Verify search filter by substring on question text."""
-    res = client.get("/api/questions?search=Navoiy")
+    res = owner_client.get("/api/questions?search=Navoiy")
     assert res.status_code == status.HTTP_200_OK
     data = res.json()
     assert data["total"] == 1
@@ -66,32 +147,32 @@ def test_list_questions_search(client, sample_question_bank):
     assert data["items"][0]["primary_answer"] == "Xamsa"
 
 
-def test_list_questions_filter_status(client, sample_question_bank):
+def test_list_questions_filter_status(owner_client, sample_question_bank):
     """Verify filtering by status (ready vs needs_review)."""
-    res_ready = client.get("/api/questions?status=ready")
+    res_ready = owner_client.get("/api/questions?status=ready")
     assert res_ready.status_code == status.HTTP_200_OK
     assert res_ready.json()["total"] == 2
     for item in res_ready.json()["items"]:
         assert item["status"] == "ready"
 
-    res_review = client.get("/api/questions?status=needs_review")
+    res_review = owner_client.get("/api/questions?status=needs_review")
     assert res_review.status_code == status.HTTP_200_OK
     assert res_review.json()["total"] == 1
     assert res_review.json()["items"][0]["status"] == "needs_review"
 
 
-def test_list_questions_filter_category(client, sample_question_bank):
+def test_list_questions_filter_category(owner_client, sample_question_bank):
     """Verify filtering by category."""
-    res = client.get("/api/questions?category=Tarix")
+    res = owner_client.get("/api/questions?category=Tarix")
     assert res.status_code == status.HTTP_200_OK
     data = res.json()
     assert data["total"] == 1
     assert data["items"][0]["category"] == "Tarix"
 
 
-def test_get_filter_options(client, sample_question_bank):
+def test_get_filter_options(owner_client, sample_question_bank):
     """Verify /api/questions/filters returns available categories, statuses, sources."""
-    res = client.get("/api/questions/filters")
+    res = owner_client.get("/api/questions/filters")
     assert res.status_code == status.HTTP_200_OK
     data = res.json()
     assert "ready" in data["statuses"]
@@ -100,10 +181,10 @@ def test_get_filter_options(client, sample_question_bank):
     assert "Tarix" in data["categories"]
 
 
-def test_get_question_detail_success(client, sample_question_bank):
+def test_get_question_detail_success(owner_client, sample_question_bank):
     """Verify full question detail including accepted answers."""
     q1 = sample_question_bank[0]
-    res = client.get(f"/api/questions/{q1.id}")
+    res = owner_client.get(f"/api/questions/{q1.id}")
     assert res.status_code == status.HTTP_200_OK
     data = res.json()
     assert data["id"] == q1.id
@@ -113,9 +194,9 @@ def test_get_question_detail_success(client, sample_question_bank):
     assert any(a["answer_text"] == "Xamsa dostoni" and not a["is_primary"] for a in data["accepted_answers"])
 
 
-def test_get_question_detail_not_found(client):
+def test_get_question_detail_not_found(owner_client):
     """Verify 404 for missing question ID."""
-    res = client.get("/api/questions/999999")
+    res = owner_client.get("/api/questions/999999")
     assert res.status_code == status.HTTP_404_NOT_FOUND
 
 

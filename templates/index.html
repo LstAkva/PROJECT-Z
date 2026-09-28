@@ -1,222 +1,225 @@
 <!DOCTYPE html>
-<html lang="uz" class="h-full bg-slate-950 text-slate-100">
+<html lang="uz" data-theme="dark" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZakoWhat — Milliy Intellektual Viktorina Platformasi</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <title>ZakoWhat — Mustaqil Intellektual Maydon</title>
+    <meta name="description" content="ZakoWhat — klassik Zakovat anʼanalaridan ilhomlangan mustaqil intellektual viktorina platformasi. Saralangan to‘plamlar, 2×12 formati va chuqur mantiqiy tafakkur maydoni.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-favicon.svg">
+
+    <!-- Architectural Google Fonts: Cinzel, Playfair Display, Plus Jakarta Sans, JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS (for layout utilities) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <!-- Core ZakoWhat Design System v1.1 -->
+    <link rel="stylesheet" href="/static/css/zakowhat-design-system.css">
+
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('zakowhat-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
     <script>
         tailwind.config = {
-            darkMode: 'class',
+            darkMode: ['class', '[data-theme="dark"]'],
             theme: {
                 extend: {
                     fontFamily: {
                         sans: ['"Plus Jakarta Sans"', 'sans-serif'],
                         display: ['"Cinzel"', 'serif'],
+                        serif: ['"Playfair Display"', 'serif'],
                         mono: ['"JetBrains Mono"', 'monospace'],
                     },
                     colors: {
                         brand: {
-                            50: '#f5f7ff',
-                            100: '#ebf0fe',
-                            200: '#ced9fd',
-                            500: '#4f46e5',
-                            600: '#4338ca',
-                            700: '#3730a3',
-                            900: '#1e1b4b',
+                            50: '#FAF7F2',
+                            100: '#E6D09C',
+                            500: '#C5A059',
+                            700: '#7A1627',
+                            900: '#3B0A12',
+                            950: '#0A080C',
                         }
                     }
                 }
             }
         }
     </script>
-    <style>
-        .custom-gradient {
-            background: radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.18) 0%, rgba(15, 23, 42, 0) 75%);
-        }
-        .shimmer {
-            background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 100%);
-            background-size: 200% 100%;
-            animation: shimmer 1.8s infinite;
-        }
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-    </style>
 </head>
-<body class="min-h-full flex flex-col font-sans selection:bg-indigo-500 selection:text-white custom-gradient">
+<body class="min-h-full flex flex-col font-sans selection:bg-amber-600/30 selection:text-white">
 
-    <!-- Top Navigation Header -->
-    <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-6">
-                <div class="flex items-center gap-3 cursor-pointer" onclick="goToQuizSelection()">
-                    <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-display font-bold text-white shadow-lg shadow-indigo-600/30">
-                        Z
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="font-display tracking-widest text-lg font-bold text-white leading-none">ZAKOWHAT</span>
-                        <span class="text-[10px] tracking-wider uppercase text-slate-400 font-semibold mt-0.5">Intellektual Arena</span>
-                    </div>
-                </div>
-
-                <nav class="hidden md:flex items-center gap-1 border-l border-slate-800 pl-6">
-                    <a href="/" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-300 bg-indigo-950/60 border border-indigo-500/30">
-                        Viktorinalar / Arena
-                    </a>
-                    <a href="/builder" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors">
-                        Kviz Konstruktori
-                    </a>
-                    <a href="/bank" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors">
-                        Savollar Banki
-                    </a>
-                </nav>
+    <!-- Architectural Masthead -->
+    <header class="masthead">
+        <div class="masthead-inner">
+            <div class="brand-link cursor-pointer" onclick="goToQuizSelection()" role="button" aria-label="ZakoWhat bosh sahifa">
+                <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat Girih Nishoni" class="brand-logo-img">
+                <span class="brand-title">ZakoWhat</span>
+                <span class="brand-tag">Intellektual Maydon</span>
             </div>
 
-            <!-- Header Status, Score & Auth -->
-            <div class="flex items-center gap-3 sm:gap-4">
-                <div id="header-score-badge" class="hidden items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-950/80 border border-indigo-500/40 text-xs font-semibold text-indigo-200">
-                    <span>Ball:</span>
-                    <span id="header-score-value" class="font-mono text-sm text-white font-bold">0</span>
-                </div>
-                <div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs text-slate-400">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span class="hidden sm:inline">Server Online</span>
-                </div>
+            <nav class="nav-actions" aria-label="Asosiy navigatsiya">
+                <a href="/" onclick="goToQuizSelection(); return false;" class="nav-link font-bold active">
+                    To‘plamlar
+                </a>
+                
+                <!-- Live Theme Toggle Button -->
+                <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Mavzuni almashtirish" title="Mavzuni almashtirish" onclick="toggleZakoWhatTheme()">
+                    <svg id="moonIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sunIcon" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="2" x2="12" y2="6"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
 
                 <!-- User Profile / Auth Action Buttons -->
-                <div id="header-auth-section" class="flex items-center gap-2 pl-2 border-l border-slate-800">
+                <div id="header-auth-section" class="flex items-center gap-2 pl-3 border-l border-zinc-700/50">
                     <div id="header-guest-controls" class="flex items-center gap-2">
-                        <button onclick="openAuthModal('login')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 border border-slate-800 transition-colors">
+                        <button onclick="openAuthModal('login')" class="btn btn-secondary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;">
                             Kirish
                         </button>
-                        <button onclick="openAuthModal('register')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shadow-sm">
-                            Ro'yxatdan o'tish
+                        <button onclick="openAuthModal('register')" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;">
+                            Ro‘yxatdan o‘tish
                         </button>
                     </div>
                     <div id="header-user-controls" class="hidden items-center gap-3">
                         <div class="flex items-center gap-2">
-                            <span class="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-xs text-indigo-300">👤</span>
+                            <span class="w-7 h-7 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-xs text-amber-300">👤</span>
                             <span id="header-user-name" class="text-xs font-bold text-white max-w-[120px] truncate"></span>
                         </div>
-                        <button onclick="handleLogout()" class="text-xs text-slate-400 hover:text-rose-400 transition-colors">
+                        <button onclick="handleLogout()" class="text-xs text-zinc-400 hover:text-rose-400 transition-colors">
                             Chiqish
                         </button>
                     </div>
                 </div>
-            </div>
+            </nav>
         </div>
     </header>
 
     <!-- Main Dynamic Application Container -->
-    <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
 
         <!-- ================================================================= -->
-        <!-- ================================================================= -->
-        <!-- SCREEN 1: ZAKOWHAT ARENA (DISCOVERY & QUIZZES) -->
+        <!-- SCREEN 1: ZAKOWHAT ARENA (CURATED PACK CATALOG) -->
         <!-- ================================================================= -->
         <section id="screen-selection" class="space-y-8 animate-fade-in">
-            <!-- Arena Header -->
-            <div class="space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800 pb-6">
-                    <div class="space-y-2">
-                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-semibold text-indigo-400">
-                            <span>🏛️ ZakoWhat Arena</span>
-                            <span class="w-1 h-1 rounded-full bg-indigo-500"></span>
-                            <span class="text-slate-400">Intellektual Maydon</span>
-                        </div>
-                        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                            Rasmiy Viktorina Turnirlari
-                        </h1>
-                        <p class="text-slate-400 text-xs sm:text-sm max-w-xl leading-relaxed">
-                            O'z bilimingizni sinab ko'ring, saralangan turnirlarda qatnashing va versiya bo'yicha yetakchilar reytingida peshqadamga aylaning.
-                        </p>
+            <!-- Staging Mode Notice Banner (Private / Admin Direct Visit) -->
+            <div id="staging-mode-banner" class="hidden p-4 sm:p-5 rounded-2xl bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-amber-500/5">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl shrink-0">🔒</span>
+                    <div>
+                        <strong class="font-bold text-amber-200 text-sm sm:text-base">Shaxsiy Staging Rejimi (Tahririyat / Test)</strong>
+                        <p class="text-xs text-amber-300/80 mt-0.5">Ushbu to‘plamlar qoralama holatida bo‘lib, ommaviy Arenada ko‘rinmaydi. Siz ularni to‘liq 24 talik o‘yin rejimida sinab ko‘rishingiz mumkin.</p>
+                    </div>
+                </div>
+                <a href="/arena" class="btn btn-secondary shrink-0 text-xs font-bold" style="padding: 0.4rem 0.9rem;">
+                    <span>Ommaviy Arenaga Qaytish &rarr;</span>
+                </a>
+            </div>
+
+            <!-- Arena Catalog Header -->
+            <div class="arena-catalog-header">
+                <div class="space-y-2">
+                    <div class="pack-badge inline-flex items-center gap-2">
+                        <span>🏛️ ZAKOWHAT ARENA</span>
+                        <span class="opacity-40">•</span>
+                        <span>SARALANGAN TO‘PLAMLAR</span>
+                    </div>
+                    <h1 class="arena-catalog-title">
+                        Rasmiy Viktorina To‘plamlari
+                    </h1>
+                    <p class="arena-catalog-desc">
+                        Klassik Zakovat anʼanalariga asoslangan 2×12 formatidagi saralangan intellektual to‘plamlar. O‘z bilimingizni sinab ko‘ring va yetakchilar safiga qo‘shiling.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Arena Search and Filters Toolbar -->
+            <div id="arena-filters-toolbar" class="arena-toolbar">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <!-- Search Input -->
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-brass-400 text-sm">
+                            🔍
+                        </span>
+                        <input
+                            id="arena-search-input"
+                            type="text"
+                            placeholder="To‘plam nomi yoki tavsifi bo‘yicha qidirish..."
+                            oninput="handleSearchInput(event)"
+                            class="arena-search-input"
+                        >
+                        <button
+                            id="arena-search-clear"
+                            onclick="clearSearchInput()"
+                            class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-white cursor-pointer text-xs"
+                            title="Tozalash"
+                        >
+                            ✕
+                        </button>
                     </div>
 
-                    <div class="flex items-center gap-2 self-start sm:self-auto">
-                        <a href="/bank" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition-colors flex items-center gap-1.5">
-                            <span>📚</span>
-                            <span>Savollar Banki</span>
-                        </a>
-                        <a href="/create" class="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-xs font-semibold text-indigo-300 transition-colors flex items-center gap-1.5">
-                            <span>✍️</span>
-                            <span>Kviz Yaratish</span>
-                        </a>
+                    <!-- Game Mode Filter Dropdown -->
+                    <div class="sm:w-56">
+                        <select
+                            id="arena-mode-filter"
+                            onchange="handleModeChange(event)"
+                            class="arena-select w-full"
+                        >
+                            <option value="all">Barcha formatlar</option>
+                            <option value="classic_zakovat">Zakovat (2×12 / 24 savol)</option>
+                            <option value="modern_multiround">Zamonaviy Multi-raund</option>
+                            <option value="svoyak">Svoяk</option>
+                            <option value="blitz">Tezkor Blitz</option>
+                            <option value="standard">Standart</option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- Arena Search and Filters Toolbar -->
-                <div class="space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80">
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                        <!-- Search Input -->
-                        <div class="relative flex-1">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
-                                🔍
-                            </span>
-                            <input
-                                id="arena-search-input"
-                                type="text"
-                                placeholder="Viktorina nomi yoki tavsifi bo'yicha qidirish..."
-                                oninput="handleSearchInput(event)"
-                                class="w-full pl-10 pr-9 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
-                            >
-                            <button
-                                id="arena-search-clear"
-                                onclick="clearSearchInput()"
-                                class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer text-xs"
-                                title="Tozalash"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        <!-- Game Mode Filter Dropdown -->
-                        <div class="sm:w-56">
-                            <select
-                                id="arena-mode-filter"
-                                onchange="handleModeChange(event)"
-                                class="w-full py-2.5 px-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer"
-                            >
-                                <option value="all">Barcha formatlar</option>
-                                <option value="modern_multiround">Zamonaviy Multi-raund</option>
-                                <option value="classic_zakovat">Klassik Zakovat (12+12)</option>
-                                <option value="svoyak">Svoяk</option>
-                                <option value="blitz">Tezkor Blitz</option>
-                                <option value="standard">Standart</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Category Pills Wrap -->
-                    <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none text-xs">
-                        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-                            Turkumlar:
-                        </span>
-                        <div id="arena-category-pills" class="flex items-center gap-1.5 flex-wrap">
-                            <!-- Category Pills rendered dynamically -->
-                        </div>
+                <!-- Category Pills Wrap -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-2 border-t border-[var(--border-subtle)] text-xs">
+                    <span class="text-[11px] font-semibold text-brass-400 uppercase tracking-wider shrink-0 mr-1">
+                        Turkumlar:
+                    </span>
+                    <div id="arena-category-pills" class="flex items-center gap-1.5 flex-wrap">
+                        <!-- Category Pills rendered dynamically -->
                     </div>
                 </div>
             </div>
 
             <!-- Arena Loading Area -->
-            <div id="arena-loading" class="p-12 rounded-2xl border border-slate-800 bg-slate-900/40 text-center space-y-3">
-                <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p class="text-sm text-slate-400">Arenadagi viktorinalar yuklanmoqda...</p>
+            <div id="arena-loading" class="p-12 rounded-2xl border border-zinc-800 bg-black/40 text-center space-y-3">
+                <div class="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="text-sm text-zinc-400">Arenadagi to‘plamlar yuklanmoqda...</p>
             </div>
 
-            <!-- Empty State -->
-            <div id="arena-empty" class="hidden p-12 rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 text-center space-y-3 animate-fade-in">
-                <div class="text-3xl">📭</div>
-                <p id="arena-empty-title" class="text-slate-300 text-base font-bold">Mos keluvchi viktorinalar topilmadi</p>
-                <p id="arena-empty-desc" class="text-xs text-slate-400 max-w-md mx-auto">Qidiruv yoki filtrlash parametrlarini o'zgartirib ko'ring yoki barcha filtrlarni tozalang.</p>
-                <div class="pt-2">
-                    <button onclick="clearAllFilters()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition-colors cursor-pointer">
+            <!-- Intentional Empty State (Architectural Geometric Codex) -->
+            <div id="arena-empty" class="hidden arena-empty-state animate-fade-in">
+                <div class="arena-empty-seal">
+                    <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat Girih" class="w-full h-full opacity-60">
+                </div>
+                <h3 id="arena-empty-title" class="arena-empty-title">Hozircha ochiq turnirlar to‘plami mavjud emas</h3>
+                <p id="arena-empty-desc" class="arena-empty-desc">
+                    Yangi saralangan to‘plamlar tahririyat tomonidan tasdiqlanishi kutilmoqda. Tez orada rasmiy 2×12 turnirlar eʼlon qilinadi.
+                </p>
+                <div id="arena-empty-actions" class="pt-2 hidden">
+                    <button onclick="clearAllFilters()" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">
                         Filtrlarni tozalash
                     </button>
                 </div>
@@ -227,7 +230,7 @@
                 <!-- Featured Quiz Section (shown if any featured/primary quiz exists) -->
                 <div id="arena-featured-section" class="hidden space-y-3">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <h2 class="text-xs font-bold text-brass-400 uppercase tracking-wider flex items-center gap-1.5">
                             <span>⭐</span>
                             <span>Tanlangan Turnir</span>
                         </h2>
@@ -237,13 +240,13 @@
                     </div>
                 </div>
 
-                <!-- Recent Quizzes List -->
+                <!-- Quizzes List -->
                 <div class="space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <div class="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+                        <h2 class="text-xs font-bold text-brass-400 uppercase tracking-wider flex items-center gap-1.5">
                             <span>📋</span>
                             <span>Barcha Viktorinalar</span>
-                            <span id="arena-quizzes-count" class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">0</span>
+                            <span id="arena-quizzes-count" class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-300">0</span>
                         </h2>
                     </div>
                     <div id="arena-quizzes-grid" class="space-y-4">
@@ -254,161 +257,205 @@
         </section>
 
         <!-- ================================================================= -->
-        <!-- SCREEN 2: ACTIVE GAMEPLAY (SOLO ATTEMPT) -->
+        <!-- SCREEN 2: ACTIVE GAMEPLAY (DARK TABLE REAL EXPERIENCE) -->
         <!-- ================================================================= -->
-        <section id="screen-gameplay" class="hidden space-y-6 animate-fade-in">
-            <!-- Round & Question Header Bar -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/70 border border-slate-800">
-                <div class="flex items-center gap-3">
-                    <span id="gameplay-round-badge" class="px-3 py-1 rounded-lg text-xs font-bold tracking-wide uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                        STANDART
-                    </span>
-                    <span id="gameplay-question-counter" class="text-sm font-semibold text-slate-300">
-                        Savol 1 / 5
-                    </span>
-                </div>
+        <section id="screen-gameplay" class="hidden animate-fade-in w-full">
+            <div class="table-outer-rim">
+                <div class="table-felt-surface">
+                    <div class="table-girih-bg"></div>
 
-                <!-- Timer & Points -->
-                <div class="flex items-center gap-4 self-end sm:self-auto">
-                    <div class="flex items-center gap-1.5 text-xs text-slate-400">
-                        <span>Ochko:</span>
-                        <span id="gameplay-points-value" class="font-bold text-amber-400 font-mono text-sm">1</span>
-                    </div>
-                    <div class="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 font-mono text-sm font-bold text-slate-200">
-                        <svg class="w-4 h-4 text-indigo-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span id="gameplay-timer-value">60</span>s
-                    </div>
-                </div>
-            </div>
-
-            <!-- Round Progress Bar -->
-            <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
-                <div id="gameplay-progress-bar" class="bg-gradient-to-r from-indigo-500 to-indigo-400 h-1.5 rounded-full transition-all duration-300" style="width: 20%"></div>
-            </div>
-
-            <!-- Question Card -->
-            <div class="relative p-6 sm:p-10 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
-
-                <!-- Media Display (if available) -->
-                <div id="question-media-container" class="hidden overflow-hidden rounded-xl border border-slate-800 max-h-72">
-                    <img id="question-media-img" src="" alt="Savol surati" class="w-full h-full object-contain bg-slate-950">
-                </div>
-
-                <!-- Question Text -->
-                <div class="space-y-2">
-                    <div class="text-xs uppercase tracking-widest font-bold text-slate-400">Savol mazmuni:</div>
-                    <h2 id="gameplay-question-text" class="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-snug">
-                        Yuklanmoqda...
-                    </h2>
-                </div>
-
-                <!-- Answer Form Area -->
-                <div id="answer-form-wrapper" class="pt-4 border-t border-slate-800/80 space-y-4">
-
-                    <!-- Standard / Mantiqasqon / Zanjir Text Input -->
-                    <form id="text-answer-form" class="space-y-4" onsubmit="handleTextAnswerSubmit(event)">
-                        <div class="relative">
-                            <input
-                                type="text"
-                                id="answer-text-input"
-                                autocomplete="off"
-                                autofocus
-                                placeholder="Javobingizni lotin alifbosida kiriting..."
-                                class="w-full px-5 py-4 rounded-2xl bg-slate-950 border-2 border-slate-800 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 text-white placeholder-slate-400 text-base sm:text-lg transition-all outline-none"
-                            />
+                    <!-- Table Header HUD -->
+                    <div class="table-hud">
+                        <div class="table-hud-meta">
+                            <span class="meta-status-dot"></span>
+                            <span id="gameplay-quiz-title" class="truncate max-w-[200px] text-alabaster font-bold"></span>
+                            <span class="text-brass-400">•</span>
+                            <span id="gameplay-round-badge" class="pack-badge">1-TUR</span>
+                            <span class="text-brass-400">•</span>
+                            <span id="gameplay-question-counter" class="text-alabaster font-semibold font-mono">Savol 1 / 12</span>
                         </div>
-                        <div class="flex items-center justify-between gap-4">
-                            <span class="text-xs text-slate-400 hidden sm:inline">Maslahat: [Enter] tugmasini bosishingiz mumkin</span>
-                            <button
-                                type="submit"
-                                id="answer-submit-btn"
-                                class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm sm:text-base transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <span>Javobni Yuborish</span>
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                </svg>
-                            </button>
-                        </div>
-                    </form>
 
-                    <!-- True/False Quick Choice Buttons (Toggled for true_false rounds) -->
-                    <div id="true-false-actions" class="hidden grid grid-cols-2 gap-4">
-                        <button
-                            type="button"
-                            onclick="handleTrueFalseSubmit('rost')"
-                            class="py-5 px-6 rounded-2xl bg-emerald-950/40 border-2 border-emerald-600/40 hover:border-emerald-500 hover:bg-emerald-900/50 text-emerald-300 font-bold text-lg sm:text-xl transition-all shadow-lg shadow-emerald-950/50 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95"
-                        >
-                            <span class="text-2xl">✓</span>
-                            <span>To'g'ri (Rost)</span>
-                            <span class="text-xs text-emerald-400/70 font-mono font-normal">[1 yoki H]</span>
-                        </button>
-                        <button
-                            type="button"
-                            onclick="handleTrueFalseSubmit('yolg\'on')"
-                            class="py-5 px-6 rounded-2xl bg-rose-950/40 border-2 border-rose-600/40 hover:border-rose-500 hover:bg-rose-900/50 text-rose-300 font-bold text-lg sm:text-xl transition-all shadow-lg shadow-rose-950/50 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95"
-                        >
-                            <span class="text-2xl">✕</span>
-                            <span>Noto'g'ri (Yolg'on)</span>
-                            <span class="text-xs text-rose-400/70 font-mono font-normal">[2 yoki Y]</span>
-                        </button>
+                        <!-- Authentic Deliberation Clock (No tenths jitter) -->
+                        <div class="clock-display">
+                            <svg class="clock-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
+                            </svg>
+                            <span id="gameplay-timer-value">90</span><span id="gameplay-timer-unit">s</span>
+                        </div>
                     </div>
 
-                    <!-- Instant Feedback Banner -->
-                    <div id="gameplay-feedback-banner" class="hidden p-4 rounded-xl text-center font-bold text-sm sm:text-base animate-bounce">
+                    <!-- Progress Bar inside Table -->
+                    <div class="w-full bg-black/40 rounded-full h-1 mb-6 overflow-hidden border border-brass-500/20">
+                        <div id="gameplay-progress-bar" class="h-1 rounded-full bg-gradient-to-r from-brass-600 via-amber-400 to-brass-300 transition-all duration-300" style="width: 8%;"></div>
+                    </div>
+
+                    <!-- Flat Legible Question Card -->
+                    <div class="question-stage-card">
+                        <!-- Media Display (if any) -->
+                        <div id="question-media-container" class="hidden overflow-hidden rounded-xl border border-brass-500/30 max-h-72 mb-4">
+                            <img id="question-media-img" src="" alt="Savol surati" class="w-full h-full object-contain bg-black">
+                        </div>
+
+                        <div class="question-stage-tag">
+                            <span id="gameplay-card-tag">SAVOL</span>
+                            <span class="text-brass-400 font-mono text-xs">ZAKOVAT 2×12</span>
+                        </div>
+
+                        <h2 id="gameplay-question-text" class="question-text">
+                            Yuklanmoqda...
+                        </h2>
+
+                        <!-- Answer Form Area -->
+                        <div id="answer-form-wrapper" class="pt-4 border-t border-brass-500/20">
+                            <form id="text-answer-form" onsubmit="handleTextAnswerSubmit(event)">
+                                <div class="submission-bar">
+                                    <input
+                                        type="text"
+                                        id="answer-text-input"
+                                        class="input-answer"
+                                        autocomplete="off"
+                                        autofocus
+                                        placeholder="Javobingizni kiriting..."
+                                    />
+                                    <button
+                                        type="submit"
+                                        id="answer-submit-btn"
+                                        class="btn-submit"
+                                    >
+                                        Javobni yuborish
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- True/False Quick Choice Buttons (Toggled for true_false rounds) -->
+                            <div id="true-false-actions" class="hidden grid grid-cols-2 gap-4 pt-2">
+                                <button
+                                    type="button"
+                                    onclick="handleTrueFalseSubmit('rost')"
+                                    class="btn btn-secondary py-4 text-emerald-300 font-bold border-emerald-600/40"
+                                >
+                                    ✓ To‘g‘ri (Rost)
+                                </button>
+                                <button
+                                    type="button"
+                                    onclick="handleTrueFalseSubmit('yolg\'on')"
+                                    class="btn btn-secondary py-4 text-rose-300 font-bold border-rose-600/40"
+                                >
+                                    ✕ Noto‘g‘ri (Yolg‘on)
+                                </button>
+                            </div>
+
+                            <!-- Instant Feedback Banner -->
+                            <div id="gameplay-feedback-banner" class="hidden mt-4 p-3 rounded-lg text-center font-bold text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table Footer Format Info -->
+                    <div class="table-format-info">
+                        <span>Mustaqil Intellektual Stol · Zakovat 2×12</span>
+                        <span class="text-xs opacity-75">Javobingizni klaviaturadan kiritib, Enter tugmasini bosing</span>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- ================================================================= -->
+        <!-- SCREEN 2.5: INTERMEDIATE BREAK (12-SAVOLLIK DAVRA TANAFFUSI) -->
+        <!-- ================================================================= -->
+        <section id="screen-intermediate" class="hidden animate-fade-in w-full py-8">
+            <div class="intermission-card">
+                <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-2xl flex items-center justify-center mx-auto text-amber-300 mb-4 shadow-lg shadow-amber-500/10">
+                    ⏳
+                </div>
+                <div class="pack-badge inline-block mb-3">O‘yin oralig‘i</div>
+                <h2 id="intermediate-break-title" class="text-2xl sm:text-3xl font-display font-extrabold text-white mb-2">
+                    1-TUR YAKUNLANDI
+                </h2>
+                <p id="intermediate-break-message" class="text-sm text-zinc-300 leading-relaxed max-w-md mx-auto mb-6">
+                    Birinchi tur (12 ta savol) yakunlandi. Nafasingizni rostlang va 2-turga o‘tish uchun tayyor bo‘lganingizda tugmani bosing.
+                </p>
+
+                <div class="intermission-scores-grid">
+                    <div>
+                        <div class="score-box-label text-emerald-400">To‘g‘ri</div>
+                        <div id="intermediate-correct-count" class="score-box-value text-emerald-300">0</div>
+                    </div>
+                    <div style="border-left: 1px solid var(--border-subtle); border-right: 1px solid var(--border-subtle);">
+                        <div class="score-box-label text-rose-400">Noto‘g‘ri</div>
+                        <div id="intermediate-incorrect-count" class="score-box-value text-rose-300">0</div>
+                    </div>
+                    <div>
+                        <div class="score-box-label text-zinc-400">Javobsiz</div>
+                        <div id="intermediate-unanswered-count" class="score-box-value text-zinc-300">0</div>
+                    </div>
+                </div>
+
+                <!-- Break Countdown -->
+                <div class="clock-display mx-auto justify-center mb-6 max-w-[200px]">
+                    <svg class="clock-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
+                    </svg>
+                    <span id="intermediate-timer-display">03:00</span>
+                </div>
+
+                <button
+                    type="button"
+                    id="intermediate-continue-btn"
+                    onclick="handleIntermediateContinue()"
+                    class="btn btn-primary w-full py-4 text-base"
+                >
+                    <span>2-turni boshlash</span>
+                    <span>&rarr;</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
         <!-- SCREEN 3: ROUND REVEAL -->
         <!-- ================================================================= -->
-        <section id="screen-reveal" class="hidden space-y-6 animate-fade-in">
-            <div class="p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-6">
+        <section id="screen-reveal" class="hidden space-y-6 animate-fade-in w-full max-w-3xl mx-auto py-8">
+            <div class="results-codex-card space-y-6">
                 <div class="text-center space-y-2">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-semibold text-indigo-300">
-                        <span>📋 Raund Natijalari</span>
+                    <div class="pack-badge inline-block">
+                        <span id="reveal-heading-badge">📋 Tur Natijalari</span>
                     </div>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Raund Yakunlandi!</h2>
-                    <p id="reveal-round-score-text" class="text-slate-400 text-sm sm:text-base">
-                        To'plangan ball: <span class="font-bold text-white font-mono">0</span>
+                    <h2 id="reveal-heading-title" class="text-2xl sm:text-3xl font-display font-extrabold text-white">Tur Yakunlandi!</h2>
+                    <p id="reveal-round-score-text" class="text-zinc-400 text-sm sm:text-base">
                     </p>
                 </div>
 
-                <!-- Mantiqasqon Hidden Rule Card -->
-                <div id="reveal-hidden-rule-card" class="hidden p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 space-y-1">
+                <!-- Hidden Rule Card if present -->
+                <div id="reveal-hidden-rule-card" class="hidden p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-1">
                     <div class="text-xs uppercase tracking-wider font-bold text-amber-400 flex items-center gap-1.5">
                         <span>💡</span>
-                        <span>Mantiqiy Bog'liqlik (Yashirin Qoida):</span>
+                        <span>Mantiqiy Bog‘liqlik:</span>
                     </div>
-                    <p id="reveal-hidden-rule-content" class="text-base sm:text-lg font-bold text-amber-200">
+                    <p id="reveal-hidden-rule-content" class="text-base font-bold text-amber-200">
                         ...
                     </p>
                 </div>
 
                 <!-- Questions & Answers Summary List -->
                 <div class="space-y-4">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Savollar va javoblar tahlili:</h3>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-brass-400">Savollar va javoblar tahlili:</h3>
                     <div id="reveal-questions-list" class="space-y-3">
                         <!-- Dynamic items generated by JS -->
                     </div>
                 </div>
 
                 <!-- Continue Action Button -->
-                <div class="pt-4 border-t border-slate-800 flex justify-end">
+                <div class="pt-4 border-t border-zinc-800 flex justify-end">
                     <button
                         type="button"
                         id="reveal-continue-btn"
                         onclick="handleContinueToNextRound()"
-                        class="w-full sm:w-auto px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer"
+                        class="btn btn-primary w-full sm:w-auto px-8 py-3.5"
                     >
-                        <span id="reveal-continue-label">Keyingi Raundga O'tish</span>
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
+                        <span id="reveal-continue-label">Keyingi Bosqichga O‘tish</span>
+                        <span>&rarr;</span>
                     </button>
                 </div>
             </div>
@@ -417,70 +464,72 @@
         <!-- ================================================================= -->
         <!-- SCREEN 4: FINAL RESULTS -->
         <!-- ================================================================= -->
-        <section id="screen-results" class="hidden space-y-8 animate-fade-in text-center">
-            <div class="p-8 sm:p-12 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-8 max-w-2xl mx-auto">
-                <div class="w-20 h-20 rounded-3xl bg-indigo-600/20 border-2 border-indigo-500/40 text-4xl flex items-center justify-center mx-auto shadow-xl shadow-indigo-500/20">
-                    🏆
-                </div>
-
-                <div class="space-y-2">
-                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Viktorina Yakunlandi!</h2>
-                    <p class="text-slate-400 text-sm sm:text-base">Barcha raundlar bo'yicha yakuniy hisob-kitob tayyor.</p>
-                </div>
-
-                <!-- Primary Metric Showcase: Correct/Total & Active Gameplay Time -->
-                <div class="grid grid-cols-2 gap-4 p-6 sm:p-8 rounded-2xl bg-slate-950 border border-slate-800">
-                    <div class="space-y-1 text-center">
-                        <div class="text-xs uppercase tracking-widest text-slate-400 font-bold">To'g'ri Javoblar</div>
-                        <div id="results-correct-ratio" class="text-4xl sm:text-5xl font-extrabold text-emerald-400 font-mono mt-1">
-                            0 / 0
-                        </div>
-                        <div class="text-[11px] text-slate-500 font-medium">To'plangan natija</div>
+        <section id="screen-results" class="hidden animate-fade-in w-full py-8 text-center">
+            <div class="results-codex-card">
+                <div class="results-score-hero">
+                    <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-3xl flex items-center justify-center mx-auto text-amber-300 mb-4 shadow-lg shadow-amber-500/10">
+                        🏆
                     </div>
-                    <div class="space-y-1 text-center border-l border-slate-800/80 pl-4">
-                        <div class="text-xs uppercase tracking-widest text-slate-400 font-bold">Faol O'yin Vaqti</div>
-                        <div id="results-active-time" class="text-4xl sm:text-5xl font-extrabold text-indigo-300 font-mono mt-1">
-                            00:00
-                        </div>
-                        <div class="text-[11px] text-slate-500 font-medium">Sof javob berish vaqti</div>
+                    <h2 class="text-3xl sm:text-4xl font-display font-extrabold text-white mb-2">
+                        Viktorina Yakunlandi!
+                    </h2>
+                    <p class="text-zinc-400 text-sm">Yakuniy natijalar hisob-kitobi tayyor.</p>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-black/40 border border-zinc-800 mb-6">
+                    <div class="p-3 text-center">
+                        <div class="text-[11px] uppercase tracking-wider text-emerald-400 font-bold">To‘g‘ri</div>
+                        <div id="results-correct-count" class="text-3xl font-extrabold text-emerald-300 font-mono">0</div>
+                        <div class="text-[10px] text-zinc-500 mt-1">To‘g‘ri javoblar</div>
+                    </div>
+                    <div class="p-3 text-center">
+                        <div class="text-[11px] uppercase tracking-wider text-rose-400 font-bold">Noto‘g‘ri</div>
+                        <div id="results-incorrect-count" class="text-3xl font-extrabold text-rose-300 font-mono">0</div>
+                        <div class="text-[10px] text-zinc-500 mt-1">Xato javoblar</div>
+                    </div>
+                    <div class="p-3 text-center">
+                        <div class="text-[11px] uppercase tracking-wider text-zinc-400 font-bold">Javobsiz</div>
+                        <div id="results-unanswered-count" class="text-3xl font-extrabold text-zinc-300 font-mono">0</div>
+                        <div class="text-[10px] text-zinc-500 mt-1">O‘tkazib yuborilgan</div>
+                    </div>
+                    <div class="p-3 text-center">
+                        <div class="text-[11px] uppercase tracking-wider text-brass-400 font-bold">O‘yin Vaqti</div>
+                        <div id="results-active-time" class="text-3xl font-extrabold text-brass-300 font-mono">00:00</div>
+                        <div class="text-[10px] text-zinc-500 mt-1">Sof javob berish</div>
                     </div>
                 </div>
 
-                <!-- Status & Score Sub-Bar -->
-                <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs">
+                <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-black/20 border border-zinc-800 text-xs mb-6">
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span id="results-status-badge" class="font-bold text-slate-300">Holat: Yakunlandi</span>
+                        <span id="results-status-badge" class="font-bold text-zinc-300">Holat: Yakunlandi</span>
                     </div>
-                    <div class="text-slate-400">
-                        Umumiy ball: <span id="results-total-score" class="font-bold font-mono text-white">0</span>
+                    <div id="results-total-questions-text" class="text-zinc-400 font-mono">
+                        Jami savollar: <span id="results-total-questions" class="font-bold text-white">24</span>
                     </div>
                 </div>
 
-                <!-- Round Breakdown Table -->
-                <div class="space-y-3 text-left">
-                    <h4 class="text-xs uppercase tracking-wider font-bold text-slate-400">Raundlar bo'yicha taqsimot:</h4>
-                    <div id="results-rounds-breakdown" class="space-y-2 text-sm">
-                        <!-- Generated by JS -->
-                    </div>
+                <div class="space-y-3 text-left mb-6">
+                    <h4 class="text-xs uppercase tracking-wider font-bold text-brass-400">Turlar bo‘yicha taqsimot:</h4>
+                    <div id="results-rounds-breakdown" class="space-y-2 text-sm"></div>
                 </div>
 
                 <!-- Anonymous First Attempt Registration Conversion Banner -->
-                <div id="results-anon-banner" class="hidden p-5 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-purple-950/40 to-slate-900 border border-indigo-500/40 text-left space-y-3">
-                    <div class="flex items-center gap-2 text-indigo-300 text-sm font-bold">
+                <div id="results-anon-banner" class="hidden p-5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-left space-y-3 mb-6">
+                    <div class="flex items-center gap-2 text-amber-300 text-sm font-bold">
                         <span>🎉</span>
                         <span>Tabriklaymiz! Siz bepul urinishingizni muvaffaqiyatli yakunladingiz.</span>
                     </div>
-                    <p class="text-xs text-slate-300 leading-relaxed">
-                        Natijangizni saqlab qolish, rasmiy liderlar jadvaliga kiritish va keyingi barcha viktorinalarni o'ynash uchun ro'yxatdan o'ting. Ushbu natija avtomatik ravishda yangi akkauntingizga biriktiriladi!
+                    <p class="text-xs text-zinc-300 leading-relaxed">
+                        Natijangizni saqlab qolish, rasmiy liderlar jadvaliga kiritish va keyingi barcha viktorinalarni o‘ynash uchun ro‘yxatdan o‘ting. Ushbu natija avtomatik ravishda yangi akkauntingizga biriktiriladi!
                     </p>
                     <button
                         type="button"
                         onclick="openAuthModal('register')"
-                        class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-2 cursor-pointer transition-all"
+                        class="btn btn-primary"
+                        style="padding: 0.5rem 1.25rem; font-size: 0.82rem;"
                     >
-                        <span>Akkaunt Yaratish va Natijani Saqlash</span>
-                        <span>→</span>
+                        <span>Akkaunt Yaratish va Natijani Saqlash &rarr;</span>
                     </button>
                 </div>
 
@@ -490,14 +539,14 @@
                         <button
                             type="button"
                             onclick="openReviewModal()"
-                            class="w-full py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                            class="btn btn-secondary py-3 text-sm font-bold"
                         >
-                            <span>📋 Javoblarni Ko'rish</span>
+                            <span>📋 Javoblarni Ko‘rish (24 savol)</span>
                         </button>
                         <button
                             type="button"
                             onclick="openLeaderboardModal(state.currentQuizId)"
-                            class="w-full py-3.5 px-4 rounded-xl bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/40 text-amber-300 font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                            class="btn btn-secondary py-3 text-sm font-bold text-brass-300 border-brass-500/40"
                         >
                             <span>🏆 Liderlar Jadvali</span>
                         </button>
@@ -506,12 +555,10 @@
                     <button
                         type="button"
                         onclick="goToQuizSelection()"
-                        class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer"
+                        class="btn btn-primary w-full py-3.5 text-base"
                     >
-                        <span>Yana Boshqa Viktorinani O'ynash</span>
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
+                        <span>To‘plamlar Katalogiga Qaytish</span>
+                        <span>&rarr;</span>
                     </button>
                 </div>
             </div>
@@ -522,19 +569,19 @@
     <!-- ================================================================= -->
     <!-- MODAL 1: AUTHENTICATION (LOGIN & REGISTRATION & GOOGLE GIS) -->
     <!-- ================================================================= -->
-    <div id="modal-auth" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+    <div id="modal-auth" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="w-full max-w-md rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden animate-fade-in" style="background-color: var(--bg-surface);">
             <!-- Modal Header with Tabs -->
-            <div class="flex items-center justify-between border-b border-slate-800 px-6 pt-5 pb-3">
+            <div class="flex items-center justify-between border-b border-zinc-800 px-6 pt-5 pb-3">
                 <div class="flex gap-4">
-                    <button id="auth-tab-login" onclick="switchAuthTab('login')" class="text-sm font-bold pb-2 border-b-2 border-indigo-500 text-white transition-colors cursor-pointer">
+                    <button id="auth-tab-login" onclick="switchAuthTab('login')" class="text-sm font-bold pb-2 border-b-2 border-amber-500 text-white transition-colors cursor-pointer">
                         Kirish
                     </button>
-                    <button id="auth-tab-register" onclick="switchAuthTab('register')" class="text-sm font-bold pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors cursor-pointer">
-                        Ro'yxatdan o'tish
+                    <button id="auth-tab-register" onclick="switchAuthTab('register')" class="text-sm font-bold pb-2 border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer">
+                        Ro‘yxatdan o‘tish
                     </button>
                 </div>
-                <button onclick="closeAuthModal()" class="text-slate-400 hover:text-white font-mono text-xl cursor-pointer">✕</button>
+                <button onclick="closeAuthModal()" class="text-zinc-400 hover:text-white font-mono text-xl cursor-pointer">✕</button>
             </div>
 
             <div class="p-6 space-y-4">
@@ -542,50 +589,50 @@
                 <div id="auth-error-banner" class="hidden p-3 rounded-xl bg-rose-950/50 border border-rose-800 text-rose-300 text-xs font-semibold"></div>
 
                 <!-- Registration Migration Info (if session active) -->
-                <div id="auth-claim-notice" class="hidden p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-indigo-200 text-xs leading-relaxed">
-                    ✨ Ro'yxatdan o'tganingizdan so'ng, hozirgi viktorina natijangiz avtomatik tarzda yangi akkauntingizga biriktiriladi!
+                <div id="auth-claim-notice" class="hidden p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-200 text-xs leading-relaxed">
+                    ✨ Ro‘yxatdan o‘tganingizdan so‘ng, hozirgi viktorina natijangiz avtomatik tarzda yangi akkauntingizga biriktiriladi!
                 </div>
 
                 <!-- Login Form -->
                 <form id="auth-login-form" class="space-y-4" onsubmit="handleLoginSubmit(event)">
                     <div class="space-y-1">
-                        <label class="text-xs font-medium text-slate-300">Foydalanuvchi nomi yoki Email</label>
-                        <input type="text" id="login-username" required autocomplete="username" placeholder="Foydalanuvchi nomi" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+                        <label class="text-xs font-medium text-zinc-300">Foydalanuvchi nomi yoki Email</label>
+                        <input type="text" id="login-username" required autocomplete="username" placeholder="Foydalanuvchi nomi" class="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-zinc-800 text-white text-sm outline-none focus:border-amber-500/80 transition-colors" />
                     </div>
                     <div class="space-y-1">
-                        <label class="text-xs font-medium text-slate-300">Parol</label>
-                        <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+                        <label class="text-xs font-medium text-zinc-300">Parol</label>
+                        <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-zinc-800 text-white text-sm outline-none focus:border-amber-500/80 transition-colors" />
                     </div>
-                    <button type="submit" id="login-submit-btn" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
-                        Tizimga kirish
+                    <button type="submit" id="login-submit-btn" class="btn btn-primary w-full py-3 text-sm">
+                        <span>Tizimga kirish</span>
                     </button>
                 </form>
 
                 <!-- Register Form -->
                 <form id="auth-register-form" class="space-y-4 hidden" onsubmit="handleRegisterSubmit(event)">
                     <div class="space-y-1">
-                        <label class="text-xs font-medium text-slate-300">Foydalanuvchi nomi (kamida 3 belgi)</label>
-                        <input type="text" id="register-username" required autocomplete="username" minlength="3" maxlength="50" placeholder="taxallus" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+                        <label class="text-xs font-medium text-zinc-300">Foydalanuvchi nomi (kamida 3 belgi)</label>
+                        <input type="text" id="register-username" required autocomplete="username" minlength="3" maxlength="50" placeholder="taxallus" class="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-zinc-800 text-white text-sm outline-none focus:border-amber-500/80 transition-colors" />
                     </div>
                     <div class="space-y-1">
-                        <label class="text-xs font-medium text-slate-300">Email (ixtiyoriy)</label>
-                        <input type="email" id="register-email" autocomplete="email" placeholder="nomingiz@misol.uz" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+                        <label class="text-xs font-medium text-zinc-300">Email (ixtiyoriy)</label>
+                        <input type="email" id="register-email" autocomplete="email" placeholder="nomingiz@misol.uz" class="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-zinc-800 text-white text-sm outline-none focus:border-amber-500/80 transition-colors" />
                     </div>
                     <div class="space-y-1">
-                        <label class="text-xs font-medium text-slate-300">Parol (kamida 6 belgi)</label>
-                        <input type="password" id="register-password" required autocomplete="new-password" minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+                        <label class="text-xs font-medium text-zinc-300">Parol (kamida 6 belgi)</label>
+                        <input type="password" id="register-password" required autocomplete="new-password" minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-zinc-800 text-white text-sm outline-none focus:border-amber-500/80 transition-colors" />
                     </div>
-                    <button type="submit" id="register-submit-btn" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
-                        Ro'yxatdan o'tish
+                    <button type="submit" id="register-submit-btn" class="btn btn-primary w-full py-3 text-sm">
+                        <span>Ro‘yxatdan o‘tish</span>
                     </button>
                 </form>
 
                 <!-- Google GIS Sign-In -->
-                <div class="pt-2 border-t border-slate-800 space-y-3">
+                <div class="pt-2 border-t border-zinc-800 space-y-3">
                     <div class="relative flex py-1 items-center">
-                        <div class="flex-grow border-t border-slate-800"></div>
-                        <span class="flex-shrink mx-3 text-[11px] text-slate-500 font-medium uppercase tracking-wider">Yoki Google bilan</span>
-                        <div class="flex-grow border-t border-slate-800"></div>
+                        <div class="flex-grow border-t border-zinc-800"></div>
+                        <span class="flex-shrink mx-3 text-[11px] text-zinc-500 font-medium uppercase tracking-wider">Yoki Google bilan</span>
+                        <div class="flex-grow border-t border-zinc-800"></div>
                     </div>
                     <div id="google-signin-container" class="flex justify-center">
                         <!-- Loaded dynamically via GIS SDK if available -->
@@ -596,40 +643,44 @@
     </div>
 
     <!-- ================================================================= -->
-    <!-- MODAL 2: ANSWER REVIEW (JAVOBLARNI KO'RISH) -->
+    <!-- MODAL 2: ANSWER REVIEW (JAVOBLARNI KO‘RISH - 24 SAVOL) -->
     <!-- ================================================================= -->
     <div id="modal-review" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
-            <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-950/60">
+        <div class="review-modal-container animate-fade-in">
+            <div class="review-modal-header bg-black/60">
                 <div class="flex items-center gap-2">
                     <span class="text-xl">📋</span>
-                    <h3 class="font-bold text-base sm:text-lg text-white">Javoblar Tahlili va To'g'ri Javoblar</h3>
+                    <h3 class="font-display font-bold text-base sm:text-lg text-white">Javoblar Tahlili va To‘g‘ri Javoblar (24 savol)</h3>
                 </div>
-                <button onclick="closeReviewModal()" class="text-slate-400 hover:text-white font-mono text-xl cursor-pointer">✕</button>
+                <button onclick="closeReviewModal()" class="text-zinc-400 hover:text-white font-mono text-xl cursor-pointer p-1">✕</button>
             </div>
 
-            <div class="p-6 overflow-y-auto space-y-5">
+            <div class="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5">
                 <!-- Review Summary Bar -->
-                <div id="review-summary-bar" class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
+                <div id="review-summary-bar" class="p-3 sm:p-4 rounded-xl bg-black/40 border border-zinc-800 grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-between gap-2.5 sm:gap-4 text-xs">
                     <div>
-                        <span class="text-slate-400">To'g'ri javoblar:</span>
-                        <strong id="review-correct-ratio" class="font-mono text-sm text-emerald-400 ml-1">0/0</strong>
+                        <span class="text-zinc-400">To‘g‘ri:</span>
+                        <strong id="review-correct-count" class="font-mono text-xs sm:text-sm text-emerald-400 ml-1">0</strong>
                     </div>
                     <div>
-                        <span class="text-slate-400">Faol o'yin vaqti:</span>
-                        <strong id="review-active-time" class="font-mono text-sm text-indigo-300 ml-1">00:00</strong>
+                        <span class="text-zinc-400">Noto‘g‘ri:</span>
+                        <strong id="review-incorrect-count" class="font-mono text-xs sm:text-sm text-rose-400 ml-1">0</strong>
                     </div>
                     <div>
-                        <span class="text-slate-400">Umumiy ball:</span>
-                        <strong id="review-total-score" class="font-mono text-sm text-white ml-1">0</strong>
+                        <span class="text-zinc-400">Javobsiz:</span>
+                        <strong id="review-unanswered-count" class="font-mono text-xs sm:text-sm text-zinc-300 ml-1">0</strong>
+                    </div>
+                    <div>
+                        <span class="text-zinc-400">Faol vaqt:</span>
+                        <strong id="review-active-time" class="font-mono text-xs sm:text-sm text-brass-300 ml-1">00:00</strong>
                     </div>
                 </div>
 
-                <!-- Mantiqqasqon Hidden Rule if present -->
+                <!-- Hidden Rule if present -->
                 <div id="review-hidden-rule-box" class="hidden p-4 rounded-xl bg-amber-950/30 border border-amber-500/40 text-amber-200 text-xs space-y-1">
                     <div class="font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
                         <span>💡</span>
-                        <span>Mantiqiy Bog'liqlik (Yashirin Qoida)</span>
+                        <span>Mantiqiy Bog‘liqlik (Yashirin Qoida)</span>
                     </div>
                     <p id="review-hidden-rule-text" class="text-sm font-semibold"></p>
                 </div>
@@ -640,8 +691,8 @@
                 </div>
             </div>
 
-            <div class="border-t border-slate-800 p-4 bg-slate-950/60 flex justify-end">
-                <button onclick="closeReviewModal()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors cursor-pointer">
+            <div class="border-t border-zinc-800 p-4 bg-black/60 flex justify-end">
+                <button onclick="closeReviewModal()" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">
                     Yopish
                 </button>
             </div>
@@ -652,50 +703,50 @@
     <!-- MODAL 3: LEADERBOARD (RASMIY LIDERLAR JADVALI) -->
     <!-- ================================================================= -->
     <div id="modal-leaderboard" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
-            <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-950/60">
+        <div class="bg-surface border border-zinc-800 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in" style="background-color: var(--bg-surface);">
+            <div class="flex items-center justify-between border-b border-zinc-800 px-6 py-4 bg-black/40">
                 <div class="space-y-0.5">
                     <div class="flex items-center gap-2">
                         <span class="text-xl">🏆</span>
-                        <h3 id="leaderboard-quiz-title" class="font-bold text-base sm:text-lg text-white">Liderlar Jadvali</h3>
-                        <span id="leaderboard-version-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">v1</span>
+                        <h3 id="leaderboard-quiz-title" class="font-display font-bold text-base sm:text-lg text-white">Liderlar Jadvali</h3>
+                        <span id="leaderboard-version-badge" class="pack-badge">v1</span>
                     </div>
-                    <p class="text-[11px] text-slate-400">Har bir ro'yxatdan o'tgan o'yinchining eng yaxshi natijasi (To'g'ri javoblar va eng kam faol vaqt bo'yicha).</p>
+                    <p class="text-[11px] text-zinc-400">Har bir ro‘yxatdan o‘tgan o‘yinchining eng yaxshi natijasi (To‘g‘ri javoblar va eng kam faol vaqt bo‘yicha).</p>
                 </div>
-                <button onclick="closeLeaderboardModal()" class="text-slate-400 hover:text-white font-mono text-xl cursor-pointer">✕</button>
+                <button onclick="closeLeaderboardModal()" class="text-zinc-400 hover:text-white font-mono text-xl cursor-pointer">✕</button>
             </div>
 
             <div class="p-6 overflow-y-auto space-y-4">
                 <div id="leaderboard-loading" class="p-8 text-center space-y-3">
-                    <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p class="text-xs text-slate-400">Reyting hisoblanmoqda...</p>
+                    <div class="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p class="text-xs text-zinc-400">Reyting hisoblanmoqda...</p>
                 </div>
 
-                <div id="leaderboard-empty" class="hidden p-8 text-center border border-dashed border-slate-800 rounded-xl space-y-2">
-                    <p class="text-sm font-semibold text-slate-300">Hozircha natijalar mavjud emas</p>
-                    <p class="text-xs text-slate-500">Birinchi bo'lib ushbu viktorinani o'ynang va jadval peshqadamiga aylaning!</p>
+                <div id="leaderboard-empty" class="hidden p-8 text-center border border-dashed border-zinc-800 rounded-xl space-y-2">
+                    <p class="text-sm font-semibold text-zinc-300">Hozircha natijalar mavjud emas</p>
+                    <p class="text-xs text-zinc-500">Birinchi bo‘lib ushbu to‘plamni o‘ynang va jadval peshqadamiga aylaning!</p>
                 </div>
 
-                <div id="leaderboard-table-container" class="hidden overflow-hidden rounded-xl border border-slate-800">
+                <div id="leaderboard-table-container" class="hidden overflow-hidden rounded-xl border border-zinc-800">
                     <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                        <thead class="bg-black/60 text-zinc-400 font-semibold border-b border-zinc-800">
                             <tr>
                                 <th class="py-3 px-4 w-12 text-center">#</th>
-                                <th class="py-3 px-4">O'yinchi</th>
+                                <th class="py-3 px-4">O‘yinchi</th>
                                 <th class="py-3 px-4 text-center">Natija</th>
                                 <th class="py-3 px-4 text-center">Faol Vaqt</th>
                                 <th class="py-3 px-4 text-right">Sana</th>
                             </tr>
                         </thead>
-                        <tbody id="leaderboard-rows" class="divide-y divide-slate-800/60 font-medium">
+                        <tbody id="leaderboard-rows" class="divide-y divide-zinc-800/60 font-medium">
                             <!-- Rows -->
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <div class="border-t border-slate-800 p-4 bg-slate-950/60 flex justify-end">
-                <button onclick="closeLeaderboardModal()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors cursor-pointer">
+            <div class="border-t border-zinc-800 p-4 bg-black/40 flex justify-end">
+                <button onclick="closeLeaderboardModal()" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">
                     Yopish
                 </button>
             </div>
@@ -703,51 +754,51 @@
     </div>
 
     <!-- ================================================================= -->
-    <!-- MODAL 4: QUIZ DETAIL (O'YIN TAFSILOTLARI VA KIRISH) -->
+    <!-- MODAL 4: QUIZ DETAIL (O‘YIN TAFSILOTLARI VA KIRISH) -->
     <!-- ================================================================= -->
     <div id="modal-quiz-detail" onclick="if (event.target === this) closeQuizDetailModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+        <div class="bg-surface border border-zinc-800 w-full max-w-2xl max-h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in" style="background-color: var(--bg-surface);">
             <!-- Detail Header -->
-            <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-950/60">
+            <div class="flex items-center justify-between border-b border-zinc-800 px-6 py-4 bg-black/40">
                 <div class="space-y-1">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span id="detail-category-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Umumiy</span>
-                        <span id="detail-mode-badge" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">Format</span>
-                        <span id="detail-version-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300 border border-slate-700 font-mono">v1</span>
+                        <span id="detail-category-badge" class="pack-badge">Umumiy</span>
+                        <span id="detail-mode-badge" class="pack-badge" style="background: rgba(59, 10, 18, 0.4); border-color: rgba(197, 160, 89, 0.3); color: var(--alabaster);">Format</span>
+                        <span id="detail-version-badge" class="font-mono text-xs text-brass-400 font-bold">v1</span>
                     </div>
-                    <h3 id="detail-title" class="font-extrabold text-lg sm:text-xl text-white leading-snug">Turnir Nomi</h3>
+                    <h3 id="detail-title" class="font-display font-extrabold text-lg sm:text-xl text-white leading-snug">Turnir Nomi</h3>
                 </div>
-                <button onclick="closeQuizDetailModal()" class="text-slate-400 hover:text-white font-mono text-xl cursor-pointer p-1">✕</button>
+                <button onclick="closeQuizDetailModal()" class="text-zinc-400 hover:text-white font-mono text-xl cursor-pointer p-1">✕</button>
             </div>
 
             <!-- Detail Body -->
             <div class="p-6 overflow-y-auto space-y-6">
                 <!-- Description -->
-                <p id="detail-description" class="text-xs sm:text-sm text-slate-300 leading-relaxed"></p>
+                <p id="detail-description" class="text-xs sm:text-sm text-zinc-300 leading-relaxed"></p>
 
                 <!-- Metric Strip -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-0.5">
-                        <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">🎯 Raundlar</div>
-                        <div id="detail-metric-rounds" class="text-sm font-bold text-white font-mono">0 ta</div>
+                    <div class="p-3 rounded-xl bg-black/40 border border-zinc-800 space-y-0.5">
+                        <div class="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">🎯 Raundlar</div>
+                        <div id="detail-metric-rounds" class="text-sm font-bold text-white font-mono">2 ta</div>
                     </div>
-                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-0.5">
-                        <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">❓ Savollar</div>
-                        <div id="detail-metric-questions" class="text-sm font-bold text-white font-mono">0 ta</div>
+                    <div class="p-3 rounded-xl bg-black/40 border border-zinc-800 space-y-0.5">
+                        <div class="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">❓ Savollar</div>
+                        <div id="detail-metric-questions" class="text-sm font-bold text-white font-mono">24 ta</div>
                     </div>
-                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-0.5">
-                        <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">⏱️ Taxminiy Vaqt</div>
-                        <div id="detail-metric-duration" class="text-sm font-bold text-indigo-300 font-mono">~0 daq</div>
+                    <div class="p-3 rounded-xl bg-black/40 border border-zinc-800 space-y-0.5">
+                        <div class="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">⏱️ Taxminiy Vaqt</div>
+                        <div id="detail-metric-duration" class="text-sm font-bold text-brass-300 font-mono">~24 daq</div>
                     </div>
-                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-0.5">
-                        <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">🛡️ Qoidalar</div>
+                    <div class="p-3 rounded-xl bg-black/40 border border-zinc-800 space-y-0.5">
+                        <div class="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">🛡️ Qoidalar</div>
                         <div class="text-[11px] font-bold text-emerald-400">1 urinish (anonim)</div>
                     </div>
                 </div>
 
                 <!-- Rounds Structure Breakdown -->
                 <div class="space-y-2.5">
-                    <div class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <div class="text-xs font-bold text-brass-400 uppercase tracking-wider flex items-center gap-1.5">
                         <span>📑</span>
                         <span>Raundlar Tuzilishi</span>
                     </div>
@@ -757,15 +808,15 @@
                 </div>
 
                 <!-- Leaderboard Preview Section -->
-                <div class="space-y-3 pt-2 border-t border-slate-800/80">
+                <div class="space-y-3 pt-2 border-t border-zinc-800">
                     <div class="flex items-center justify-between">
-                        <div class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <div class="text-xs font-bold text-brass-400 uppercase tracking-wider flex items-center gap-1.5">
                             <span>🏆</span>
                             <span>Ushbu Versiya Peshqadamlari</span>
                         </div>
                         <button id="detail-btn-view-full-leaderboard" class="text-xs text-amber-300 hover:text-amber-200 font-semibold cursor-pointer flex items-center gap-1">
-                            <span>To'liq reyting</span>
-                            <span>→</span>
+                            <span>To‘liq reyting</span>
+                            <span>&rarr;</span>
                         </button>
                     </div>
 
@@ -775,49 +826,119 @@
                     </div>
 
                     <!-- Leaderboard Preview Table or Empty State -->
-                    <div id="detail-lb-preview-table-container" class="hidden overflow-hidden rounded-xl border border-slate-800">
+                    <div id="detail-lb-preview-table-container" class="hidden overflow-hidden rounded-xl border border-zinc-800">
                         <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                            <thead class="bg-black/60 text-zinc-400 font-semibold border-b border-zinc-800">
                                 <tr>
                                     <th class="py-2.5 px-3 w-10 text-center">#</th>
-                                    <th class="py-2.5 px-3">O'yinchi</th>
+                                    <th class="py-2.5 px-3">O‘yinchi</th>
                                     <th class="py-2.5 px-3 text-center">Natija</th>
                                     <th class="py-2.5 px-3 text-right">Vaqt</th>
                                 </tr>
                             </thead>
-                            <tbody id="detail-lb-preview-rows" class="divide-y divide-slate-800/60 font-medium">
+                            <tbody id="detail-lb-preview-rows" class="divide-y divide-zinc-800/60 font-medium">
                                 <!-- Preview rows -->
                             </tbody>
                         </table>
                     </div>
 
                     <!-- Empty Leaderboard State -->
-                    <div id="detail-lb-preview-empty" class="p-4 rounded-xl border border-dashed border-slate-800 bg-slate-950/40 text-center space-y-1">
-                        <p class="text-xs font-semibold text-slate-300">Hozircha hech kim natija qayd etmagan</p>
-                        <p class="text-[11px] text-slate-400">Siz ushbu viktorinani o'ynab, birinchi bo'lib peshqadamlik jadvaliga kirishingiz mumkin!</p>
+                    <div id="detail-lb-preview-empty" class="p-4 rounded-xl border border-dashed border-zinc-800 bg-black/40 text-center space-y-1">
+                        <p class="text-xs font-semibold text-zinc-300">Hozircha hech kim natija qayd etmagan</p>
+                        <p class="text-[11px] text-zinc-500">Siz ushbu to‘plamni o‘ynab, birinchi bo‘lib peshqadamlik jadvaliga kirishingiz mumkin!</p>
                     </div>
                 </div>
             </div>
 
             <!-- Detail Footer with Prominent Play Action -->
-            <div class="border-t border-slate-800 p-4 bg-slate-950/80 flex items-center justify-between gap-3">
-                <button onclick="closeQuizDetailModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors cursor-pointer">
+            <div class="border-t border-zinc-800 p-4 bg-black/60 flex items-center justify-between gap-3">
+                <button onclick="closeQuizDetailModal()" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">
                     Orqaga
                 </button>
-                <button id="detail-btn-play-now" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2 cursor-pointer">
-                    <span>O'yinni boshlash</span>
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
+                <button id="detail-btn-play-now" class="btn btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.9rem;">
+                    <span>O‘yinni boshlash</span>
+                    <span>&rarr;</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-400">
-        <div class="max-w-5xl mx-auto px-4">
-            ZakoWhat &copy; 2026. O'zbek intellektual viktorina tizimi. Barcha huquqlar himoyalangan.
+    <!-- ================================================================= -->
+    <!-- MODAL 5: ZAKOVAT GAMEPLAY SETTINGS (VAQT REJIMI) -->
+    <!-- ================================================================= -->
+    <div id="modal-zakovat-settings" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="relative w-full max-w-md rounded-2xl border border-zinc-800 p-6 sm:p-8 shadow-2xl space-y-6 animate-scale-up" style="background-color: var(--bg-surface);">
+            <button
+                type="button"
+                onclick="closeZakovatSettingsModal()"
+                class="absolute top-5 right-5 w-8 h-8 rounded-full bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            >
+                ✕
+            </button>
+
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-2xl flex items-center justify-center mx-auto text-amber-300 shadow-md">
+                    ⏱️
+                </div>
+                <h3 id="settings-modal-title" class="font-display text-xl font-bold text-white">O‘yin Rejimini Tanlang</h3>
+                <p id="settings-modal-subtitle" class="text-xs text-zinc-400">2 tur • 24 savol</p>
+            </div>
+
+            <div class="space-y-3">
+                <!-- Option 1: Vaqt bilan (Default) -->
+                <label id="opt-label-with-timer" class="flex items-start gap-4 p-4 rounded-xl border-2 border-amber-500/80 bg-amber-500/10 cursor-pointer transition-all">
+                    <input type="radio" name="timer_mode" value="with_timer" checked onchange="updateTimerModeSelection()" class="mt-1 accent-amber-500 w-4 h-4 cursor-pointer">
+                    <div class="space-y-1">
+                        <div class="text-sm font-bold text-white flex items-center gap-2">
+                            <span>⏱️</span>
+                            <span>Vaqt bilan (Klassik)</span>
+                            <span class="pack-badge">Tavsiya</span>
+                        </div>
+                        <p class="text-xs text-zinc-300 leading-relaxed">
+                            Har bir savol uchun adolatli vaqt: 90s bazaviy + savol uzunligiga qarab o‘qish vaqti (90–150s).
+                        </p>
+                    </div>
+                </label>
+
+                <!-- Option 2: Vaqtsiz -->
+                <label id="opt-label-no-timer" class="flex items-start gap-4 p-4 rounded-xl border-2 border-zinc-800 bg-black/40 hover:border-zinc-700 cursor-pointer transition-all">
+                    <input type="radio" name="timer_mode" value="no_timer" onchange="updateTimerModeSelection()" class="mt-1 accent-amber-500 w-4 h-4 cursor-pointer">
+                    <div class="space-y-1">
+                        <div class="text-sm font-bold text-white flex items-center gap-2">
+                            <span>🧘</span>
+                            <span>Vaqtsiz (Mashg‘ulot)</span>
+                        </div>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Hech qanday vaqt cheklovisiz. O‘z surʼatingizda bemalol o‘ylang va javob bering.
+                        </p>
+                    </div>
+                </label>
+            </div>
+
+            <div class="pt-2">
+                <button
+                    type="button"
+                    id="start-game-confirm-btn"
+                    onclick="confirmStartGameWithSettings()"
+                    class="btn btn-primary w-full py-3.5 text-base"
+                >
+                    <span>O‘yinni Boshlash</span>
+                    <span>&rarr;</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Architectural Footer -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat" width="24" height="24">
+                <span>ZakoWhat — Mustaqil Intellektual Maydon</span>
+            </div>
+            <div class="footer-copy">
+                &copy; 2026 ZakoWhat. Klassik Zakovat anʼanalariga asoslangan intellektual viktorina tizimi.
+            </div>
         </div>
     </footer>
 
@@ -836,14 +957,51 @@
             currentQuestion: null,
             totalScore: 0,
             timerInterval: null,
-            timeLeft: 60,
+            timeLeft: 90,
             isSubmitting: false,
             searchQuery: '',
             currentMode: 'all',
             currentCategory: 'all',
             searchDebounceTimer: null,
             detailQuizId: null,
+            isStaging: false,
+            timerMode: 'with_timer',
+            pendingQuizId: null,
+            pendingIsStaging: false,
+            breakInterval: null,
+            breakTimeLeft: 180,
+            gameMode: null,
         };
+
+        // =====================================================================
+        // THEME CONTROLLER (Dark / Light Architectural Switcher)
+        // =====================================================================
+        function updateThemeIcons(theme) {
+            const moon = document.getElementById('moonIcon');
+            const sun = document.getElementById('sunIcon');
+            if (!moon || !sun) return;
+            if (theme === 'light') {
+                moon.style.display = 'block';
+                sun.style.display = 'none';
+            } else {
+                moon.style.display = 'none';
+                sun.style.display = 'block';
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('zakowhat-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcons(savedTheme);
+        }
+
+        function toggleZakoWhatTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', nextTheme);
+            localStorage.setItem('zakowhat-theme', nextTheme);
+            updateThemeIcons(nextTheme);
+        }
 
         // =====================================================================
         // AUTHENTICATION & PROFILE CONTROLLER
@@ -904,13 +1062,13 @@
             banner.classList.add('hidden');
 
             if (tab === 'login') {
-                btnLogin.className = 'text-sm font-bold pb-2 border-b-2 border-indigo-500 text-white transition-colors cursor-pointer';
-                btnRegister.className = 'text-sm font-bold pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors cursor-pointer';
+                btnLogin.className = 'text-sm font-bold pb-2 border-b-2 border-amber-500 text-white transition-colors cursor-pointer';
+                btnRegister.className = 'text-sm font-bold pb-2 border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer';
                 formLogin.classList.remove('hidden');
                 formRegister.classList.add('hidden');
             } else {
-                btnRegister.className = 'text-sm font-bold pb-2 border-b-2 border-indigo-500 text-white transition-colors cursor-pointer';
-                btnLogin.className = 'text-sm font-bold pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors cursor-pointer';
+                btnRegister.className = 'text-sm font-bold pb-2 border-b-2 border-amber-500 text-white transition-colors cursor-pointer';
+                btnLogin.className = 'text-sm font-bold pb-2 border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer';
                 formRegister.classList.remove('hidden');
                 formLogin.classList.add('hidden');
             }
@@ -1080,7 +1238,7 @@
         // NAVIGATION CONTROLLER
         // =====================================================================
         function showScreen(screenId) {
-            ['screen-selection', 'screen-gameplay', 'screen-reveal', 'screen-results'].forEach(id => {
+            ['screen-selection', 'screen-gameplay', 'screen-intermediate', 'screen-reveal', 'screen-results'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('hidden');
             });
@@ -1088,11 +1246,8 @@
             if (target) target.classList.remove('hidden');
 
             const scoreBadge = document.getElementById('header-score-badge');
-            if (screenId === 'screen-selection') {
+            if (scoreBadge) {
                 scoreBadge.classList.add('hidden');
-            } else {
-                scoreBadge.classList.remove('hidden');
-                document.getElementById('header-score-value').innerText = state.totalScore;
             }
         }
 
@@ -1115,7 +1270,7 @@
                     <button
                         onclick="handleCategoryChange('all')"
                         data-category="all"
-                        class="arena-category-btn px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${state.currentCategory === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-950 hover:bg-slate-800 text-slate-400 border border-slate-800'}"
+                        class="category-pill ${state.currentCategory === 'all' ? 'active' : ''}"
                     >
                         Barchasi
                     </button>
@@ -1127,7 +1282,7 @@
                         <button
                             onclick="handleCategoryChange(this.getAttribute('data-category'))"
                             data-category="${escapeHtml(cat)}"
-                            class="arena-category-btn px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer ${isActive ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'bg-slate-950 hover:bg-slate-800 text-slate-400 border border-slate-800'}"
+                            class="category-pill ${isActive ? 'active' : ''}"
                         >
                             ${escapeHtml(cat)}
                         </button>
@@ -1142,13 +1297,13 @@
 
         function handleCategoryChange(category) {
             state.currentCategory = category;
-            const buttons = document.querySelectorAll('.arena-category-btn');
+            const buttons = document.querySelectorAll('.category-pill');
             buttons.forEach(btn => {
                 const cat = btn.getAttribute('data-category');
                 if (cat === category) {
-                    btn.className = 'arena-category-btn px-3 py-1 rounded-full text-xs font-bold bg-indigo-600 text-white shadow-sm transition-colors cursor-pointer';
+                    btn.classList.add('active');
                 } else {
-                    btn.className = 'arena-category-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-950 hover:bg-slate-800 text-slate-400 border border-slate-800 transition-colors cursor-pointer';
+                    btn.classList.remove('active');
                 }
             });
             loadQuizzes();
@@ -1186,14 +1341,171 @@
         }
 
         function clearAllFilters() {
-            clearSearchInput();
+            const input = document.getElementById('arena-search-input');
+            if (input) input.value = '';
+            const clearBtn = document.getElementById('arena-search-clear');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            state.searchQuery = '';
             state.currentMode = 'all';
             const modeSelect = document.getElementById('arena-mode-filter');
             if (modeSelect) modeSelect.value = 'all';
-            handleCategoryChange('all');
+            state.currentCategory = 'all';
+            const buttons = document.querySelectorAll('.arena-category-btn');
+            buttons.forEach(btn => {
+                const cat = btn.getAttribute('data-category');
+                if (cat === 'all') {
+                    btn.className = 'arena-category-btn px-3 py-1 rounded-full text-xs font-bold bg-indigo-600 text-white shadow-sm transition-colors cursor-pointer';
+                } else {
+                    btn.className = 'arena-category-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-950 hover:bg-slate-800 text-slate-400 border border-slate-800 transition-colors cursor-pointer';
+                }
+            });
+            loadQuizzes();
+        }
+
+        async function loadStagingQuizzes() {
+            state.isStaging = true;
+            const loadingEl = document.getElementById('arena-loading');
+            const emptyEl = document.getElementById('arena-empty');
+            const contentEl = document.getElementById('arena-content');
+            const featuredSection = document.getElementById('arena-featured-section');
+            const gridEl = document.getElementById('arena-quizzes-grid');
+            const countEl = document.getElementById('arena-quizzes-count');
+
+            if (loadingEl) loadingEl.classList.remove('hidden');
+            if (emptyEl) emptyEl.classList.add('hidden');
+            if (contentEl) contentEl.classList.add('hidden');
+            if (featuredSection) featuredSection.classList.add('hidden');
+
+            const toolbar = document.getElementById('arena-filters-toolbar');
+            if (toolbar) toolbar.classList.add('hidden');
+            const stagingBanner = document.getElementById('staging-mode-banner');
+            if (stagingBanner) stagingBanner.classList.remove('hidden');
+
+            if (!state.currentUser) {
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (emptyEl) {
+                    document.getElementById('arena-empty-title').innerText = 'Kirish talab qilinadi';
+                    document.getElementById('arena-empty-desc').innerText = 'Staging to\'plamlarini ko\'rish va test qilish faqat ro\'yxatdan o\'tgan / tizimga kirgan foydalanuvchilar uchun ruxsat etilgan.';
+                    emptyEl.classList.remove('hidden');
+                }
+                openAuthModal('login');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/play/staging/quizzes`);
+                if (res.status === 401) {
+                    if (loadingEl) loadingEl.classList.add('hidden');
+                    if (emptyEl) {
+                        document.getElementById('arena-empty-title').innerText = 'Kirish talab qilinadi';
+                        document.getElementById('arena-empty-desc').innerText = 'Staging to\'plamlarini ko\'rish uchun tizimga kiring.';
+                        emptyEl.classList.remove('hidden');
+                    }
+                    openAuthModal('login');
+                    return;
+                }
+                if (res.status === 403) {
+                    if (loadingEl) loadingEl.classList.add('hidden');
+                    if (emptyEl) {
+                        document.getElementById('arena-empty-title').innerText = 'Ruxsat berilmagan (403)';
+                        document.getElementById('arena-empty-desc').innerText = 'Staging to\'plamlariga faqat administratorlar uchun ruxsat etilgan.';
+                        emptyEl.classList.remove('hidden');
+                    }
+                    return;
+                }
+                if (!res.ok) throw new Error('Staging to\'plamlarini yuklab bo\'lmadi');
+                const quizzes = await res.json();
+
+                if (loadingEl) loadingEl.classList.add('hidden');
+
+                if (!quizzes || quizzes.length === 0) {
+                    if (emptyEl) {
+                        document.getElementById('arena-empty-title').innerText = 'Staging to\'plamlari topilmadi';
+                        document.getElementById('arena-empty-desc').innerText = 'Hozirda staging rejimida hech qanday qoralama to\'plam mavjud emas.';
+                        emptyEl.classList.remove('hidden');
+                    }
+                    return;
+                }
+
+                if (countEl) countEl.innerText = quizzes.length;
+                if (contentEl) contentEl.classList.remove('hidden');
+
+                if (gridEl) {
+                    gridEl.innerHTML = quizzes.map(q => `
+                        <div class="flex flex-col justify-between p-5 rounded-2xl bg-slate-900/80 border border-amber-500/30 hover:border-amber-500/60 transition-all shadow-lg hover:shadow-amber-500/5 space-y-4">
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                        🔒 STAGING DRAFT
+                                    </span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
+                                        Zakovat (2 tur • 24 savol)
+                                    </span>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <h4 onclick="openQuizDetail(${q.quiz_id}, true)" class="text-base font-bold text-white hover:text-amber-300 transition-colors cursor-pointer leading-snug">
+                                        ${escapeHtml(q.title)}
+                                    </h4>
+                                    <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                                        ${escapeHtml(q.description || '24 ta saralangan original Zakovat savollari.')}
+                                    </p>
+                                </div>
+
+                                <div class="flex items-center gap-3 text-[11px] text-slate-400 font-medium">
+                                    <span>🎯 ${q.total_rounds} tur</span>
+                                    <span>•</span>
+                                    <span>❓ ${q.total_questions} ta savol</span>
+                                    <span>•</span>
+                                    <span>⏱️ ~${q.total_questions} daqiqa</span>
+                                </div>
+
+                                <div class="flex items-center gap-2 p-2 rounded-lg bg-amber-950/20 border border-amber-500/20 text-[11px] text-amber-300/90">
+                                    <span>🛡️</span>
+                                    <span>Yopiq test rejimi: natijalar ommaviy liderlar jadvaliga kiritilmaydi.</span>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                                <span class="text-[11px] text-slate-500 font-mono">ID: #${q.quiz_id}</span>
+                                <div class="flex items-center gap-2">
+                                    <button
+                                        onclick="openQuizDetail(${q.quiz_id}, true)"
+                                        class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-200 font-semibold text-xs transition-colors cursor-pointer"
+                                    >
+                                        Batafsil
+                                    </button>
+                                    <button
+                                        onclick="startStagingQuiz(${q.quiz_id})"
+                                        class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition-colors shadow-md shadow-amber-600/20 flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                        <span>O'ynash</span>
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (emptyEl) {
+                    document.getElementById('arena-empty-title').innerText = 'Xatolik';
+                    document.getElementById('arena-empty-desc').innerText = err.message;
+                    emptyEl.classList.remove('hidden');
+                }
+            }
         }
 
         async function loadQuizzes() {
+            state.isStaging = false;
+            const stagingBanner = document.getElementById('staging-mode-banner');
+            if (stagingBanner) stagingBanner.classList.add('hidden');
+            const toolbar = document.getElementById('arena-filters-toolbar');
+            if (toolbar) toolbar.classList.remove('hidden');
+
             const loadingEl = document.getElementById('arena-loading');
             const emptyEl = document.getElementById('arena-empty');
             const contentEl = document.getElementById('arena-content');
@@ -1230,11 +1542,16 @@
                     if (emptyEl) {
                         const isFiltered = Boolean(state.searchQuery || state.currentMode !== 'all' || state.currentCategory !== 'all');
                         document.getElementById('arena-empty-title').innerText = isFiltered
-                            ? 'Qidiruv yoki filtrlash bo\'yicha viktorinalar topilmadi'
-                            : 'Hozircha ochiq viktorinalar mavjud emas';
+                            ? 'Qidiruv yoki filtrlash bo‘yicha to‘plamlar topilmadi'
+                            : 'Hozircha ochiq turnirlar to‘plami mavjud emas';
                         document.getElementById('arena-empty-desc').innerText = isFiltered
-                            ? 'Boshqa so\'z kiritib ko\'ring yoki filtrlarni tozalang.'
-                            : 'Tez orada yangi qiziqarli turnirlar e\'lon qilinadi.';
+                            ? 'Boshqa so‘z kiritib ko‘ring yoki filtrlarni tozalang.'
+                            : 'Yangi saralangan to‘plamlar tahririyat tomonidan tasdiqlanishi kutilmoqda. Tez orada rasmiy 2×12 turnirlar eʼlon qilinadi.';
+                        const emptyActions = document.getElementById('arena-empty-actions');
+                        if (emptyActions) {
+                            if (isFiltered) emptyActions.classList.remove('hidden');
+                            else emptyActions.classList.add('hidden');
+                        }
                         emptyEl.classList.remove('hidden');
                     }
                     return;
@@ -1249,88 +1566,70 @@
                     const f = quizzes[0];
                     featuredSection.classList.remove('hidden');
 
-                    let fTopPlayerHtml = `
-                        <div class="flex items-center gap-2 p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-400">
-                            <span>🏆</span>
-                            <span>Hali hech kim natija qayd etmagan — birinchi bo'lib peshqadamlikni egallang!</span>
-                        </div>
-                    `;
+                    let fTopPlayerHtml = '';
                     if (f.top_player) {
                         fTopPlayerHtml = `
-                            <div class="flex items-center justify-between p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs text-amber-300">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-base">👑</span>
-                                    <span class="text-slate-300">Joriy Peshqadam:</span>
-                                    <strong class="text-white font-bold">${escapeHtml(f.top_player.display_name)}</strong>
+                            <div class="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-zinc-800 text-xs text-brass-300 mt-3">
+                                <div class="flex items-center gap-1.5 truncate mr-2">
+                                    <span>👑</span>
+                                    <span class="text-zinc-400">Joriy Peshqadam:</span>
+                                    <strong class="text-white truncate">${escapeHtml(f.top_player.display_name)}</strong>
                                 </div>
-                                <div class="flex items-center gap-3 font-mono">
-                                    <span class="text-emerald-400 font-bold">${f.top_player.correct_count} / ${f.top_player.total_questions} to'g'ri</span>
-                                    <span class="text-amber-400/80">⏱️ ${f.top_player.formatted_time}</span>
+                                <div class="flex items-center gap-3 font-mono text-[11px]">
+                                    <span class="text-emerald-400 font-bold">${f.top_player.correct_count}/${f.top_player.total_questions}</span>
+                                    <span class="text-brass-400/80">• ⏱️ ${f.top_player.formatted_time}</span>
                                 </div>
                             </div>
                         `;
                     }
 
                     featuredCard.innerHTML = `
-                        <div class="p-6 sm:p-7 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-900 border border-indigo-500/30 shadow-xl space-y-4">
-                            <div class="flex flex-wrap items-center justify-between gap-3">
-                                <div class="flex items-center gap-2">
-                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
-                                        ${escapeHtml(f.category || 'Umumiy')}
-                                    </span>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">
-                                        ${escapeHtml(f.game_mode || 'Standart')}
-                                    </span>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300 border border-slate-700 font-mono">
-                                        v${f.version_number}
-                                    </span>
+                        <div class="arena-pack-card" style="border-color: rgba(197, 160, 89, 0.45); background: radial-gradient(circle at 50% 0%, rgba(59, 10, 18, 0.3) 0%, rgba(13, 10, 16, 0.95) 75%);">
+                            <div>
+                                <div class="pack-card-header">
+                                    <div class="flex items-center gap-2">
+                                        <span class="pack-badge">${escapeHtml(f.category || 'Umumiy')}</span>
+                                        <span class="pack-badge" style="background: rgba(59, 10, 18, 0.45); border-color: rgba(197, 160, 89, 0.35); color: var(--alabaster);">
+                                            ${escapeHtml(f.game_mode === 'classic_zakovat' ? 'Zakovat 2×12' : (f.game_mode || 'Standart'))}
+                                        </span>
+                                    </div>
+                                    <span class="font-mono text-xs text-brass-400 font-bold">v${f.version_number}</span>
                                 </div>
-                                <div class="flex items-center gap-3 text-xs text-slate-400 font-medium">
-                                    <span>🎯 ${f.total_rounds} raund</span>
-                                    <span>•</span>
-                                    <span>❓ ${f.total_questions} ta savol</span>
-                                    <span>•</span>
-                                    <span>⏱️ ~${f.estimated_duration_minutes} daqiqa</span>
-                                </div>
-                            </div>
 
-                            <div class="space-y-1.5">
-                                <h3 onclick="openQuizDetail(${f.quiz_id})" class="text-xl sm:text-2xl font-black text-white hover:text-indigo-300 transition-colors cursor-pointer leading-snug">
+                                <h3 onclick="openQuizDetail(${f.quiz_id})" class="pack-title cursor-pointer hover:text-amber-300 transition-colors text-xl sm:text-2xl font-bold">
                                     ${escapeHtml(f.title)}
                                 </h3>
-                                <p class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-                                    ${escapeHtml(f.description || "O'zbek intellektual viktorina turniri")}
+
+                                <p class="pack-desc text-zinc-300">
+                                    ${escapeHtml(f.description || "24 ta saralangan original Zakovat savollari.")}
                                 </p>
+
+                                ${fTopPlayerHtml}
                             </div>
 
-                            ${fTopPlayerHtml}
-
-                            <div class="flex items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
-                                <button
-                                    data-quiz-id="${f.quiz_id}"
-                                    data-version="${f.version_number}"
-                                    data-title="${escapeHtml(f.title)}"
-                                    onclick="openLeaderboardModal(this.dataset.quizId, this.dataset.version, this.dataset.title)"
-                                    class="px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300 font-semibold text-xs transition-colors border border-slate-700 flex items-center gap-1.5 cursor-pointer"
-                                >
-                                    <span>🏆</span>
-                                    <span>Liderlar Jadvali</span>
-                                </button>
+                            <div class="pack-meta-row">
+                                <div class="flex items-center gap-2 sm:gap-3 text-xs">
+                                    <span>🎯 ${f.total_rounds} tur</span>
+                                    <span>•</span>
+                                    <span>❓ ${f.total_questions} savol</span>
+                                    <span>•</span>
+                                    <span>⏱️ ~${f.estimated_duration_minutes || f.total_questions} daq</span>
+                                </div>
                                 <div class="flex items-center gap-2">
                                     <button
                                         onclick="openQuizDetail(${f.quiz_id})"
-                                        class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors cursor-pointer"
+                                        class="btn btn-secondary"
+                                        style="padding: 0.45rem 1rem; font-size: 0.8rem;"
                                     >
                                         Batafsil
                                     </button>
                                     <button
                                         onclick="openQuizDetail(${f.quiz_id})"
-                                        class="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 cursor-pointer"
+                                        class="btn btn-primary"
+                                        style="padding: 0.45rem 1.25rem; font-size: 0.8rem;"
                                     >
-                                        <span>O'ynash</span>
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                        </svg>
+                                        <span>O‘ynash</span>
+                                        <span>&rarr;</span>
                                     </button>
                                 </div>
                             </div>
@@ -1343,89 +1642,83 @@
                 // Quizzes List / Grid
                 if (gridEl) {
                     gridEl.innerHTML = quizzes.map(q => {
-                        let topPlayerHtml = `
-                            <div class="flex items-center gap-2 p-2 rounded-lg bg-slate-950/40 border border-slate-800 text-[11px] text-slate-400">
-                                <span>🏆</span>
-                                <span>Hali peshqadam yo'q • Birinchi bo'ling</span>
-                            </div>
-                        `;
+                        let topPlayerHtml = '';
                         if (q.top_player) {
                             topPlayerHtml = `
-                                <div class="flex items-center justify-between p-2 rounded-lg bg-amber-950/20 border border-amber-500/20 text-[11px] text-amber-300">
+                                <div class="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-zinc-800 text-xs text-brass-300 mt-3">
                                     <div class="flex items-center gap-1.5 truncate mr-2">
-                                        <span>🥇</span>
-                                        <span class="text-slate-400">#1:</span>
+                                        <span>👑</span>
+                                        <span class="text-zinc-400">Peshqadam:</span>
                                         <strong class="text-white truncate">${escapeHtml(q.top_player.display_name)}</strong>
                                     </div>
-                                    <div class="flex items-center gap-2 shrink-0 font-mono text-[10px]">
+                                    <div class="flex items-center gap-2 shrink-0 font-mono text-[11px]">
                                         <span class="text-emerald-400 font-bold">${q.top_player.correct_count}/${q.top_player.total_questions}</span>
-                                        <span class="text-amber-400/80">• ${q.top_player.formatted_time}</span>
+                                        <span class="text-brass-400/80">• ⏱️ ${q.top_player.formatted_time}</span>
                                     </div>
                                 </div>
                             `;
                         }
 
                         return `
-                            <div class="p-5 sm:p-6 rounded-2xl border border-slate-800 bg-slate-900/70 hover:border-indigo-500/40 hover:bg-slate-900 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div class="space-y-2 flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
-                                            ${escapeHtml(q.category || 'Umumiy')}
-                                        </span>
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">
-                                            ${escapeHtml(q.game_mode || 'Standart')}
-                                        </span>
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-300 border border-slate-700 font-mono">
-                                            v${q.version_number}
-                                        </span>
+                            <div class="arena-pack-card">
+                                <div>
+                                    <div class="pack-card-header">
+                                        <div class="flex items-center gap-2">
+                                            <span class="pack-badge">${escapeHtml(q.category || 'Umumiy')}</span>
+                                            <span class="pack-badge" style="background: rgba(59, 10, 18, 0.45); border-color: rgba(197, 160, 89, 0.35); color: var(--alabaster);">
+                                                ${escapeHtml(q.game_mode === 'classic_zakovat' ? 'Zakovat 2×12' : (q.game_mode || 'Standart'))}
+                                            </span>
+                                        </div>
+                                        <span class="font-mono text-xs text-brass-400 font-bold">v${q.version_number}</span>
                                     </div>
 
-                                    <h3 onclick="openQuizDetail(${q.quiz_id})" class="text-base sm:text-lg font-bold text-white hover:text-indigo-300 transition-colors cursor-pointer truncate">
+                                    <h3 onclick="openQuizDetail(${q.quiz_id})" class="pack-title cursor-pointer hover:text-amber-300 transition-colors">
                                         ${escapeHtml(q.title)}
                                     </h3>
 
-                                    <p class="text-xs text-slate-400 line-clamp-2 max-w-xl">
-                                        ${escapeHtml(q.description || "O'zbek intellektual viktorina turniri")}
+                                    <p class="pack-desc">
+                                        ${escapeHtml(q.description || "24 ta saralangan original Zakovat savollari.")}
                                     </p>
-
-                                    <div class="flex items-center gap-3 text-[11px] text-slate-400 font-medium pt-0.5">
-                                        <span>🎯 ${q.total_rounds} raund</span>
-                                        <span>•</span>
-                                        <span>❓ ${q.total_questions} savol</span>
-                                        <span>•</span>
-                                        <span>⏱️ ~${q.estimated_duration_minutes} daqiqa</span>
-                                    </div>
 
                                     ${topPlayerHtml}
                                 </div>
 
-                                <div class="flex items-center gap-2 self-start sm:self-center shrink-0">
-                                    <button
-                                        onclick="openQuizDetail(${q.quiz_id})"
-                                        class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors cursor-pointer"
-                                    >
-                                        Batafsil
-                                    </button>
-                                    <button
-                                        data-quiz-id="${q.quiz_id}"
-                                        data-version="${q.version_number}"
-                                        data-title="${escapeHtml(q.title)}"
-                                        onclick="openLeaderboardModal(this.dataset.quizId, this.dataset.version, this.dataset.title)"
-                                        class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs transition-colors border border-slate-700 flex items-center gap-1 cursor-pointer"
-                                        title="Liderlar jadvali"
-                                    >
-                                        <span>🏆</span>
-                                        <span class="hidden md:inline">Reyting</span>
-                                    </button>
-                                    <button
-                                        onclick="openQuizDetail(${q.quiz_id})"
-                                        class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-indigo-600/25 flex items-center gap-1.5 cursor-pointer"
-                                    >
-                                        <span>O'ynash</span>
-                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                        </svg>
-                                    </button>
+                                <div class="pack-meta-row">
+                                    <div class="flex items-center gap-2 sm:gap-3 text-xs">
+                                        <span>🎯 ${q.total_rounds} tur</span>
+                                        <span>•</span>
+                                        <span>❓ ${q.total_questions} savol</span>
+                                        <span>•</span>
+                                        <span>⏱️ ~${q.estimated_duration_minutes || q.total_questions} daq</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            onclick="openQuizDetail(${q.quiz_id})"
+                                            class="btn btn-secondary"
+                                            style="padding: 0.4rem 0.85rem; font-size: 0.8rem;"
+                                        >
+                                            Batafsil
+                                        </button>
+                                        <button
+                                            data-quiz-id="${q.quiz_id}"
+                                            data-version="${q.version_number}"
+                                            data-title="${escapeHtml(q.title)}"
+                                            onclick="openLeaderboardModal(this.dataset.quizId, this.dataset.version, this.dataset.title)"
+                                            class="btn btn-secondary"
+                                            style="padding: 0.4rem 0.75rem; font-size: 0.8rem;"
+                                            title="Liderlar jadvali"
+                                        >
+                                            🏆 Reyting
+                                        </button>
+                                        <button
+                                            onclick="openQuizDetail(${q.quiz_id})"
+                                            class="btn btn-primary"
+                                            style="padding: 0.4rem 1.1rem; font-size: 0.8rem;"
+                                        >
+                                            <span>O‘ynash</span>
+                                            <span>&rarr;</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         `;
@@ -1445,15 +1738,18 @@
         // =====================================================================
         // QUIZ DETAIL CONTROLLER
         // =====================================================================
-        async function openQuizDetail(quizId) {
+        async function openQuizDetail(quizId, isStaging = false) {
             state.detailQuizId = quizId;
             const modal = document.getElementById('modal-quiz-detail');
             if (!modal) return;
 
+            const isStagingMode = Boolean(isStaging || state.isStaging);
+
             try {
-                const res = await fetch(`${API_BASE}/quizzes/${quizId}`);
+                const url = isStagingMode ? `${API_BASE}/play/staging/quizzes/${quizId}` : `${API_BASE}/quizzes/${quizId}`;
+                const res = await fetch(url);
                 if (!res.ok) {
-                    const err = await res.json();
+                    const err = await res.json().catch(() => ({}));
                     const errorMsg = typeof err.detail === 'string'
                         ? err.detail
                         : (Array.isArray(err.detail) ? err.detail.map(d => d.msg).join(', ') : 'Viktorina tafsilotlarini yuklab bo\'lmadi');
@@ -1463,18 +1759,18 @@
 
                 // Sync URL to /quiz/{id}
                 if (!window.location.pathname.startsWith('/play/')) {
-                    window.history.replaceState({}, '', `/quiz/${quizId}`);
+                    window.history.replaceState({}, '', isStagingMode ? `/staging/${quizId}` : `/quiz/${quizId}`);
                 }
 
                 // Populate Header & Meta
                 document.getElementById('detail-title').innerText = data.title;
                 document.getElementById('detail-category-badge').innerText = data.category || 'Umumiy';
-                document.getElementById('detail-mode-badge').innerText = data.game_mode || 'Standart';
-                document.getElementById('detail-version-badge').innerText = 'v' + data.version_number;
+                document.getElementById('detail-mode-badge').innerText = (data.game_mode === 'classic_zakovat' || data.game_mode === 'zakovat_classic') ? 'Zakovat (2 tur • 24 savol)' : (data.game_mode || 'Standart');
+                document.getElementById('detail-version-badge').innerText = isStagingMode ? '🔒 Staging' : ('v' + data.version_number);
                 document.getElementById('detail-description').innerText = data.description || 'Turnir haqida ma\'lumot kiritilmagan.';
 
                 // Metrics
-                document.getElementById('detail-metric-rounds').innerText = `${data.total_rounds} ta raund`;
+                document.getElementById('detail-metric-rounds').innerText = `${data.total_rounds} ta tur`;
                 document.getElementById('detail-metric-questions').innerText = `${data.total_questions} ta savol`;
                 document.getElementById('detail-metric-duration').innerText = `~${data.estimated_duration_minutes} daq`;
 
@@ -1499,61 +1795,69 @@
                 const lbTableContainer = document.getElementById('detail-lb-preview-table-container');
                 const lbEmpty = document.getElementById('detail-lb-preview-empty');
                 const lbRows = document.getElementById('detail-lb-preview-rows');
+                const btnFullLb = document.getElementById('detail-btn-view-full-leaderboard');
 
-                if (data.top_player && topPlayerChip) {
-                    topPlayerChip.classList.remove('hidden');
-                    topPlayerChip.innerHTML = `
-                        <div class="flex items-center gap-2">
-                            <span class="text-base">👑</span>
-                            <span class="text-slate-300 font-medium">Joriy #1 Peshqadam:</span>
-                            <strong class="text-white font-bold">${escapeHtml(data.top_player.display_name)}</strong>
-                        </div>
-                        <div class="flex items-center gap-2 font-mono">
-                            <span class="text-emerald-400 font-bold">${data.top_player.correct_count}/${data.top_player.total_questions} to'g'ri</span>
-                            <span class="text-amber-400/80">• ${data.top_player.formatted_time}</span>
-                        </div>
-                    `;
-                } else if (topPlayerChip) {
-                    topPlayerChip.classList.add('hidden');
-                }
-
-                if (data.leaderboard_preview && data.leaderboard_preview.length > 0) {
-                    if (lbTableContainer) lbTableContainer.classList.remove('hidden');
-                    if (lbEmpty) lbEmpty.classList.add('hidden');
-
-                    if (lbRows) {
-                        lbRows.innerHTML = data.leaderboard_preview.map(item => {
-                            let rankBadge = `<span class="font-mono text-slate-400 font-bold">${item.rank}</span>`;
-                            if (item.rank === 1) rankBadge = `<span>🥇</span>`;
-                            else if (item.rank === 2) rankBadge = `<span>🥈</span>`;
-                            else if (item.rank === 3) rankBadge = `<span>🥉</span>`;
-
-                            const isMe = state.currentUser && (state.currentUser.id === item.user_id);
-                            return `
-                                <tr class="${isMe ? 'bg-indigo-950/40 text-indigo-200' : 'hover:bg-slate-950/40 text-slate-300'}">
-                                    <td class="py-2 px-3 text-center font-bold">${rankBadge}</td>
-                                    <td class="py-2 px-3 font-semibold text-white flex items-center gap-2">
-                                        <span>${escapeHtml(item.display_name)}</span>
-                                        ${isMe ? `<span class="text-[9px] px-1 py-0.5 rounded bg-indigo-500/30 text-indigo-300 font-bold">Siz</span>` : ''}
-                                    </td>
-                                    <td class="py-2 px-3 text-center font-mono font-bold text-emerald-400">
-                                        ${item.correct_count} <span class="text-slate-500 text-[10px] font-normal">/ ${item.total_questions}</span>
-                                    </td>
-                                    <td class="py-2 px-3 text-right font-mono font-semibold text-indigo-300">
-                                        ${item.formatted_time}
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('');
-                    }
-                } else {
+                if (isStagingMode) {
+                    if (topPlayerChip) topPlayerChip.classList.add('hidden');
                     if (lbTableContainer) lbTableContainer.classList.add('hidden');
-                    if (lbEmpty) lbEmpty.classList.remove('hidden');
+                    if (lbEmpty) lbEmpty.classList.add('hidden');
+                    if (btnFullLb) btnFullLb.classList.add('hidden');
+                } else {
+                    if (btnFullLb) btnFullLb.classList.remove('hidden');
+                    if (data.top_player && topPlayerChip) {
+                        topPlayerChip.classList.remove('hidden');
+                        topPlayerChip.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">👑</span>
+                                <span class="text-slate-300 font-medium">Joriy #1 Peshqadam:</span>
+                                <strong class="text-white font-bold">${escapeHtml(data.top_player.display_name)}</strong>
+                            </div>
+                            <div class="flex items-center gap-2 font-mono">
+                                <span class="text-emerald-400 font-bold">${data.top_player.correct_count}/${data.top_player.total_questions} to'g'ri</span>
+                                <span class="text-amber-400/80">• ${data.top_player.formatted_time}</span>
+                            </div>
+                        `;
+                    } else if (topPlayerChip) {
+                        topPlayerChip.classList.add('hidden');
+                    }
+
+                    if (data.leaderboard_preview && data.leaderboard_preview.length > 0) {
+                        if (lbTableContainer) lbTableContainer.classList.remove('hidden');
+                        if (lbEmpty) lbEmpty.classList.add('hidden');
+
+                        if (lbRows) {
+                            lbRows.innerHTML = data.leaderboard_preview.map(item => {
+                                let rankBadge = `<span class="font-mono text-slate-400 font-bold">${item.rank}</span>`;
+                                if (item.rank === 1) rankBadge = `<span>🥇</span>`;
+                                else if (item.rank === 2) rankBadge = `<span>🥈</span>`;
+                                else if (item.rank === 3) rankBadge = `<span>🥉</span>`;
+
+                                const isMe = state.currentUser && (state.currentUser.id === item.user_id);
+                                return `
+                                    <tr class="${isMe ? 'bg-indigo-950/40 text-indigo-200' : 'hover:bg-slate-950/40 text-slate-300'}">
+                                        <td class="py-2 px-3 text-center font-bold">${rankBadge}</td>
+                                        <td class="py-2 px-3 font-semibold text-white flex items-center gap-2">
+                                            <span>${escapeHtml(item.display_name)}</span>
+                                            ${isMe ? `<span class="text-[9px] px-1 py-0.5 rounded bg-indigo-500/30 text-indigo-300 font-bold">Siz</span>` : ''}
+                                        </td>
+                                        <td class="py-2 px-3 text-center font-mono font-bold text-emerald-400">
+                                            ${item.correct_count} <span class="text-slate-500 text-[10px] font-normal">/ ${item.total_questions}</span>
+                                        </td>
+                                        <td class="py-2 px-3 text-right font-mono font-semibold text-indigo-300">
+                                            ${item.formatted_time}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('');
+                        }
+                    } else {
+                        if (lbTableContainer) lbTableContainer.classList.add('hidden');
+                        if (lbEmpty) lbEmpty.classList.remove('hidden');
+                    }
                 }
 
                 // Button Actions
-                const btnFullLb = document.getElementById('detail-btn-view-full-leaderboard');
-                if (btnFullLb) {
+                if (btnFullLb && !isStagingMode) {
                     btnFullLb.onclick = () => {
                         closeQuizDetailModal();
                         openLeaderboardModal(data.quiz_id, data.version_number, data.title);
@@ -1564,7 +1868,7 @@
                 if (btnPlay) {
                     btnPlay.onclick = () => {
                         closeQuizDetailModal();
-                        startQuiz(data.quiz_id);
+                        openZakovatSettingsModal(data.quiz_id, isStagingMode, data.title);
                     };
                 }
 
@@ -1578,17 +1882,116 @@
             const modal = document.getElementById('modal-quiz-detail');
             if (modal) modal.classList.add('hidden');
             if (window.location.pathname.startsWith('/quiz/')) {
-                window.history.replaceState({}, '', '/');
+                window.history.replaceState({}, '', state.isStaging ? '/staging' : '/arena');
             }
+        }
+
+        // =====================================================================
+        // MODAL 5: ZAKOVAT PRE-GAME SETTINGS CONTROLLER
+        // =====================================================================
+        function openZakovatSettingsModal(quizId, isStaging = false, title = '') {
+            state.pendingQuizId = quizId;
+            state.pendingIsStaging = isStaging;
+            state.timerMode = 'with_timer';
+
+            const modal = document.getElementById('modal-zakovat-settings');
+            if (!modal) return;
+
+            const titleEl = document.getElementById('settings-modal-title');
+            const subtitleEl = document.getElementById('settings-modal-subtitle');
+            if (title && titleEl) {
+                titleEl.innerText = title;
+            } else if (titleEl) {
+                titleEl.innerText = "O'yin Rejimini Tanlang";
+            }
+            if (subtitleEl) {
+                subtitleEl.innerText = "2 tur • 24 savol";
+            }
+
+            const radioWith = document.querySelector('input[name="timer_mode"][value="with_timer"]');
+            if (radioWith) radioWith.checked = true;
+            updateTimerModeSelection();
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeZakovatSettingsModal() {
+            const modal = document.getElementById('modal-zakovat-settings');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function updateTimerModeSelection() {
+            const selected = document.querySelector('input[name="timer_mode"]:checked');
+            const val = selected ? selected.value : 'with_timer';
+            state.timerMode = val;
+
+            const lblWith = document.getElementById('opt-label-with-timer');
+            const lblNo = document.getElementById('opt-label-no-timer');
+
+            if (val === 'with_timer') {
+                if (lblWith) {
+                    lblWith.className = 'flex items-start gap-4 p-4 rounded-xl border-2 border-amber-500/80 bg-amber-500/10 cursor-pointer transition-all';
+                }
+                if (lblNo) {
+                    lblNo.className = 'flex items-start gap-4 p-4 rounded-xl border-2 border-zinc-800 bg-black/40 hover:border-zinc-700 cursor-pointer transition-all';
+                }
+            } else {
+                if (lblWith) {
+                    lblWith.className = 'flex items-start gap-4 p-4 rounded-xl border-2 border-zinc-800 bg-black/40 hover:border-zinc-700 cursor-pointer transition-all';
+                }
+                if (lblNo) {
+                    lblNo.className = 'flex items-start gap-4 p-4 rounded-xl border-2 border-amber-500/80 bg-amber-500/10 cursor-pointer transition-all';
+                }
+            }
+        }
+
+        async function confirmStartGameWithSettings() {
+            closeZakovatSettingsModal();
+            const quizId = state.pendingQuizId;
+            const isStaging = state.pendingIsStaging;
+            const timerMode = state.timerMode;
+            await executeStartGame(quizId, isStaging, timerMode);
         }
 
         // =====================================================================
         // STAGE 2: START QUIZ SESSION
         // =====================================================================
-        async function startQuiz(quizId) {
-            state.currentQuizId = quizId;
+        function startQuiz(quizId) {
+            openZakovatSettingsModal(quizId, false);
+        }
+
+        async function startStagingQuiz(quizId) {
+            if (!state.currentUser) {
+                openAuthModal('login');
+                return;
+            }
             try {
-                const res = await fetch(`${API_BASE}/play/start/${quizId}`, { method: 'POST' });
+                const res = await fetch(`${API_BASE}/play/staging/quizzes/${quizId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    openZakovatSettingsModal(quizId, true, data.title);
+                    return;
+                }
+            } catch (e) {
+                console.warn('Could not fetch staging quiz details', e);
+            }
+            openZakovatSettingsModal(quizId, true);
+        }
+
+        async function executeStartGame(quizId, isStaging = false, timerMode = 'with_timer') {
+            state.currentQuizId = quizId;
+            state.timerMode = timerMode;
+            try {
+                const url = isStaging ? `${API_BASE}/play/staging/start/${quizId}` : `${API_BASE}/play/start/${quizId}`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ timer_mode: timerMode })
+                });
+                if (res.status === 401) {
+                    openAuthModal('login');
+                    return;
+                }
                 if (res.status === 403) {
                     const err = await res.json();
                     alert(err.detail || "Siz bir martalik bepul sinov urinishingizdan foydalandingiz. Barcha viktorinalarni cheksiz o'ynash va reytingda qatnashish uchun ro'yxatdan o'ting!");
@@ -1597,11 +2000,19 @@
                 }
                 if (!res.ok) {
                     const err = await res.json();
-                    throw new Error(err.detail || 'O\'yinni boshlab bo\'lmadi');
+                    throw new Error(err.detail || "O'yinni boshlab bo'lmadi");
                 }
                 const data = await res.json();
                 state.sessionToken = data.session_token;
+                sessionStorage.setItem('zakowhat_session_token', data.session_token);
+                sessionStorage.setItem('zakowhat_timer_mode', timerMode);
+                sessionStorage.setItem('zakowhat_quiz_id', String(quizId));
                 state.totalScore = 0;
+                window.history.replaceState({}, '', `/play/${quizId}`);
+                const qTitleEl = document.getElementById('gameplay-quiz-title');
+                if (qTitleEl && data.quiz_title) {
+                    qTitleEl.innerText = data.quiz_title;
+                }
                 renderQuestionState(data.current_state);
                 showScreen('screen-gameplay');
             } catch (err) {
@@ -1619,30 +2030,39 @@
             state.currentRoundType = round.round_type;
             state.currentQuestion = question;
 
+            const roundSeq = round.sequence || round.round_sequence || 1;
+            const roundTitle = round.name || (roundSeq === 2 ? "2-tur" : "1-tur");
+
             // Round Badge Theme
             const badgeEl = document.getElementById('gameplay-round-badge');
-            const roundTypesMap = {
-                'standard': { name: 'Standart', color: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
-                'true_false': { name: "To'g'ri / Noto'g'ri", color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-                'mantiqasqon': { name: 'Mantiqasqon', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-                'zanjir': { name: 'Zanjir (Harflar zanjiri)', color: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
-            };
-            const meta = roundTypesMap[round.round_type] || { name: round.round_type, color: 'bg-slate-800 text-slate-300 border-slate-700' };
-            badgeEl.className = `px-3 py-1 rounded-lg text-xs font-bold tracking-wide uppercase border ${meta.color}`;
-            badgeEl.innerText = meta.name;
+            if (badgeEl) {
+                const roundTypesMap = {
+                    'standard': { name: 'Standart', color: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
+                    'true_false': { name: "To'g'ri / Noto'g'ri", color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
+                    'mantiqasqon': { name: 'Mantiqasqon', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+                    'zanjir': { name: 'Zanjir (Harflar zanjiri)', color: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
+                    'zakovat_classic': { name: roundTitle, color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+                    'classic_zakovat': { name: roundTitle, color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+                };
+                const meta = roundTypesMap[round.round_type] || { name: roundTitle, color: 'bg-slate-800 text-slate-300 border-slate-700' };
+                badgeEl.className = `px-3 py-1 rounded-lg text-xs font-bold tracking-wide uppercase border ${meta.color}`;
+                badgeEl.innerText = (round.round_type === 'zakovat_classic' || round.round_type === 'classic_zakovat') ? roundTitle.toUpperCase() : meta.name;
+            }
 
             // Counter & Progress
             const currentQIndex = stateObj.round_question_index + 1;
             const totalQ = stateObj.round_total_questions;
-            document.getElementById('gameplay-question-counter').innerText = `Savol ${currentQIndex} / ${totalQ}`;
+            const counterEl = document.getElementById('gameplay-question-counter');
+            if (counterEl) {
+                counterEl.innerText = `${roundTitle} • Savol ${currentQIndex} / ${totalQ}`;
+            }
             const pct = Math.round((currentQIndex / totalQ) * 100);
-            document.getElementById('gameplay-progress-bar').style.width = `${pct}%`;
-
-            // Points
-            document.getElementById('gameplay-points-value').innerText = question.points || 1;
+            const progressBar = document.getElementById('gameplay-progress-bar');
+            if (progressBar) progressBar.style.width = `${pct}%`;
 
             // Question Text
-            document.getElementById('gameplay-question-text').innerText = question.text;
+            const qTextEl = document.getElementById('gameplay-question-text');
+            if (qTextEl) qTextEl.innerText = question.text;
 
             // Media
             const mediaContainer = document.getElementById('question-media-container');
@@ -1675,19 +2095,33 @@
                 setTimeout(() => textInput.focus(), 50);
             }
 
-            startTimer(60);
+            const rawLimit = (question.remaining_time_seconds !== undefined && question.remaining_time_seconds !== null)
+                ? question.remaining_time_seconds
+                : (question.time_limit_seconds || 90);
+            const timeLimit = (state.timerMode === 'no_timer' || question.time_limit_seconds === 0) ? 0 : rawLimit;
+            startTimer(timeLimit);
         }
 
         // Timer
         function startTimer(seconds) {
             clearInterval(state.timerInterval);
-            state.timeLeft = seconds;
             const timerEl = document.getElementById('gameplay-timer-value');
-            timerEl.innerText = state.timeLeft;
+            const unitEl = document.getElementById('gameplay-timer-unit');
+
+            if (seconds === 0 || state.timerMode === 'no_timer') {
+                state.timeLeft = 0;
+                if (timerEl) timerEl.innerText = '∞';
+                if (unitEl) unitEl.innerText = '';
+                return;
+            }
+
+            state.timeLeft = seconds;
+            if (timerEl) timerEl.innerText = state.timeLeft;
+            if (unitEl) unitEl.innerText = 's';
 
             state.timerInterval = setInterval(() => {
                 state.timeLeft--;
-                timerEl.innerText = state.timeLeft;
+                if (timerEl) timerEl.innerText = state.timeLeft;
                 if (state.timeLeft <= 0) {
                     clearInterval(state.timerInterval);
                     handleTimeOut();
@@ -1696,7 +2130,7 @@
         }
 
         function handleTimeOut() {
-            if (state.isSubmitting) return;
+            if (state.isSubmitting || state.timerMode === 'no_timer') return;
             submitAnswer(""); // Submit empty answer when time runs out
         }
 
@@ -1725,13 +2159,25 @@
             if (input) input.disabled = true;
             if (submitBtn) submitBtn.disabled = true;
 
-            const feedbackEl = document.getElementById('gameplay-feedback-banner');
+            const qId = state.currentQuestion ? (state.currentQuestion.question_id || state.currentQuestion.id) : null;
+            const rqId = state.currentQuestion ? state.currentQuestion.round_question_id : null;
+            const clientSubId = `${state.sessionToken || 'sess'}_${qId || 'q'}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+            const payload = { 
+                answer: answerText,
+                client_submission_id: clientSubId
+            };
+            if (qId !== null && qId !== undefined) payload.question_id = qId;
+            if (rqId !== null && rqId !== undefined) payload.round_question_id = rqId;
 
             try {
                 const res = await fetch(`${API_BASE}/play/${state.sessionToken}/answer`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ answer: answerText })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Idempotency-Key': clientSubId,
+                        'X-Request-Id': clientSubId
+                    },
+                    body: JSON.stringify(payload)
                 });
 
                 if (!res.ok) {
@@ -1741,21 +2187,26 @@
 
                 const result = await res.json();
                 state.totalScore = result.total_score;
-                document.getElementById('header-score-value').innerText = state.totalScore;
+                const scoreEl = document.getElementById('header-score-value');
+                if (scoreEl) scoreEl.innerText = state.totalScore;
 
-                // Visual Feedback
-                feedbackEl.classList.remove('hidden');
-                if (result.is_correct) {
-                    feedbackEl.className = 'p-4 rounded-xl text-center font-bold text-base bg-emerald-950/70 border border-emerald-500/50 text-emerald-300';
-                    feedbackEl.innerHTML = `✓ TO'G'RI JAVOB! <span class="font-mono text-emerald-200">+${result.points_awarded} ball</span>`;
-                } else {
-                    feedbackEl.className = 'p-4 rounded-xl text-center font-bold text-base bg-rose-950/70 border border-rose-500/50 text-rose-300';
-                    feedbackEl.innerHTML = `✕ NOTO'G'RI! <span class="font-mono text-rose-200">+0 ball</span>`;
+                // Visual Feedback (tri-state, no ball increments)
+                const feedbackEl = document.getElementById('gameplay-feedback-banner');
+                if (feedbackEl) {
+                    feedbackEl.classList.remove('hidden');
+                    if (result.is_correct) {
+                        feedbackEl.className = 'p-4 rounded-xl text-center font-bold text-base bg-emerald-950/70 border border-emerald-500/50 text-emerald-300';
+                        feedbackEl.innerHTML = `✓ TO'G'RI JAVOB!`;
+                    } else {
+                        feedbackEl.className = 'p-4 rounded-xl text-center font-bold text-base bg-rose-950/70 border border-rose-500/50 text-rose-300';
+                        feedbackEl.innerHTML = (answerText && answerText.trim()) ? `✕ NOTO'G'RI JAVOB!` : `⏳ JAVOB BERILMADI!`;
+                    }
                 }
 
                 setTimeout(async () => {
-                    if (result.round_completed) {
-                        // Move to Round Reveal
+                    if (result.intermediate_break) {
+                        showIntermediateBreak(result.break_data);
+                    } else if (result.round_completed) {
                         await loadRoundReveal();
                     } else if (result.next_state) {
                         renderQuestionState(result.next_state);
@@ -1771,17 +2222,198 @@
         }
 
         // =====================================================================
-        // STAGE 5: ROUND REVEAL
+        // STAGE 4.5: INTERMEDIATE BREAK
+        // =====================================================================
+        function showIntermediateBreak(breakData) {
+            clearInterval(state.timerInterval);
+            clearInterval(state.breakInterval);
+
+            const titleEl = document.getElementById('intermediate-break-title');
+            const msgEl = document.getElementById('intermediate-break-message');
+            const corrEl = document.getElementById('intermediate-correct-count');
+            const incorrEl = document.getElementById('intermediate-incorrect-count');
+            const unansEl = document.getElementById('intermediate-unanswered-count');
+            const timerEl = document.getElementById('intermediate-timer-display');
+
+            if (breakData) {
+                if (titleEl) titleEl.innerText = breakData.round_title || "1-TUR YAKUNLANDI";
+                if (msgEl) msgEl.innerText = breakData.message || "Birinchi tur (12 ta savol) yakunlandi.";
+                if (corrEl) corrEl.innerText = breakData.correct_count ?? 0;
+                if (incorrEl) incorrEl.innerText = breakData.incorrect_count ?? 0;
+                if (unansEl) unansEl.innerText = breakData.unanswered_count ?? 0;
+            }
+
+            let breakSec = (breakData && breakData.break_duration_seconds) ? breakData.break_duration_seconds : 180;
+            if (breakData && breakData.break_started_at) {
+                const startTime = new Date(breakData.break_started_at).getTime();
+                if (!isNaN(startTime)) {
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    if (elapsed > 0 && elapsed < breakSec) {
+                        breakSec = breakSec - elapsed;
+                    } else if (elapsed >= breakSec) {
+                        breakSec = 0;
+                    }
+                }
+            }
+            state.breakTimeLeft = breakSec;
+
+            function formatBreakTime(s) {
+                const m = Math.floor(s / 60);
+                const sec = s % 60;
+                return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+            }
+
+            if (timerEl) timerEl.innerText = formatBreakTime(state.breakTimeLeft);
+
+            state.breakInterval = setInterval(() => {
+                state.breakTimeLeft--;
+                if (timerEl) timerEl.innerText = formatBreakTime(Math.max(0, state.breakTimeLeft));
+                if (state.breakTimeLeft <= 0) {
+                    clearInterval(state.breakInterval);
+                    handleIntermediateContinue();
+                }
+            }, 1000);
+
+            showScreen('screen-intermediate');
+        }
+
+        let isContinuingFromBreak = false;
+        async function handleIntermediateContinue() {
+            if (isContinuingFromBreak) return;
+            isContinuingFromBreak = true;
+            clearInterval(state.breakInterval);
+            const btn = document.getElementById('intermediate-continue-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = "Yuklanmoqda...";
+            }
+            try {
+                const res = await fetch(`${API_BASE}/play/${state.sessionToken}/continue`, { method: 'POST' });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || '2-turga o\'tib bo\'lmadi');
+                }
+                const data = await res.json();
+                if (data.current_state) {
+                    renderQuestionState(data.current_state);
+                    showScreen('screen-gameplay');
+                }
+            } catch (err) {
+                alert('Xatolik: ' + err.message);
+            } finally {
+                isContinuingFromBreak = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<span>2-turga o'tish</span><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>`;
+                }
+            }
+        }
+
+        // =====================================================================
+        // =====================================================================
+        // REVIEW RENDERING HELPER (SHARED BY SCREEN-REVEAL & MODAL-REVIEW)
+        // =====================================================================
+        function buildReviewQuestionsHtml(rounds) {
+            if (!rounds || rounds.length === 0) return '';
+            let questionsHtml = '';
+            let globalIndex = 0;
+
+            rounds.forEach((r, rIdx) => {
+                const turNum = r.round_sequence || (rIdx + 1);
+                const defaultTurName = turNum === 1 ? '1-tur' : (turNum === 2 ? '2-tur' : `${turNum}-tur`);
+                const roundTitle = r.round_title || defaultTurName;
+                const qCount = (r.questions || []).length;
+                const startQ = globalIndex + 1;
+                const endQ = globalIndex + qCount;
+                const rangeLabel = qCount > 0 ? ` (${startQ}–${endQ}-savollar)` : '';
+
+                questionsHtml += `
+                    <div class="p-3.5 rounded-xl bg-black/40 border border-zinc-800 text-brass-300 font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-between shadow-sm ${rIdx > 0 ? 'mt-6' : 'mt-2'} mb-3">
+                        <div class="flex items-center gap-2">
+                            <span>🏛️</span>
+                            <span>${escapeHtml(roundTitle)}${rangeLabel}</span>
+                        </div>
+                        <span class="text-xs font-mono font-medium text-brass-400/80">${qCount} ta savol</span>
+                    </div>
+                `;
+
+                r.questions.forEach(q => {
+                    globalIndex++;
+                    const isUnans = q.is_unanswered !== undefined ? q.is_unanswered : !q.submitted_answer;
+                    const badgeClass = q.is_correct
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : (isUnans ? 'bg-zinc-800 text-zinc-400 border border-zinc-700' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30');
+                    const badgeLabel = q.is_correct
+                        ? "To‘g‘ri"
+                        : (isUnans ? "Javobsiz" : "Noto‘g‘ri");
+                    const userAns = isUnans ? "Javob berilmadi" : escapeHtml(q.submitted_answer || "Javob berilmadi");
+                    const userAnsColor = q.is_correct ? 'text-emerald-300' : (isUnans ? 'text-zinc-400' : 'text-rose-300');
+
+                    questionsHtml += `
+                        <div class="review-question-item ${q.is_correct ? 'correct' : (isUnans ? 'unanswered' : 'incorrect')} space-y-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-900 text-brass-300 border border-zinc-800 font-mono">Savol #${globalIndex}</span>
+                                    <span class="text-xs font-semibold text-zinc-400">${escapeHtml(roundTitle)}</span>
+                                </div>
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}">
+                                    ${badgeLabel}
+                                </span>
+                            </div>
+                            <div class="text-sm font-semibold text-white leading-relaxed">${escapeHtml(q.text)}</div>
+                            <div class="grid sm:grid-cols-2 gap-2 text-xs pt-1">
+                                <div class="p-2.5 rounded-lg bg-black/40 border border-zinc-800">
+                                    <div class="text-zinc-400 text-[11px] mb-0.5">Sizning javobingiz:</div>
+                                    <div class="font-bold ${userAnsColor}">${userAns}</div>
+                                </div>
+                                <div class="p-2.5 rounded-lg bg-black/40 border border-zinc-800">
+                                    <div class="text-zinc-400 text-[11px] mb-0.5">To‘g‘ri javob:</div>
+                                    <div class="font-bold text-brass-300">${escapeHtml((q.correct_answers || []).join(' / '))}</div>
+                                </div>
+                            </div>
+                            ${q.explanation ? `
+                                <div class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200">
+                                    <strong class="text-amber-300">Izoh:</strong> ${escapeHtml(q.explanation)}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+            });
+
+            return questionsHtml;
+        }
+
+        // =====================================================================
+        // STAGE 5: ROUND REVEAL / POST-Q24 REVIEW
         // =====================================================================
         async function loadRoundReveal() {
             try {
                 const res = await fetch(`${API_BASE}/play/${state.sessionToken}/reveal`);
-                if (!res.ok) throw new Error('Raund natijalarini olib bo\'lmadi');
+                if (!res.ok) throw new Error('Natijalarni olib bo\'lmadi');
                 const data = await res.json();
 
-                document.getElementById('reveal-round-score-text').innerHTML = `
-                    Bu raundda to'plangan ball: <span class="font-bold text-white font-mono text-lg">${data.round_score}</span> | Umumiy: <span class="font-bold text-indigo-400 font-mono text-lg">${data.total_score_so_far}</span>
-                `;
+                const totalQ = data.total_questions || (data.questions ? data.questions.length : 0);
+                const correctCount = data.total_correct !== undefined
+                    ? data.total_correct
+                    : (data.questions ? data.questions.filter(x => x.is_correct).length : 0);
+
+                const badgeEl = document.getElementById('reveal-heading-badge');
+                const titleEl = document.getElementById('reveal-heading-title');
+                if (!data.has_next_round) {
+                    if (badgeEl) badgeEl.innerText = "📋 Yakuniy Natijalar";
+                    if (titleEl) titleEl.innerText = "Viktorina Yakunlandi!";
+                } else {
+                    if (badgeEl) badgeEl.innerText = "📋 Tur Natijalari";
+                    if (titleEl) titleEl.innerText = "Tur Yakunlandi!";
+                }
+
+                const scoreTextEl = document.getElementById('reveal-round-score-text');
+                if (scoreTextEl) {
+                    scoreTextEl.innerHTML = `
+                        To'g'ri javoblar: <span class="font-bold text-emerald-400 font-mono text-lg">${correctCount}</span> / ${totalQ}
+                    `;
+                }
 
                 // Hidden Rule for Mantiqasqon
                 const hiddenRuleCard = document.getElementById('reveal-hidden-rule-card');
@@ -1793,32 +2425,28 @@
                     hiddenRuleCard.classList.add('hidden');
                 }
 
-                // Questions List
+                // Questions List (Using shared renderer for all 24 questions across rounds)
                 const listEl = document.getElementById('reveal-questions-list');
-                listEl.innerHTML = data.questions.map((q, idx) => `
-                    <div class="p-4 rounded-xl bg-slate-950/70 border ${q.is_correct ? 'border-emerald-900/40 bg-emerald-950/10' : 'border-slate-800'} space-y-2">
-                        <div class="flex items-start justify-between gap-3">
-                            <span class="text-xs font-mono font-bold text-slate-400">#${q.sequence}</span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${q.is_correct ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
-                                ${q.is_correct ? `+${q.points_awarded} ball` : '0 ball'}
-                            </span>
-                        </div>
-                        <div class="text-sm font-semibold text-slate-200">${escapeHtml(q.text)}</div>
-                        <div class="grid sm:grid-cols-2 gap-2 pt-1 text-xs">
-                            <div class="p-2 rounded bg-slate-900/90">
-                                <span class="text-slate-400">Sizning javobingiz:</span>
-                                <span class="font-bold ${q.is_correct ? 'text-emerald-300' : 'text-rose-300'}">${escapeHtml(q.submitted_answer || "(Javob berilmadi)")}</span>
-                            </div>
-                            <div class="p-2 rounded bg-slate-900/90">
-                                <span class="text-slate-400">Qabul qilingan javob:</span>
-                                <span class="font-bold text-indigo-300">${escapeHtml(q.correct_answers.join(' / '))}</span>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
+                if (data.rounds && data.rounds.length > 0) {
+                    listEl.innerHTML = buildReviewQuestionsHtml(data.rounds);
+                } else if (data.questions) {
+                    const pseudoRound = [{
+                        round_sequence: data.round_sequence || 1,
+                        round_title: "1-tur",
+                        questions: data.questions
+                    }];
+                    listEl.innerHTML = buildReviewQuestionsHtml(pseudoRound);
+                }
 
+                const btn = document.getElementById('reveal-continue-btn');
                 const btnLabel = document.getElementById('reveal-continue-label');
-                btnLabel.innerText = data.has_next_round ? "Keyingi Raundga O'tish" : "Yakuniy Natijalarni Ko'rish";
+                if (data.has_next_round) {
+                    btnLabel.innerText = "Keyingi turga o'tish";
+                    btn.onclick = handleContinueToNextRound;
+                } else {
+                    btnLabel.innerText = "Yakuniy Natijalarni Ko'rish";
+                    btn.onclick = handleFinalizeAndShowResults;
+                }
 
                 showScreen('screen-reveal');
             } catch (err) {
@@ -1826,14 +2454,19 @@
             }
         }
 
+        let isContinuingRound = false;
         async function handleContinueToNextRound() {
+            if (isContinuingRound) return;
+            isContinuingRound = true;
+            const btn = document.getElementById('reveal-continue-btn');
+            if (btn) btn.disabled = true;
+
             try {
                 const res = await fetch(`${API_BASE}/play/${state.sessionToken}/continue`, { method: 'POST' });
                 if (!res.ok) throw new Error('Keyingi bosqichga o\'tib bo\'lmadi');
                 const data = await res.json();
 
                 if (data.quiz_completed || data.status === 'completed') {
-                    // Fetch and show final results
                     await loadFinalResults();
                 } else if (data.current_state) {
                     renderQuestionState(data.current_state);
@@ -1841,36 +2474,87 @@
                 }
             } catch (err) {
                 alert('Xatolik: ' + err.message);
+                if (btn) btn.disabled = false;
+            } finally {
+                isContinuingRound = false;
+            }
+        }
+
+        let isFinalizingResults = false;
+        async function handleFinalizeAndShowResults() {
+            if (isFinalizingResults) return;
+            isFinalizingResults = true;
+
+            const btn = document.getElementById('reveal-continue-btn');
+            const btnLabel = document.getElementById('reveal-continue-label');
+            if (btn) btn.disabled = true;
+            if (btnLabel) btnLabel.innerText = "Natijalar hisoblanmoqda...";
+
+            try {
+                // Ensure attempt is finalized to completed state idempotently
+                await fetch(`${API_BASE}/play/${state.sessionToken}/continue`, { method: 'POST' });
+            } catch (e) {
+                console.warn('Finalize continue notice:', e);
+            }
+
+            try {
+                await loadFinalResults();
+            } catch (err) {
+                alert('Natijalarni yuklashda xatolik: ' + err.message);
+                if (btn) btn.disabled = false;
+                if (btnLabel) btnLabel.innerText = "Yakuniy Natijalarni Ko'rish";
+            } finally {
+                isFinalizingResults = false;
             }
         }
 
         // =====================================================================
         // STAGE 6: FINAL RESULTS
         // =====================================================================
+        let isLoadingResults = false;
         async function loadFinalResults() {
+            if (isLoadingResults) return;
+            isLoadingResults = true;
+
             try {
                 const res = await fetch(`${API_BASE}/play/${state.sessionToken}/results`);
-                if (!res.ok) throw new Error('Natijalarni yuklab bo\'lmadi');
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Natijalarni yuklab bo\'lmadi');
+                }
                 const data = await res.json();
 
-                document.getElementById('results-total-score').innerText = data.total_score;
-                document.getElementById('results-correct-ratio').innerText = `${data.total_correct} / ${data.total_questions}`;
-                document.getElementById('results-active-time').innerText = data.formatted_time || '00:00';
+                const correctEl = document.getElementById('results-correct-count');
+                const incorrectEl = document.getElementById('results-incorrect-count');
+                const unansweredEl = document.getElementById('results-unanswered-count');
+                const timeEl = document.getElementById('results-active-time');
+                const totalQEl = document.getElementById('results-total-questions');
+
+                if (correctEl) correctEl.innerText = data.total_correct ?? 0;
+                if (incorrectEl) incorrectEl.innerText = data.total_incorrect ?? 0;
+                if (unansweredEl) unansweredEl.innerText = data.total_unanswered ?? 0;
+                if (timeEl) timeEl.innerText = data.formatted_time || '00:00';
+                if (totalQEl) totalQEl.innerText = data.total_questions ?? 0;
+
+                const scoreEl = document.getElementById('results-total-score');
+                if (scoreEl) scoreEl.innerText = data.total_score ?? 0;
 
                 const breakdownEl = document.getElementById('results-rounds-breakdown');
-                breakdownEl.innerHTML = data.rounds.map(r => `
-                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
+                breakdownEl.innerHTML = data.rounds.map(r => {
+                    const roundName = r.round_title || (r.round_sequence === 2 ? "2-tur" : (r.round_sequence === 1 ? "1-tur" : `${r.round_sequence}-tur`));
+                    return `
+                    <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                            <span class="font-bold text-white capitalize">${r.round_type.replace('_', ' ')} (Raund ${r.round_sequence})</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                            <span class="font-bold text-white capitalize">${escapeHtml(roundName)}</span>
                         </div>
-                        <div class="flex items-center gap-3 font-mono">
-                            <span class="text-emerald-400">✓ ${r.correct_count}</span>
-                            <span class="text-rose-400">✕ ${r.incorrect_count}</span>
-                            <span class="text-white font-bold bg-slate-900 px-2 py-0.5 rounded text-xs border border-slate-800">${r.round_score} ball</span>
+                        <div class="flex items-center gap-3 font-mono text-xs">
+                            <span class="text-emerald-400 font-bold">✓ ${r.correct_count}</span>
+                            <span class="text-rose-400 font-bold">✕ ${r.incorrect_count}</span>
+                            <span class="text-slate-400 font-bold">⏳ ${r.unanswered_count || 0}</span>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
 
                 // Display anonymous registration conversion banner if applicable
                 const anonBanner = document.getElementById('results-anon-banner');
@@ -1883,6 +2567,9 @@
                 showScreen('screen-results');
             } catch (err) {
                 alert('Natijalar xatoligi: ' + err.message);
+                throw err;
+            } finally {
+                isLoadingResults = false;
             }
         }
 
@@ -1903,56 +2590,31 @@
                 }
                 const data = await res.json();
 
-                document.getElementById('review-correct-ratio').innerText = `${data.total_correct}`;
-                document.getElementById('review-active-time').innerText = data.formatted_time || '00:00';
-                document.getElementById('review-total-score').innerText = data.total_score;
+                const corrEl = document.getElementById('review-correct-count');
+                const incorrEl = document.getElementById('review-incorrect-count');
+                const unansEl = document.getElementById('review-unanswered-count');
+                const timeEl = document.getElementById('review-active-time');
+
+                if (corrEl) corrEl.innerText = data.total_correct ?? 0;
+                if (incorrEl) incorrEl.innerText = data.total_incorrect ?? 0;
+                if (unansEl) unansEl.innerText = data.total_unanswered ?? 0;
+                if (timeEl) timeEl.innerText = data.formatted_time || '00:00';
+
+                const scoreEl = document.getElementById('review-total-score');
+                if (scoreEl) scoreEl.innerText = data.total_score ?? 0;
 
                 const hiddenRuleBox = document.getElementById('review-hidden-rule-box');
                 const hiddenRuleText = document.getElementById('review-hidden-rule-text');
                 let foundHiddenRule = null;
 
                 const listEl = document.getElementById('review-questions-list');
-                let questionsHtml = '';
+                listEl.innerHTML = buildReviewQuestionsHtml(data.rounds);
 
                 data.rounds.forEach(r => {
                     if (r.config && r.config.hidden_rule) {
                         foundHiddenRule = r.config.hidden_rule;
                     }
-
-                    r.questions.forEach(q => {
-                        questionsHtml += `
-                            <div class="p-4 rounded-xl bg-slate-950 border ${q.is_correct ? 'border-emerald-900/50' : 'border-rose-950/60'} space-y-2.5">
-                                <div class="flex items-center justify-between gap-2">
-                                    <div class="flex items-center gap-2">
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-slate-400 font-mono">#${q.sequence}</span>
-                                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider capitalize">${r.round_type.replace('_', ' ')}</span>
-                                    </div>
-                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${q.is_correct ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
-                                        ${q.is_correct ? `+${q.points_awarded} ball` : '0 ball'}
-                                    </span>
-                                </div>
-                                <div class="text-sm font-semibold text-white leading-relaxed">${escapeHtml(q.text)}</div>
-                                <div class="grid sm:grid-cols-2 gap-2 text-xs pt-1">
-                                    <div class="p-2.5 rounded-lg bg-slate-900/80">
-                                        <div class="text-slate-400 text-[11px] mb-0.5">Sizning javobingiz:</div>
-                                        <div class="font-bold ${q.is_correct ? 'text-emerald-300' : 'text-rose-300'}">${escapeHtml(q.submitted_answer || "(Javob berilmadi)")}</div>
-                                    </div>
-                                    <div class="p-2.5 rounded-lg bg-slate-900/80">
-                                        <div class="text-slate-400 text-[11px] mb-0.5">To'g'ri qabul qilingan javob:</div>
-                                        <div class="font-bold text-indigo-300">${escapeHtml(q.correct_answers.join(' / '))}</div>
-                                    </div>
-                                </div>
-                                ${q.explanation ? `
-                                    <div class="p-2.5 rounded-lg bg-indigo-950/20 border border-indigo-500/20 text-[11px] text-indigo-200">
-                                        <strong class="text-indigo-300">Izoh:</strong> ${escapeHtml(q.explanation)}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        `;
-                    });
                 });
-
-                listEl.innerHTML = questionsHtml;
 
                 if (foundHiddenRule) {
                     hiddenRuleText.innerText = foundHiddenRule;
@@ -2065,9 +2727,62 @@
 
         function goToQuizSelection() {
             clearInterval(state.timerInterval);
+            clearInterval(state.breakInterval);
             state.sessionToken = null;
+            sessionStorage.removeItem('zakowhat_session_token');
+            sessionStorage.removeItem('zakowhat_timer_mode');
+            sessionStorage.removeItem('zakowhat_quiz_id');
+            window.history.replaceState({}, '', state.isStaging ? '/staging' : '/arena');
             showScreen('screen-selection');
-            loadQuizzes();
+            if (state.isStaging) {
+                loadStagingQuizzes();
+            } else {
+                loadQuizzes();
+            }
+        }
+
+        async function restoreActiveSession() {
+            const savedToken = sessionStorage.getItem('zakowhat_session_token');
+            if (!savedToken) return false;
+
+            try {
+                const res = await fetch(`${API_BASE}/play/${savedToken}`);
+                if (!res.ok) {
+                    sessionStorage.removeItem('zakowhat_session_token');
+                    sessionStorage.removeItem('zakowhat_timer_mode');
+                    sessionStorage.removeItem('zakowhat_quiz_id');
+                    return false;
+                }
+
+                const data = await res.json();
+                state.sessionToken = savedToken;
+                state.timerMode = sessionStorage.getItem('zakowhat_timer_mode') || 'with_timer';
+                state.currentQuizId = data.quiz_id || parseInt(sessionStorage.getItem('zakowhat_quiz_id'), 10) || null;
+                state.isStaging = Boolean(data.is_staging);
+                state.totalScore = data.total_score || 0;
+
+                if (data.status === 'in_progress') {
+                    const stateObj = data.current_state || data;
+                    renderQuestionState(stateObj);
+                    showScreen('screen-gameplay');
+                    return true;
+                } else if (data.status === 'intermediate_break') {
+                    showIntermediateBreak(data.break_data);
+                    return true;
+                } else if (data.status === 'round_reveal') {
+                    await loadRoundReveal();
+                    return true;
+                } else if (data.status === 'completed') {
+                    await loadFinalResults();
+                    return true;
+                }
+            } catch (e) {
+                console.warn('Failed to restore active session:', e);
+                sessionStorage.removeItem('zakowhat_session_token');
+                sessionStorage.removeItem('zakowhat_timer_mode');
+                sessionStorage.removeItem('zakowhat_quiz_id');
+            }
+            return false;
         }
 
         function escapeHtml(text) {
@@ -2094,10 +2809,30 @@
 
         // Initialize on Load
         window.addEventListener('DOMContentLoaded', async () => {
+            initTheme();
             await checkAuth();
             initGoogleGis();
-            await loadCategories();
-            await loadQuizzes();
+
+            // Try restoring active session (Flow D: refresh during Q5, Q12, break, Q13, Q24, results)
+            const restored = await restoreActiveSession();
+            if (restored) {
+                return;
+            }
+
+            // Check if on staging mode: /staging or /staging/{quiz_id}
+            const stagingMatch = window.location.pathname.match(/^\/staging(?:\/(\d+))?$/);
+            if (stagingMatch) {
+                state.isStaging = true;
+                const stagingQuizId = stagingMatch[1] ? parseInt(stagingMatch[1], 10) : null;
+                if (stagingQuizId) {
+                    await startStagingQuiz(stagingQuizId);
+                } else {
+                    await loadStagingQuizzes();
+                }
+                return;
+            }
+
+            await Promise.all([loadCategories(), loadQuizzes()]);
 
             // Check for direct links: /quiz/{id}, /play/{id}, or ?quiz={id}
             const urlParams = new URLSearchParams(window.location.search);

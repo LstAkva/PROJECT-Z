@@ -1,6 +1,6 @@
 import secrets
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, JSON, Boolean, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, JSON, Boolean, UniqueConstraint, Index, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from database import Base
@@ -45,7 +45,7 @@ class Round(Base):
     config = Column(JSON, nullable=True)
     
     quiz_version = relationship("QuizVersion", back_populates="rounds")
-    questions = relationship("Question", back_populates="round", cascade="all, delete-orphan")  # legacy backward-compat
+    questions = relationship("Question", back_populates="round")  # legacy backward-compat (no delete-orphan)
     round_questions = relationship(
         "RoundQuestion",
         back_populates="round",
@@ -131,6 +131,15 @@ class User(Base):
 class SoloAttempt(Base):
     """Отдельная игра конкретного игрока."""
     __tablename__ = "solo_attempts"
+    __table_args__ = (
+        Index(
+            "idx_solo_attempts_anon_id_unique",
+            "anon_id",
+            unique=True,
+            postgresql_where=text("anon_id IS NOT NULL"),
+            sqlite_where=text("anon_id IS NOT NULL"),
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     quiz_version_id = Column(Integer, ForeignKey("quiz_versions.id"), nullable=False)
@@ -147,6 +156,7 @@ class SoloAttempt(Base):
     question_opened_at = Column(DateTime, nullable=True)
     started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     completed_at = Column(DateTime, nullable=True)
+    attempt_metadata = Column(JSONB().with_variant(JSON, "sqlite"), nullable=True)
 
     quiz_version = relationship("QuizVersion", back_populates="solo_attempts")
     user = relationship("User", back_populates="solo_attempts")

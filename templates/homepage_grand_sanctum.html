@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZakoWhat — Mustaqil Intellektual Maydon</title>
+  <meta name="description" content="ZakoWhat — klassik Zakovat anʼanalaridan ilhomlangan mustaqil intellektual viktorina platformasi. Saralangan to‘plamlar, 2×12 formati va chuqur mantiqiy tafakkur maydoni.">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-favicon.svg">
+
+  <!-- Architectural Google Fonts: Cinzel, Playfair Display, Plus Jakarta Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Core Design System -->
+  <link rel="stylesheet" href="/static/css/zakowhat-design-system.css">
+</head>
+<body>
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-link">Asosiy mazmunga o‘tish</a>
+
+  <!-- 1. Architectural Masthead -->
+  <header class="masthead">
+    <div class="masthead-inner">
+      <a href="/preview/grand-sanctum" class="brand-link" aria-label="ZakoWhat bosh sahifa">
+        <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat Girih Nishoni" class="brand-logo-img">
+        <span class="brand-title">ZakoWhat</span>
+        <span class="brand-tag">Intellektual Klub</span>
+      </a>
+
+      <nav class="nav-actions" aria-label="Asosiy navigatsiya">
+        <a href="#showcase" class="nav-link">Stol</a>
+        <a href="#codex" class="nav-link">Format</a>
+        <a href="#lore" class="nav-link">Falsafa</a>
+        <a href="/arena" class="nav-link">To‘plamlar</a>
+        
+        <!-- Live Theme Toggle Button -->
+        <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Mavzuni almashtirish" title="Mavzuni almashtirish">
+          <svg id="moonIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg id="sunIcon" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="2" x2="12" y2="6"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <a href="/arena" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.82rem;">
+          <span>Arena</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <!-- 2. Grand Sanctum Hero with Large Engraved Girih Geometry -->
+    <section class="hero-section">
+      <!-- Architectural Girih Background & Directional Oxblood Lighting -->
+      <div class="hero-girih-canvas" aria-hidden="true">
+        <div class="hero-girih-lighting"></div>
+        <svg class="hero-girih-svg" viewBox="0 0 1000 1000" fill="none">
+          <circle cx="500" cy="500" r="480" stroke="currentColor" stroke-width="0.8" stroke-dasharray="3 6" opacity="0.3"/>
+          <circle cx="500" cy="500" r="440" stroke="currentColor" stroke-width="1.0" opacity="0.45"/>
+          <circle cx="500" cy="500" r="380" stroke="currentColor" stroke-width="0.75" stroke-dasharray="2 4" opacity="0.35"/>
+          <circle cx="500" cy="500" r="320" stroke="currentColor" stroke-width="1.0" opacity="0.5"/>
+          <circle cx="500" cy="500" r="220" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+          <circle cx="500" cy="500" r="140" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>
+          <circle cx="500" cy="500" r="60" stroke="currentColor" stroke-width="1.0" opacity="0.65"/>
+          
+          <!-- 16-Axis radial astronomical rays -->
+          <line x1="980.0" y1="500.0" x2="20.0" y2="500.0" stroke="currentColor" stroke-width="0.75" opacity="0.35"/>
+          <line x1="943.5" y1="683.7" x2="56.5" y2="316.3" stroke="currentColor" stroke-width="0.75" stroke-dasharray="4 8" opacity="0.22"/>
+          <line x1="839.4" y1="839.4" x2="160.6" y2="160.6" stroke="currentColor" stroke-width="0.75" opacity="0.35"/>
+          <line x1="683.7" y1="943.5" x2="316.3" y2="56.5" stroke="currentColor" stroke-width="0.75" stroke-dasharray="4 8" opacity="0.22"/>
+          <line x1="500.0" y1="980.0" x2="500.0" y2="20.0" stroke="currentColor" stroke-width="0.75" opacity="0.35"/>
+          <line x1="316.3" y1="943.5" x2="683.7" y2="56.5" stroke="currentColor" stroke-width="0.75" stroke-dasharray="4 8" opacity="0.22"/>
+          <line x1="160.6" y1="839.4" x2="839.4" y2="160.6" stroke="currentColor" stroke-width="0.75" opacity="0.35"/>
+          <line x1="56.5" y1="683.7" x2="943.5" y2="316.3" stroke="currentColor" stroke-width="0.75" stroke-dasharray="4 8" opacity="0.22"/>
+          
+          <!-- Concentric Interlocking Polygons -->
+          <rect x="290.0" y="290.0" width="420" height="420" stroke="currentColor" stroke-width="0.9" fill="none" opacity="0.4"/>
+          <rect x="290.0" y="290.0" width="420" height="420" stroke="currentColor" stroke-width="0.9" fill="none" transform="rotate(45 500 500)" opacity="0.4"/>
+          <rect x="340.0" y="340.0" width="320" height="320" stroke="currentColor" stroke-width="0.9" fill="none" opacity="0.4"/>
+          <rect x="340.0" y="340.0" width="320" height="320" stroke="currentColor" stroke-width="0.9" fill="none" transform="rotate(45 500 500)" opacity="0.4"/>
+          <polygon points="940.0,500.0 670.3,588.6 774.4,774.4 588.6,670.3 500.0,940.0 411.4,670.3 225.6,774.4 329.7,588.6 60.0,500.0 329.7,411.4 225.6,225.6 411.4,329.7 500.0,60.0 588.6,329.7 774.4,225.6 670.3,411.4" stroke="currentColor" stroke-width="1.2" fill="none" opacity="0.55"/>
+        </svg>
+      </div>
+
+      <!-- Foreground Content Wrapper -->
+      <div class="hero-content-wrapper">
+        <div class="hero-insignia-badge">
+          <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat Girih Muammo Nishoni">
+        </div>
+
+        <div class="eyebrow-label">Mustaqil Intellektual Maydon</div>
+
+        <!-- Solid Monumental Headline (Zero AI clip-text gradient tells) -->
+        <h1 class="hero-headline">
+          Daqiqa Ichra Haqiqat Jilvasi
+        </h1>
+
+        <!-- Short, Concise Supporting Text -->
+        <p class="hero-subhead">
+          ZakoWhat — klassik Zakovat anʼanalaridan ilhomlangan mustaqil intellektual viktorina platformasi.
+          Saralangan to‘plamlar, 2×12 meʼmoriy formati va chuqur mantiqiy tafakkur maydoni.
+        </p>
+
+        <div class="hero-cta-group">
+          <a href="/arena" class="btn btn-primary">
+            Arenaga Kirish
+          </a>
+          <a href="#showcase" class="btn btn-secondary">
+            O‘yin Stoliga Nazar
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Atmospheric Architectural Transition Divider -->
+    <div class="sanctum-transition-divider" aria-hidden="true">
+      <div class="divider-line left"></div>
+      <div class="divider-node">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <polygon points="12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9" stroke-width="1.2" fill="rgba(197, 160, 89, 0.15)"/>
+          <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="divider-line right"></div>
+    </div>
+
+    <!-- 3. Cinematic Dark Table Showcase -->
+    <section id="showcase" class="showcase-section" aria-label="O‘yin stoli ko‘rgazmasi">
+      <div class="table-outer-rim">
+        <div class="table-felt-surface">
+          <!-- Background Girih Pattern -->
+          <div class="table-girih-bg" aria-hidden="true"></div>
+
+          <!-- Table HUD -->
+          <div class="table-hud">
+            <div class="table-hud-meta">
+              <span class="meta-status-dot" aria-hidden="true"></span>
+              <span>1-to‘plam · 1-tur · 1-savol</span>
+            </div>
+
+            <!-- Authentic Integer Countdown (Illustrative dynamic demo timer: 01:38) -->
+            <div class="clock-display" aria-label="Namoyish taymeri: 1 daqiqa 38 soniya">
+              <svg class="clock-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span id="countdownDisplay">01:38</span>
+              <span class="clock-preview-badge">Namoyish</span>
+            </div>
+          </div>
+
+          <!-- Question Stage Card (Flat and legible) -->
+          <div class="question-stage-card">
+            <div class="question-stage-tag">
+              <span>SAVOL MATNI</span>
+              <span>DINAMIK REJIM (90–150S)</span>
+            </div>
+
+            <p class="question-text">
+              Bu insonga tegishli mashhur gaplar yozilgan sahifada yurtimizdagi bir viloyat, ikki xil uy-ro‘zg‘or buyumi va ob-havo so‘zlari ham uchraydi. «Bek va Lola» animatsion serialining epizodlaridan birida stadiondagi tomoshabinlar qatorida ushbu inson ham tasvirlangan.
+              <br><br>
+              <strong>Diqqat, savol:</strong> Ushbu inson kim?
+            </p>
+
+            <form class="submission-bar" onsubmit="event.preventDefault();" aria-label="Javob topshirish shakli">
+              <!-- No spoiler placeholder! -->
+              <input 
+                id="sampleAnswerInput"
+                class="input-answer" 
+                type="text" 
+                placeholder="Javobingizni kiriting..." 
+                aria-label="Javobingiz"
+                autocomplete="off"
+              >
+              <!-- Dedicated submission action with authentic terminology -->
+              <button class="btn-submit" type="button" id="submitActionBtn">
+                Javobni yuborish
+              </button>
+            </form>
+          </div>
+
+          <!-- Format HUD Bottom -->
+          <div class="table-format-info">
+            <span>Format: 2 tur × 12 savol · 12-savoldan so‘ng oraliq tanaffus</span>
+            <span>Jami: 24 savol</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Geometric Codex: Architectural Triptych -->
+    <section id="codex" class="codex-section" aria-label="ZakoWhat asosiy mezonlari">
+      <div class="eyebrow-label" style="display:flex; justify-content:center;">Tizim Meʼmorchiligi</div>
+      <h2 class="section-title">Uch Asosiy Poydevor</h2>
+      <p class="section-subtitle">
+        Platforma tasodifiy viktorina emas, balki qatʼiy Zakovat mezonlari asosida loyihalangan.
+      </p>
+
+      <div class="codex-triptych">
+        <!-- Pillar 1 -->
+        <div class="codex-column">
+          <div class="pillar-marker">
+            <span class="marker-glyph">✦</span>
+            <span class="pillar-category">Kuratorlik</span>
+          </div>
+          <h3 class="pillar-title">Saralangan To‘plamlar</h3>
+          <p class="pillar-desc">
+            Har bir paket tahririyat tomonidan tekshirilgan, faktik asosi mustahkam va dublikatlardan tozalangan yaxlit to‘plamdir. Tasodifiy savollar oqimi emas, mantiqiy uyg‘unlik taʼminlanadi.
+          </p>
+        </div>
+
+        <!-- Architectural Vertical Divider 1 -->
+        <div class="codex-vertical-divider" aria-hidden="true"></div>
+
+        <!-- Pillar 2 (Featured format) -->
+        <div class="codex-column featured">
+          <div class="pillar-marker">
+            <span class="marker-glyph">✦</span>
+            <span class="pillar-category">Klassik Tuzilma</span>
+          </div>
+          <h3 class="pillar-title">2 Tur × 12 Savol</h3>
+          <p class="pillar-desc">
+            Anʼanaviy Zakovat formati: 2 tur, har birida 12 tadan savol — jami 24 savol. 12-savoldan so‘ng jamoaviy tahlil va nafas rostlash uchun oraliq tanaffus ko‘zda tutilgan.
+          </p>
+        </div>
+
+        <!-- Architectural Vertical Divider 2 -->
+        <div class="codex-vertical-divider" aria-hidden="true"></div>
+
+        <!-- Pillar 3 -->
+        <div class="codex-column">
+          <div class="pillar-marker">
+            <span class="marker-glyph">✦</span>
+            <span class="pillar-category">Moslashuvchanlik</span>
+          </div>
+          <h3 class="pillar-title">Dinamik Vaqt va Mashq</h3>
+          <p class="pillar-desc">
+            Savol matni hajmiga qarab 90–150 soniyalik dinamik o‘ylash vaqti yoki erkin mashq qilish uchun vaqtsiz rejim. Muqobil to‘g‘ri variantlar hisobga olingan xolis baholash.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Lore & Geometry of Deduction -->
+    <section id="lore" class="lore-section" aria-label="Brend falsafasi">
+      <div class="lore-card">
+        <div class="lore-seal">
+          <img src="/static/svg/zakowhat-insignia.svg" alt="Girih-i Muammo muhri">
+        </div>
+        <div class="lore-content">
+          <div class="eyebrow-label">Brend Falsafasi</div>
+          <h3>Girih-i Muammo: Mantiq Geometriyasi</h3>
+          <p>
+            Samarqand va Buxoro meʼmoriy yodgorliklaridagi girih naqshlari mantiqiy tartib va mutanosiblik ifodasidir. Har bir intellektual savol — yechimini kutayotgan meʼmoriy jumboq. Haqiqat yodlash orqali emas, balki chuqur tahlil va mantiqiy bog‘liqliklar zanjiri bilan topiladi.
+          </p>
+          <div class="lore-quote">
+            «Bir daqiqa ichra chigal tugun yechilar, idrok esa yangi marralar sari yo‘l ochar.»
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Arena Section (Clear Preview with Real Links) -->
+    <section id="arena" class="hero-section" style="padding-top: var(--space-8); padding-bottom: var(--space-16); overflow: visible;">
+      <div class="eyebrow-label">Kutilayotgan Bosqich</div>
+      <h2 class="section-title">ZakoWhat Arena</h2>
+      <p class="hero-subhead">
+        Jonli jamoaviy bellashuvlar va umumiy reyting tizimi ayni paytda faol ishlab chiqilmoqda.
+        Hozirda mavjud saralangan to‘plamlarni yakka tartibda sinab ko‘rishingiz mumkin.
+      </p>
+      <div class="hero-cta-group">
+        <a href="/arena" class="btn btn-primary">
+          Saralangan To‘plamlar Katalogi
+        </a>
+        <a href="#showcase" class="btn btn-secondary">
+          Namoyish Stoliga Qaytish
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- 7. Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat" width="24" height="24">
+        <span style="font-family: var(--font-display); font-weight: 700; color: var(--text-main);">ZAKOWHAT</span>
+        <span class="footer-note">— Mustaqil Intellektual Platforma. Barcha huquqlar himoyalangan.</span>
+      </div>
+      <div class="footer-note">
+        Toshkent · Samarqand · Buxoro · 2026
+      </div>
+    </div>
+  </footer>
+
+  <!-- Theme Toggle & Showcase Script -->
+  <script>
+    (function() {
+      const htmlEl = document.documentElement;
+      const themeToggleBtn = document.getElementById('themeToggleBtn');
+      const sunIcon = document.getElementById('sunIcon');
+      const moonIcon = document.getElementById('moonIcon');
+
+      function updateThemeIcons(theme) {
+        if (theme === 'light') {
+          moonIcon.style.display = 'block';
+          sunIcon.style.display = 'none';
+        } else {
+          moonIcon.style.display = 'none';
+          sunIcon.style.display = 'block';
+        }
+      }
+
+      // Read preference or default to dark
+      const savedTheme = localStorage.getItem('zakowhat-theme') || 'dark';
+      htmlEl.setAttribute('data-theme', savedTheme);
+      updateThemeIcons(savedTheme);
+
+      if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', function() {
+          const currentTheme = htmlEl.getAttribute('data-theme');
+          const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+          htmlEl.setAttribute('data-theme', nextTheme);
+          localStorage.setItem('zakowhat-theme', nextTheme);
+          updateThemeIcons(nextTheme);
+        });
+      }
+
+      // Smooth integer seconds countdown simulation for showcase (01:38 -> 98 seconds)
+      let totalSeconds = 98;
+      const countdownEl = document.getElementById('countdownDisplay');
+      if (countdownEl) {
+        setInterval(function() {
+          if (totalSeconds > 0) {
+            totalSeconds--;
+            const mins = Math.floor(totalSeconds / 60);
+            const secs = totalSeconds % 60;
+            const formatted = (mins < 10 ? '0' + mins : mins) + ':' + (secs < 10 ? '0' + secs : secs);
+            countdownEl.textContent = formatted;
+          } else {
+            totalSeconds = 98;
+          }
+        }, 1000);
+      }
+
+      // Submission button interactive feedback
+      const submitBtn = document.getElementById('submitActionBtn');
+      const inputEl = document.getElementById('sampleAnswerInput');
+      if (submitBtn && inputEl) {
+        submitBtn.addEventListener('click', function() {
+          const val = inputEl.value.trim();
+          if (!val) {
+            inputEl.focus();
+            return;
+          }
+          submitBtn.textContent = 'Qabul qilindi';
+          submitBtn.style.background = '#2E7D32';
+          setTimeout(function() {
+            submitBtn.textContent = 'Javobni yuborish';
+            submitBtn.style.background = '';
+          }, 2000);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

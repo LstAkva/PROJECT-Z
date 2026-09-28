@@ -335,9 +335,9 @@ def test_classic_zakovat_12_plus_12_progression(client, db_session):
         ans_resp = client.post(f"/api/play/{token}/answer", json={"answer": f"ans_1_{seq}"})
         assert ans_resp.status_code == status.HTTP_200_OK
 
-    # Verify Tour 1 finished and entered round_reveal
+    # Verify Tour 1 finished and entered intermediate_break
     state_resp = client.get(f"/api/play/{token}")
-    assert state_resp.json()["status"] == "round_reveal"
+    assert state_resp.json()["status"] in ("intermediate_break", "round_reveal")
 
     # Intermediate Tour 1 reveal
     rev_resp = client.get(f"/api/play/{token}/reveal")

@@ -7,6 +7,8 @@ from sqlalchemy import func
 from database import get_db
 from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAnswer, SoloAttempt
 from api.quizzes import CANONICAL_ROUND_TYPES, compile_published_manifest, sanitize_round_config
+from services.editorial import get_question_editorial_status
+from services.official_pack_qa import MEDIA_DEPENDENCY_RE
 
 router = APIRouter(prefix="/api/drafts", tags=["drafts"])
 
@@ -862,7 +864,8 @@ def run_publish_validation(version: QuizVersion, db: Session) -> dict:
     Comprehensive publish-readiness validation engine.
     Returns structured field/round/question-level errors and warnings.
     Enforces mode-specific rules:
-    - classic_zakovat: exactly 2 rounds x 12 questions (sequences 1..12) as blocking errors.
+    - classic_zakovat: either the builder's 2 x 12 representation or the
+      official-curation 1 x 24 zakovat_classic representation, as blocking errors.
     - mantiqqasqon: hidden rule/logic required in round config as blocking error.
     - svoyak: point ladder and strictly positive points.
     - modern_multiround: canonical round type requirements.
@@ -905,6 +908,10 @@ def run_publish_validation(version: QuizVersion, db: Session) -> dict:
         })
 
     total_q = 0
+    approved_count = 0
+    needs_review_count = 0
+    rejected_count = 0
+    unresolved_count = 0
 
     for r in rounds:
         rqs = (
@@ -934,6 +941,9 @@ def run_publish_validation(version: QuizVersion, db: Session) -> dict:
         # Check questions in this round
         for rq in rqs:
             q = rq.question
+            global_seq = ((r.sequence - 1) * 12 + rq.sequence) if version.game_mode == "classic_zakovat" and len(rounds) == 2 else rq.sequence
+            q_label = f"Q{global_seq}" if version.game_mode == "classic_zakovat" else f"#{rq.sequence}"
+
             if not q or not q.text or not q.text.strip():
                 structured_errors.append({
                     "scope": "question",
@@ -943,8 +953,9 @@ def run_publish_validation(version: QuizVersion, db: Session) -> dict:
                     "round_type": r.round_type,
                     "question_id": q.id if q else None,
                     "question_sequence": rq.sequence,
+                    "global_sequence": global_seq,
                     "code": "REQUIRED_TEXT",
-                    "message": f"'{rname}' #{rq.sequence}-savol matni bo'sh bo'lishi mumkin emas."
+                    "message": f"{q_label} — savol matni bo'sh bo'lishi mumkin emas."
                 })
 
             # Check accepted answers
@@ -958,9 +969,75 @@ def run_publish_validation(version: QuizVersion, db: Session) -> dict:
                     "round_type": r.round_type,
                     "question_id": q.id if q else None,
                     "question_sequence": rq.sequence,
+                    "global_sequence": global_seq,
                     "code": "MISSING_PRIMARY_ANSWER",
-                    "message": f"'{rname}' #{rq.sequence}-savol uchun to'g'ri javob belgilanmagan."
+                    "message": f"{q_label} — missing primary answer (to'g'ri javob belgilanmagan)"
                 })
+
+            # Missing media dependency check
+            if q and q.text and MEDIA_DEPENDENCY_RE.search(q.text):
+                structured_errors.append({
+                    "scope": "question",
+                    "field": "media",
+                    "round_id": r.id,
+                    "round_sequence": r.sequence,
+                    "round_type": r.round_type,
+                    "question_id": q.id,
+                    "question_sequence": rq.sequence,
+                    "global_sequence": global_seq,
+                    "code": "MISSING_MEDIA_DEPENDENCY",
+                    "message": f"{q_label} — missing media dependency (etishmayotgan rasm/tarqatma materialga havola aniqlandi)"
+                })
+
+            # Editorial decision check
+            if q:
+                ed_status = get_question_editorial_status(q)
+                if ed_status == "approved":
+                    approved_count += 1
+                elif ed_status == "rejected":
+                    rejected_count += 1
+                    structured_errors.append({
+                        "scope": "question",
+                        "field": "editorial_status",
+                        "round_id": r.id,
+                        "round_sequence": r.sequence,
+                        "round_type": r.round_type,
+                        "question_id": q.id,
+                        "question_sequence": rq.sequence,
+                        "global_sequence": global_seq,
+                        "code": "REJECTED_QUESTION",
+                        "message": f"{q_label} — rejected (rad etilgan)"
+                    })
+                elif ed_status == "needs_review":
+                    needs_review_count += 1
+                    structured_errors.append({
+                        "scope": "question",
+                        "field": "editorial_status",
+                        "round_id": r.id,
+                        "round_sequence": r.sequence,
+                        "round_type": r.round_type,
+                        "question_id": q.id,
+                        "question_sequence": rq.sequence,
+                        "global_sequence": global_seq,
+                        "code": "NEEDS_REVIEW_QUESTION",
+                        "message": f"{q_label} — needs review (ko'rib chiqilishi kutilmoqda)"
+                    })
+                else:
+                    unresolved_count += 1
+                    is_builder_authored = bool(q.source_meta and isinstance(q.source_meta, dict) and q.source_meta.get("created_in_builder"))
+                    if not is_builder_authored and version.game_mode == "classic_zakovat":
+                        structured_errors.append({
+                            "scope": "question",
+                            "field": "editorial_status",
+                            "round_id": r.id,
+                            "round_sequence": r.sequence,
+                            "round_type": r.round_type,
+                            "question_id": q.id,
+                            "question_sequence": rq.sequence,
+                            "global_sequence": global_seq,
+                            "code": "UNRESOLVED_QUESTION",
+                            "message": f"{q_label} — unresolved (tahririyat qarori qabul qilinmagan)"
+                        })
 
             # Check points
             effective_points = rq.points_override if rq.points_override is not None else (q.default_points if q and q.default_points is not None else (q.points if q else 1))
@@ -1086,7 +1163,6 @@ def run_publish_validation(version: QuizVersion, db: Session) -> dict:
 
     # Game mode checks
     if version.game_mode == "classic_zakovat":
-        # Correction #1: EXACTLY 2 rounds and 12 questions each with sequences 1..12 are BLOCKING ERRORS
         if len(rounds) != 2:
             structured_errors.append({
                 "scope": "quiz",
@@ -1097,7 +1173,7 @@ def run_publish_validation(version: QuizVersion, db: Session) -> dict:
                 "question_id": None,
                 "question_sequence": None,
                 "code": "INVALID_ROUND_COUNT",
-                "message": f"Klassik Zakovat formati uchun aynan 2 ta tur bo'lishi shart (hozirda {len(rounds)} ta)."
+                "message": f"Zakovat formati uchun aynan 2 ta tur (1-tur va 2-tur) bo'lishi shart (hozirda {len(rounds)} ta)."
             })
         for r_idx, r in enumerate(rounds, start=1):
             r_rqs = (
@@ -1133,8 +1209,20 @@ def run_publish_validation(version: QuizVersion, db: Session) -> dict:
                         "message": f"{r_idx}-turda savollar ketma-ketligi 1 dan 12 gacha to'liq bo'lishi shart."
                     })
 
+    is_valid = len(structured_errors) == 0
+    readiness_state = "Published" if version.status == "published" else ("Ready to Publish" if (is_valid and total_q > 0) else "Draft")
+
     return {
-        "valid": len(structured_errors) == 0,
+        "valid": is_valid,
+        "is_ready_to_publish": is_valid and (total_q == 24 if version.game_mode == "classic_zakovat" else total_q > 0),
+        "readiness_state": readiness_state,
+        "editorial_summary": {
+            "total": total_q,
+            "approved": approved_count,
+            "needs_review": needs_review_count,
+            "rejected": rejected_count,
+            "unresolved": unresolved_count,
+        },
         "errors": [e["message"] for e in structured_errors],
         "structured_errors": structured_errors,
         "warnings": [w["message"] for w in structured_warnings],
@@ -1273,12 +1361,16 @@ def start_preview_simulation(draft_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Birinchi raundda hech qanday savol yo'q")
 
     # Create isolated preview attempt
+    now = datetime.now(timezone.utc)
     attempt = SoloAttempt(
         quiz_version_id=version.id,
         timer_mode="preview",  # Isolated preview session flag
         current_round_index=0,
         current_question_index=0,
         total_score=0,
+        total_correct=0,
+        active_time_seconds=0,
+        question_opened_at=now,
         status="in_progress",
     )
     db.add(attempt)
@@ -1335,23 +1427,20 @@ class PublishDraftRequest(BaseModel):
     category: Optional[str] = None
 
 
-@router.post("/{draft_id}/publish", status_code=status.HTTP_200_OK)
-def publish_draft(draft_id: int, payload: Optional[PublishDraftRequest] = None, db: Session = Depends(get_db)):
+def execute_publish_version(
+    version: QuizVersion,
+    db: Session,
+    visibility: Optional[str] = "public",
+    category: Optional[str] = None,
+) -> dict:
     """
-    Explicit atomic publishing endpoint.
-    - Idempotency guard: rejects subsequent publish attempts on already published versions.
-    - Runs complete server-side publish-readiness validation; invalid drafts are rejected.
+    Authoritative publishing service function.
+    - Idempotency guard: rejects subsequent publish attempts on already published versions (HTTP 409 Conflict).
+    - Requires draft status (HTTP 400 Bad Request).
+    - Runs complete server-side publish-readiness validation (HTTP 422 Unprocessable Entity).
     - Atomically compiles self-contained published_manifest and sets status='published'.
-    - Supports visibility: 'public' (default, discoverable) or 'unlisted' (playable by direct link only).
-    - Supports category: sets manifest category for Arena filtering.
+    - Returns standardized publication summary.
     """
-    version = db.query(QuizVersion).filter(QuizVersion.id == draft_id).first()
-    if not version:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Kviz versiyasi (ID: {draft_id}) topilmadi",
-        )
-
     # Idempotency safety: already published cannot be published again
     if version.status == "published":
         raise HTTPException(
@@ -1378,12 +1467,12 @@ def publish_draft(draft_id: int, payload: Optional[PublishDraftRequest] = None, 
 
     # Atomic publication transaction
     manifest = compile_published_manifest(version, db)
-    vis = (payload.visibility if payload and payload.visibility else "public").strip().lower()
+    vis = (visibility or "public").strip().lower()
     if vis not in ("public", "unlisted"):
         vis = "public"
     manifest["visibility"] = vis
 
-    cat = (payload.category.strip() if payload and payload.category and payload.category.strip() else None)
+    cat = (category.strip() if category and category.strip() else None)
     if not cat:
         cat = manifest.get("category") or "Umumiy"
     manifest["category"] = cat
@@ -1399,10 +1488,11 @@ def publish_draft(draft_id: int, payload: Optional[PublishDraftRequest] = None, 
 
     return {
         "success": True,
+        "message": f"Version {version.version_number} published",
         "quiz_id": version.quiz_id,
         "version_id": version.id,
         "version_number": version.version_number,
-        "title": version.quiz.title,
+        "title": version.quiz.title if version.quiz else None,
         "game_mode": version.game_mode,
         "status": version.status,
         "visibility": manifest.get("visibility", "public"),
@@ -1411,3 +1501,22 @@ def publish_draft(draft_id: int, payload: Optional[PublishDraftRequest] = None, 
         "total_rounds": len(manifest.get("rounds", [])),
         "total_questions": sum(len(r.get("questions", [])) for r in manifest.get("rounds", [])),
     }
+
+
+@router.post("/{draft_id}/publish", status_code=status.HTTP_200_OK)
+def publish_draft(draft_id: int, payload: Optional[PublishDraftRequest] = None, db: Session = Depends(get_db)):
+    """
+    Explicit atomic publishing endpoint.
+    Delegates to the authoritative execute_publish_version service.
+    """
+    version = db.query(QuizVersion).filter(QuizVersion.id == draft_id).first()
+    if not version:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Kviz versiyasi (ID: {draft_id}) topilmadi",
+        )
+
+    vis = payload.visibility if payload else "public"
+    cat = payload.category if payload else None
+    return execute_publish_version(version, db, visibility=vis, category=cat)
+

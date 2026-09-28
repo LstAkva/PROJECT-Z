@@ -3,9 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, or_
 from database import get_db
-from models import Question, AcceptedAnswer
+from models import Question, AcceptedAnswer, User
+from api.owner import verify_owner_access
 
-router = APIRouter(prefix="/api/questions", tags=["questions"])
+router = APIRouter(
+    prefix="/api/questions",
+    tags=["questions"],
+    dependencies=[Depends(verify_owner_access)]
+)
 
 
 @router.get("", status_code=status.HTTP_200_OK)

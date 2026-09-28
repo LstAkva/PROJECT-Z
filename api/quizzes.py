@@ -306,16 +306,24 @@ def list_quizzes(
     category: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
-    quizzes = db.query(Quiz).all()
+    # Fetch all published quiz versions with their parent quiz eagerly loaded in one query
+    published_versions = (
+        db.query(QuizVersion)
+        .join(Quiz, QuizVersion.quiz_id == Quiz.id)
+        .options(joinedload(QuizVersion.quiz))
+        .filter(QuizVersion.status == "published")
+        .order_by(QuizVersion.quiz_id.asc(), QuizVersion.version_number.desc())
+        .all()
+    )
+    latest_by_quiz = {}
+    for v in published_versions:
+        if v.quiz_id not in latest_by_quiz:
+            latest_by_quiz[v.quiz_id] = v
+
     results = []
-    for quiz in quizzes:
-        latest_published = (
-            db.query(QuizVersion)
-            .filter(QuizVersion.quiz_id == quiz.id, QuizVersion.status == "published")
-            .order_by(QuizVersion.version_number.desc())
-            .first()
-        )
-        if not latest_published:
+    for latest_published in latest_by_quiz.values():
+        quiz = latest_published.quiz
+        if not quiz:
             continue
 
         manifest = latest_published.published_manifest or {}
@@ -414,17 +422,19 @@ def get_categories(db: Session = Depends(get_db)):
     seen = set(base_categories)
     custom_categories = []
 
-    quizzes = db.query(Quiz).all()
-    for quiz in quizzes:
-        latest_published = (
-            db.query(QuizVersion)
-            .filter(QuizVersion.quiz_id == quiz.id, QuizVersion.status == "published")
-            .order_by(QuizVersion.version_number.desc())
-            .first()
-        )
-        if not latest_published:
-            continue
-        manifest = latest_published.published_manifest or {}
+    published_versions = (
+        db.query(QuizVersion)
+        .filter(QuizVersion.status == "published")
+        .order_by(QuizVersion.quiz_id.asc(), QuizVersion.version_number.desc())
+        .all()
+    )
+    latest_by_quiz = {}
+    for v in published_versions:
+        if v.quiz_id not in latest_by_quiz:
+            latest_by_quiz[v.quiz_id] = v
+
+    for v in latest_by_quiz.values():
+        manifest = v.published_manifest or {}
         if manifest.get("visibility") == "unlisted":
             continue
         cat = manifest.get("category")
@@ -614,6 +624,13 @@ def create_quiz_draft(payload: CreateQuizDraftRequest, db: Session = Depends(get
 
 @router.post("/{quiz_id}/publish/{version_number}", status_code=status.HTTP_200_OK)
 def publish_quiz_version(quiz_id: int, version_number: int, db: Session = Depends(get_db)):
+    """
+    Publish quiz version endpoint.
+    Delegates directly to authoritative execute_publish_version service,
+    enforcing comprehensive publish-readiness validation and idempotency.
+    """
+    from api.drafts import execute_publish_version
+
     version = (
         db.query(QuizVersion)
         .filter(QuizVersion.quiz_id == quiz_id, QuizVersion.version_number == version_number)
@@ -622,12 +639,7 @@ def publish_quiz_version(quiz_id: int, version_number: int, db: Session = Depend
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
 
-    manifest = compile_published_manifest(version, db)
-    version.published_manifest = manifest
-    version.status = "published"
-    version.published_at = datetime.now(timezone.utc)
-    db.commit()
-    return {"message": f"Version {version_number} published"}
+    return execute_publish_version(version, db)
 
 
 @router.get("/{quiz_id}", status_code=status.HTTP_200_OK)

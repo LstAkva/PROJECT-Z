@@ -424,12 +424,16 @@ def test_mantiqqasqon_hidden_rule_not_leaked_before_reveal(client, db_session):
 # REGRESSION TESTS: QUESTION BANK ISOLATION & LIFECYCLE
 # =========================================================
 
-def test_authored_questions_never_appear_in_question_bank(client, db_session):
+def test_authored_questions_never_appear_in_question_bank(client, db_session, monkeypatch):
     """
     Verify Question Bank Isolation:
     Questions authored inside a draft have status='draft' and MUST NEVER appear
     in Question Bank endpoints (/api/questions, /api/questions/filters, /api/questions/{id}).
     """
+    import uuid
+    owner_email = f"owner_authoring_test_{uuid.uuid4().hex[:8]}@example.test"
+    monkeypatch.setenv("OWNER_EMAIL", owner_email)
+
     # 1. Create a draft and author a question
     draft = client.post("/api/drafts", json={"title": "Isolated Draft"}).json()
     r = client.post(f"/api/drafts/{draft['version_id']}/rounds", json={"round_type": "zanjir"}).json()
@@ -446,6 +450,13 @@ def test_authored_questions_never_appear_in_question_bank(client, db_session):
     q_db = db_session.query(Question).filter(Question.id == q_id).first()
     assert q_db.status == "draft"
     assert q_db.round_id is None
+
+    # Authenticate as owner to query internal Question Bank
+    client.post("/api/auth/register", json={
+        "email": owner_email,
+        "password": "ValidPassword123!",
+        "display_name": "Owner Authoring Tester",
+    })
 
     # 3. Query Question Bank list endpoint (/api/questions)
     qb_res = client.get("/api/questions")

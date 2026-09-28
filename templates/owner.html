@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZakoWhat — Owner Panel</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .animate-fade-in { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- ================================================================= -->
+    <!-- ACCESS DENIED / AUTH SCREEN (Shown if 401 or 403) -->
+    <!-- ================================================================= -->
+    <div id="screen-auth-denied" class="hidden min-h-screen flex items-center justify-center p-4 bg-slate-950">
+        <div class="max-w-md w-full p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-6 shadow-2xl">
+            <div class="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-3xl flex items-center justify-center mx-auto text-rose-400">
+                🔒
+            </div>
+            <div class="space-y-2">
+                <h2 id="auth-denied-title" class="text-2xl font-bold text-white">Owner Ruxsati Talab Qilinadi</h2>
+                <p id="auth-denied-desc" class="text-sm text-slate-400">
+                    Ushbu sahifaga faqat platforma egasi (Owner) kirishi mumkin. Iltimos, tizim egasi akkaunti bilan kiring.
+                </p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="owner-login-form" onsubmit="handleOwnerLogin(event); return false;" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Email</label>
+                    <input type="email" id="owner-login-email" required class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white text-sm outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Parol</label>
+                    <input type="password" id="owner-login-password" required class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white text-sm outline-none">
+                </div>
+                <div id="owner-login-error" class="hidden p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-xs text-rose-300"></div>
+                <button type="submit" id="owner-login-btn" class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-indigo-600/30">
+                    Tizimga Kirish
+                </button>
+            </form>
+
+            <div class="pt-2 border-t border-slate-800/80">
+                <a href="/" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
+                    ← Bosh Sahifaga Qaytish
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MAIN OWNER APPLICATION (Shown after authorization) -->
+    <!-- ================================================================= -->
+    <div id="screen-owner-app" class="hidden flex flex-col flex-grow">
+
+        <!-- Top Header & Safety Guard Banner -->
+        <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16 gap-4">
+                    
+                    <!-- Left: Brand & Environment Badge -->
+                    <div class="flex items-center gap-3">
+                        <span class="text-lg font-black tracking-tight text-white flex items-center gap-2">
+                            <span class="text-indigo-400">⚡</span>
+                            <span>ZAKOWHAT</span>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                OWNER PANEL
+                            </span>
+                        </span>
+
+                        <!-- Prominent DEV Environment Indicator -->
+                        <div id="env-indicator-badge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 border border-emerald-500/30 text-emerald-300">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span id="env-badge-text">NEON DEV</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Navigation, Identity, Logout -->
+                    <div class="flex items-center gap-3">
+                        <a href="/" class="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors hidden md:inline-flex items-center gap-1">
+                            <span>Arena</span>
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        </a>
+                        <a href="/staging" class="text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors hidden md:inline-flex items-center gap-1">
+                            <span>Staging</span>
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        </a>
+
+                        <div class="h-4 w-px bg-slate-800 hidden md:block"></div>
+
+                        <!-- Owner Identity -->
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/40 text-xs font-bold text-indigo-300 flex items-center justify-center">
+                                👑
+                            </div>
+                            <span id="header-owner-email" class="text-xs font-medium text-slate-300 hidden sm:inline max-w-[150px] truncate">
+                                owner
+                            </span>
+                        </div>
+
+                        <!-- Logout -->
+                        <button onclick="handleLogout()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+                            Chiqish
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs Bar -->
+                <div class="flex items-center gap-2 -mb-px overflow-x-auto text-xs font-bold border-t border-slate-800/80 pt-1">
+                    <button id="nav-tab-dashboard" onclick="switchOwnerTab('dashboard')" class="px-4 py-3 border-b-2 border-indigo-500 text-indigo-400 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
+                        <span>📊</span>
+                        <span>Boshqaruv Paneli</span>
+                    </button>
+                    <button id="nav-tab-quizzes" onclick="switchOwnerTab('quizzes')" class="px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
+                        <span>📋</span>
+                        <span>Viktorina Paketlari</span>
+                    </button>
+                    <button id="nav-tab-questions" onclick="switchOwnerTab('questions')" class="px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
+                        <span>📚</span>
+                        <span>Savollar Banki</span>
+                    </button>
+                    <button id="nav-tab-generator" onclick="switchOwnerTab('generator')" class="px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
+                        <span>🎲</span>
+                        <span>Pack Generator</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Body -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+
+            <!-- ========================================================= -->
+            <!-- TAB 1: DASHBOARD -->
+            <!-- ========================================================= -->
+            <section id="owner-view-dashboard" class="space-y-6 animate-fade-in">
+                
+                <!-- System Status Banner -->
+                <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center text-xl">
+                            🛡️
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tizim va Xavfsizlik Holati</div>
+                            <div class="text-sm font-bold text-white flex items-center gap-2">
+                                <span class="text-emerald-400">● Ishchi rejim:</span>
+                                <span id="dash-env-label" class="font-mono text-emerald-300">development</span>
+                                <span class="text-slate-500">•</span>
+                                <span id="dash-db-target-label" class="font-mono text-slate-300">DB: development</span>
+                                <span class="text-slate-500">•</span>
+                                <span id="dash-alembic-label" class="font-mono text-slate-400 text-xs">Rev: 9c0d1e2f3a4b</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-slate-400">
+                        <span class="px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 font-semibold">
+                            🔒 Production Tegilmagan
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Drafts -->
+                    <div class="p-5 rounded-2xl bg-slate-900 border border-amber-500/30 space-y-2">
+                        <div class="flex items-center justify-between text-xs font-bold text-amber-400 uppercase tracking-wider">
+                            <span>Qoralama Paketlar</span>
+                            <span>📝</span>
+                        </div>
+                        <div id="metric-draft-count" class="text-3xl sm:text-4xl font-extrabold text-amber-300 font-mono">0</div>
+                        <div class="text-xs text-slate-400">Tayyorlanayotgan paketlar</div>
+                    </div>
+
+                    <!-- Published -->
+                    <div class="p-5 rounded-2xl bg-slate-900 border border-emerald-500/30 space-y-2">
+                        <div class="flex items-center justify-between text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                            <span>Nashr Qilingan</span>
+                            <span>🚀</span>
+                        </div>
+                        <div id="metric-published-count" class="text-3xl sm:text-4xl font-extrabold text-emerald-300 font-mono">0</div>
+                        <div class="text-xs text-slate-400">Ommaviy arenadagi paketlar</div>
+                    </div>
+
+                    <!-- Question Bank -->
+                    <div class="p-5 rounded-2xl bg-slate-900 border border-indigo-500/30 space-y-2">
+                        <div class="flex items-center justify-between text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                            <span>Savollar Banki</span>
+                            <span>📚</span>
+                        </div>
+                        <div id="metric-bank-count" class="text-3xl sm:text-4xl font-extrabold text-indigo-300 font-mono">0</div>
+                        <div class="text-xs text-slate-400">Qayta ishlatiladigan savollar</div>
+                    </div>
+
+                    <!-- Attached Questions -->
+                    <div class="p-5 rounded-2xl bg-slate-900 border border-purple-500/30 space-y-2">
+                        <div class="flex items-center justify-between text-xs font-bold text-purple-400 uppercase tracking-wider">
+                            <span>Paketlarda Mavjud</span>
+                            <span>🎯</span>
+                        </div>
+                        <div id="metric-attached-count" class="text-3xl sm:text-4xl font-extrabold text-purple-300 font-mono">0</div>
+                        <div class="text-xs text-slate-400">Biriktirilgan savollar soni</div>
+                    </div>
+                </div>
+
+                <!-- Quick Action Bar -->
+                <div class="p-6 rounded-2xl bg-gradient-to-r from-indigo-950/60 to-slate-900 border border-indigo-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <h3 class="text-base font-bold text-white">Yangi Zakovat Paketi Yaratish</h3>
+                        <p class="text-xs text-slate-300">
+                            Aynan 2 ta tur (1-tur va 2-tur) va 24 ta savoldan iborat yangi original paket tuzish.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="switchOwnerTab('generator')" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all flex items-center gap-2 cursor-pointer">
+                            <span>🎲 Pack Generator</span>
+                        </button>
+                        <button onclick="openCreateQuizModal()" class="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2 cursor-pointer">
+                            <span>+ Yangi Paket Tuzish</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Activity / Quizzes Preview -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                            <span>📋</span>
+                            <span>Oxirgi Viktorina Paketlari</span>
+                        </h3>
+                        <button onclick="switchOwnerTab('quizzes')" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300">
+                            Barchasini ko'rish →
+                        </button>
+                    </div>
+                    <div id="dashboard-recent-quizzes" class="space-y-3">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================= -->
+            <!-- TAB 2: QUIZZES MANAGEMENT & PACK EDITOR -->
+            <!-- ========================================================= -->
+            <section id="owner-view-quizzes" class="hidden space-y-6 animate-fade-in">
+
+                <!-- VIEW A: QUIZZES LIST -->
+                <div id="quizzes-subview-list" class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                        <div class="space-y-1">
+                            <h2 class="text-xl font-bold text-white">Viktorina Paketlari Boshqaruvi</h2>
+                            <p class="text-xs text-slate-400">Barcha qoralama va nashr qilingan paketlarni tahrirlash va nazorat qilish</p>
+                        </div>
+                        <button onclick="openCreateQuizModal()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition-all flex items-center gap-2 cursor-pointer">
+                            <span>+ Yangi Paket</span>
+                        </button>
+                    </div>
+
+                    <!-- Filter Tabs -->
+                    <div class="flex items-center gap-2 text-xs font-semibold">
+                        <button onclick="filterQuizzesList('all')" id="btn-filter-all" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white transition-colors cursor-pointer">Barchasi</button>
+                        <button onclick="filterQuizzesList('draft')" id="btn-filter-draft" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer">Qoralama (Draft)</button>
+                        <button onclick="filterQuizzesList('published')" id="btn-filter-published" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer">Nashr qilingan</button>
+                        <button onclick="filterQuizzesList('archived')" id="btn-filter-archived" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer">Arxiv</button>
+                    </div>
+
+                    <!-- Quizzes Grid -->
+                    <div id="owner-quizzes-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- VIEW B: 2x12 PACK EDITOR -->
+                <div id="quizzes-subview-editor" class="hidden space-y-6">
+                    
+                    <!-- Editor Navigation Bar -->
+                    <div class="flex items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <button onclick="closePackEditor()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer text-xs font-bold flex items-center gap-1">
+                                ← Ortga
+                            </button>
+                            <div>
+                                <h2 id="editor-quiz-title" class="text-lg sm:text-xl font-extrabold text-white">Paket Nomi</h2>
+                                <p id="editor-quiz-meta" class="text-xs text-slate-400">Zakovat • 2 tur • 24 savol</p>
+                            </div>
+                        </div>
+
+                        <!-- Action Toolbar -->
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button id="btn-batch-approve" onclick="batchApprovePackQuestions()" class="px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 font-bold text-xs border border-emerald-500/30 transition-colors cursor-pointer flex items-center gap-1.5" title="Ushbu paketdagi barcha savollarni ma'qullash">
+                                <span>✓ Barchasini Ma'qullash</span>
+                            </button>
+                            <button onclick="triggerValidateDraft()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 font-bold text-xs border border-indigo-500/30 transition-colors cursor-pointer flex items-center gap-1.5">
+                                <span>🔍 Tekshirish</span>
+                            </button>
+                            <button onclick="previewInStaging()" class="px-3.5 py-2 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 font-bold text-xs border border-amber-500/30 transition-colors cursor-pointer flex items-center gap-1.5">
+                                <span>👁️ Stagingda Sinash</span>
+                            </button>
+                            <button id="editor-publish-btn" onclick="openPublishModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-colors cursor-pointer flex items-center gap-1.5">
+                                <span>🚀 Nashr Qilish</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Validation State Card -->
+                    <div id="editor-validation-card" class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-2.5 flex-wrap">
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span>⚖️</span>
+                                    <span>Tayyorgarlik:</span>
+                                </span>
+                                <span id="editor-readiness-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold"></span>
+                                <span id="editor-validation-badge" class="px-2 py-0.5 rounded text-[11px] font-bold"></span>
+                            </div>
+
+                            <!-- Editorial Counts Summary Pills -->
+                            <div id="editor-editorial-pills" class="flex items-center gap-2 text-xs font-bold flex-wrap">
+                                <span id="pill-approved" class="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">0 Ma'qullangan</span>
+                                <span id="pill-needs-review" class="px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">0 Qayta ko'rish</span>
+                                <span id="pill-rejected" class="px-2 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-500/30">0 Rad etilgan</span>
+                                <span id="pill-unresolved" class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">0 Kutilmoqda</span>
+                            </div>
+                        </div>
+
+                        <div id="editor-validation-checklist" class="grid sm:grid-cols-3 gap-2 text-xs">
+                            <div id="chk-rounds" class="p-2 rounded-lg bg-slate-950 border border-slate-800 flex items-center gap-2">
+                                <span id="chk-rounds-icon">⏳</span>
+                                <span>2 ta tur (1 va 2-tur)</span>
+                            </div>
+                            <div id="chk-r1-count" class="p-2 rounded-lg bg-slate-950 border border-slate-800 flex items-center gap-2">
+                                <span id="chk-r1-icon">⏳</span>
+                                <span>1-tur: 0/12 savol</span>
+                            </div>
+                            <div id="chk-r2-count" class="p-2 rounded-lg bg-slate-950 border border-slate-800 flex items-center gap-2">
+                                <span id="chk-r2-icon">⏳</span>
+                                <span>2-tur: 0/12 savol</span>
+                            </div>
+                        </div>
+                        <div id="editor-validation-errors-box" class="hidden p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 space-y-1 text-xs text-rose-300">
+                            <!-- Injected error messages -->
+                        </div>
+                    </div>
+
+                    <!-- 2 Turlar Layout -->
+                    <div class="grid lg:grid-cols-2 gap-6">
+                        
+                        <!-- 1-TUR COLUMN -->
+                        <div class="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold text-xs border border-indigo-500/30">
+                                        1-TUR
+                                    </span>
+                                    <h3 class="text-sm font-bold text-white">Birinchi 12 ta savol</h3>
+                                </div>
+                                <span id="r1-count-badge" class="text-xs font-mono font-bold text-slate-400">0 / 12</span>
+                            </div>
+
+                            <!-- Questions list for Round 1 -->
+                            <div id="r1-questions-container" class="space-y-2.5 min-h-[150px]">
+                                <!-- Injected by JS -->
+                            </div>
+
+                            <!-- Add Question Button -->
+                            <button onclick="openQuestionPicker(1)" class="w-full py-3 rounded-xl border border-dashed border-indigo-500/40 hover:border-indigo-500 hover:bg-indigo-500/10 text-indigo-300 font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer">
+                                <span>+ 1-turga Savol Qo'shish</span>
+                            </button>
+                        </div>
+
+                        <!-- 2-TUR COLUMN -->
+                        <div class="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-bold text-xs border border-amber-500/30">
+                                        2-TUR
+                                    </span>
+                                    <h3 class="text-sm font-bold text-white">Ikkinchi 12 ta savol (13–24)</h3>
+                                </div>
+                                <span id="r2-count-badge" class="text-xs font-mono font-bold text-slate-400">0 / 12</span>
+                            </div>
+
+                            <!-- Questions list for Round 2 -->
+                            <div id="r2-questions-container" class="space-y-2.5 min-h-[150px]">
+                                <!-- Injected by JS -->
+                            </div>
+
+                            <!-- Add Question Button -->
+                            <button onclick="openQuestionPicker(2)" class="w-full py-3 rounded-xl border border-dashed border-amber-500/40 hover:border-amber-500 hover:bg-amber-500/10 text-amber-300 font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer">
+                                <span>+ 2-turga Savol Qo'shish</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================= -->
+            <!-- TAB 3: QUESTION BANK BROWSER -->
+            <!-- ========================================================= -->
+            <section id="owner-view-questions" class="hidden space-y-6 animate-fade-in">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div class="space-y-1">
+                        <h2 class="text-xl font-bold text-white">Savollar Banki Explorer</h2>
+                        <p class="text-xs text-slate-400">3,284 dan ortiq saralangan original Zakovat savollari bazasi</p>
+                    </div>
+                    <span id="bank-total-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 self-start sm:self-auto">
+                        0 ta savol
+                    </span>
+                </div>
+
+                <!-- Search & Filters Toolbar -->
+                <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 grid sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <input
+                            type="text"
+                            id="bank-search-input"
+                            oninput="debounceBankSearch()"
+                            placeholder="Savol matni yoki javob bo'yicha qidirish..."
+                            class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none"
+                        />
+                    </div>
+                    <div>
+                        <select id="bank-category-filter" onchange="loadBankQuestions(1)" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none cursor-pointer">
+                            <option value="all">Barcha Kategoriyalar</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Bank Questions Grid -->
+                <div id="bank-questions-grid" class="space-y-3">
+                    <!-- Loaded dynamically -->
+                </div>
+
+                <!-- Pagination Bar -->
+                <div id="bank-pagination" class="flex items-center justify-between border-t border-slate-800/80 pt-4 text-xs">
+                    <button id="bank-prev-btn" onclick="changeBankPage(-1)" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+                        ← Oldingi
+                    </button>
+                    <span id="bank-page-info" class="font-mono text-slate-400">Sahifa 1 / 1</span>
+                    <button id="bank-next-btn" onclick="changeBankPage(1)" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+                        Keyingi →
+                    </button>
+                </div>
+            </section>
+
+            <!-- ========================================================= -->
+            <!-- TAB 4: PACK GENERATOR v1 -->
+            <!-- ========================================================= -->
+            <section id="owner-view-generator" class="hidden space-y-6 animate-fade-in">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-xl font-bold text-white">Pack Generator v1</h2>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">
+                                Savollar Banki → Curated Drafts
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400">
+                            3,400+ ta saralangan savollar bankidan deterministik va takrorlanmas 24-savolli Klassik Zakovat qoralama paketlarini generatsiya qilish.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-slate-400">
+                        <span class="px-2.5 py-1 rounded-lg bg-indigo-950/40 border border-indigo-500/30 text-indigo-300 font-semibold">
+                            🛡️ Qoralama holatida saqlanadi (Hech qachon avtomatik nashr etilmaydi)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Generator Controls Card -->
+                <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                        <!-- Seed Input -->
+                        <div class="md:col-span-4 space-y-1.5">
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                                Generator Seed (Qayta Takrorlanuvchanlik)
+                            </label>
+                            <div class="flex gap-2">
+                                <input
+                                    type="number"
+                                    id="gen-seed-input"
+                                    value="12345"
+                                    placeholder="Masalan: 12345"
+                                    class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white font-mono text-sm outline-none"
+                                />
+                                <button
+                                    type="button"
+                                    id="btn-gen-randomize-seed"
+                                    onclick="randomizeGeneratorSeed()"
+                                    title="Tasodifiy yangi seed tanlash"
+                                    class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+                                >
+                                    <span>🎲 Yangi</span>
+                                </button>
+                            </div>
+                            <span class="text-[11px] text-slate-500">Bir xil seed va bank holati har doim aynan bir xil savollarni beradi.</span>
+                        </div>
+
+                        <!-- Game Mode Selector -->
+                        <div class="md:col-span-4 space-y-1.5">
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                                O'yin Formati
+                            </label>
+                            <select
+                                id="gen-game-mode-select"
+                                class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none cursor-pointer"
+                            >
+                                <option value="classic_zakovat" selected>Klassik Zakovat (2 tur × 12 savol = 24 ta)</option>
+                            </select>
+                            <span class="text-[11px] text-slate-500">Faqat matnli, yaroqli Zakovat savollari tanlanadi.</span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="md:col-span-4 flex gap-2">
+                            <button
+                                type="button"
+                                id="btn-gen-preview"
+                                onclick="handlePreviewCandidatePack()"
+                                class="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                                <span>🔍 Tekshirish & Ko'rish</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Options Row -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-800/80 text-xs text-slate-300">
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                id="gen-exclude-attached-check"
+                                checked
+                                class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span>Mavjud paketlarga biriktirilgan savollarni chetlab o'tish (tavsiya etiladi)</span>
+                        </label>
+                        <span class="text-[11px] text-slate-400">
+                            Manba xilma-xilligi: har bir manba blokidan maksimum 2 ta savol
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Preview Container (shown once preview is loaded) -->
+                <div id="gen-preview-container" class="hidden space-y-6">
+                    <!-- Summary & Commit Bar -->
+                    <div class="p-6 rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-950/40 border border-indigo-500/30 space-y-4">
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                                        <span>✓</span>
+                                        <span>Yaroqlilik Auditidan O'tdi</span>
+                                    </span>
+                                    <span class="text-slate-600">•</span>
+                                    <span id="gen-preview-seed-badge" class="font-mono text-xs text-indigo-300">Seed: 12345</span>
+                                </div>
+                                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                    <span>24 ta Saralangan Savol</span>
+                                    <span class="text-xs font-normal text-slate-400">(1-tur: 12 ta, 2-tur: 12 ta)</span>
+                                </h3>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2 text-xs">
+                                <span class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
+                                    Manba bloklari: <strong id="gen-metric-sources" class="text-white">0</strong> ta
+                                </span>
+                                <span class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
+                                    Maks. bitta manbadan: <strong id="gen-metric-max-source" class="text-white">0</strong> ta
+                                </span>
+                                <span class="px-3 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 font-semibold">
+                                    0 dublikat • 100% yaroqli
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Commit Form Fields -->
+                        <div class="p-4 rounded-xl bg-slate-950/60 border border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                            <div class="md:col-span-5 space-y-1">
+                                <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                                    Paket Nomi (Ixtiyoriy)
+                                </label>
+                                <input
+                                    type="text"
+                                    id="gen-commit-title"
+                                    placeholder="Avtomatik nomlanadi..."
+                                    class="w-full px-3.5 py-2 rounded-lg bg-slate-900 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none"
+                                />
+                            </div>
+                            <div class="md:col-span-4 space-y-1">
+                                <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                                    Tavsif (Ixtiyoriy)
+                                </label>
+                                <input
+                                    type="text"
+                                    id="gen-commit-desc"
+                                    placeholder="Generatsiya tavsifi..."
+                                    class="w-full px-3.5 py-2 rounded-lg bg-slate-900 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none"
+                                />
+                            </div>
+                            <div class="md:col-span-3">
+                                <button
+                                    type="button"
+                                    id="btn-gen-commit"
+                                    onclick="handleCommitGeneratedPack()"
+                                    class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                    <span>🚀 Qoralama Yaratish</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2-Round Two-Column Question Layout -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Round 1 -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-indigo-500/30">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-lg bg-indigo-600/30 text-indigo-300 font-bold text-xs flex items-center justify-center">1</span>
+                                    <h4 class="text-sm font-bold text-white">1-Tur (12 ta savol)</h4>
+                                </div>
+                                <span class="text-xs text-indigo-300 font-mono">1–12 savollar</span>
+                            </div>
+                            <div id="gen-preview-round-1" class="space-y-3">
+                                <!-- Injected by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Round 2 -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-amber-500/30">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-lg bg-amber-600/30 text-amber-300 font-bold text-xs flex items-center justify-center">2</span>
+                                    <h4 class="text-sm font-bold text-white">2-Tur (12 ta savol)</h4>
+                                </div>
+                                <span class="text-xs text-amber-300 font-mono">13–24 savollar</span>
+                            </div>
+                            <div id="gen-preview-round-2" class="space-y-3">
+                                <!-- Injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 1: CREATE QUIZ PACK -->
+    <!-- ================================================================= -->
+    <div id="modal-create-quiz" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="w-full max-w-lg p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-6 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white">Yangi Zakovat Paketi Yaratish</h3>
+                <button onclick="closeCreateQuizModal()" class="text-slate-400 hover:text-white cursor-pointer">✕</button>
+            </div>
+            <form id="create-quiz-form" onsubmit="handleCreateQuizSubmit(event); return false;" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Paket Nomi</label>
+                    <input type="text" id="create-quiz-title" required placeholder="Masalan: Zakovat Rasmiy To'plam #09" class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-sm outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Tavsif (Ixtiyoriy)</label>
+                    <textarea id="create-quiz-desc" rows="3" placeholder="Paket haqida qisqacha ma'lumot..." class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-sm outline-none"></textarea>
+                </div>
+                <div class="p-3 rounded-xl bg-indigo-950/30 border border-indigo-500/20 text-indigo-300">
+                    ℹ️ Format avtomatik ravishda <strong>Klassik Zakovat (2 tur × 12 savol = 24 ta)</strong> sifatida tuziladi.
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeCreateQuizModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold cursor-pointer">Bekor qilish</button>
+                    <button type="submit" id="btn-create-quiz-submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold cursor-pointer shadow-lg shadow-indigo-600/30">Yaratish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 2: QUESTION BANK PICKER (For Attaching / Replacing) -->
+    <!-- ================================================================= -->
+    <div id="modal-picker" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="w-full max-w-2xl max-h-[90vh] flex flex-col p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div>
+                    <h3 id="picker-modal-title" class="text-base font-bold text-white">Savollar Bankidan Tanlash</h3>
+                    <p id="picker-modal-subtitle" class="text-xs text-slate-400">1-tur uchun savol tanlang</p>
+                </div>
+                <button onclick="closeQuestionPicker()" class="text-slate-400 hover:text-white cursor-pointer">✕</button>
+            </div>
+
+            <!-- Picker Search -->
+            <div class="space-y-2">
+                <input
+                    type="text"
+                    id="picker-search-input"
+                    oninput="debouncePickerSearch()"
+                    placeholder="Qidirish (matn yoki javob)..."
+                    class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none"
+                />
+            </div>
+
+            <!-- Picker Results List -->
+            <div id="picker-results-list" class="flex-grow overflow-y-auto space-y-2 pr-1 min-h-[300px] max-h-[500px]">
+                <!-- Injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 3: QUESTION DETAIL & EDITORIAL INSPECTOR -->
+    <!-- ================================================================= -->
+    <div id="modal-question-detail" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="w-full max-w-3xl max-h-[92vh] flex flex-col p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-2xl overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span id="detail-q-id" class="font-mono text-xs font-bold text-indigo-400">#0</span>
+                    <span id="detail-q-qa-badge" class="px-2 py-0.5 rounded text-[10px] font-bold"></span>
+                    <span id="detail-q-ed-badge" class="px-2 py-0.5 rounded text-[10px] font-bold"></span>
+                    <span id="detail-q-category-badge" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-semibold"></span>
+                </div>
+                <button onclick="closeQuestionDetailModal()" class="text-slate-400 hover:text-white cursor-pointer text-lg font-bold">✕</button>
+            </div>
+
+            <!-- Modal Scrollable Body -->
+            <div class="space-y-4 text-xs overflow-y-auto pr-1 flex-grow">
+                <!-- Question Text -->
+                <div>
+                    <span class="text-slate-400 font-semibold block mb-1">Savol Matni:</span>
+                    <p id="detail-q-text" class="text-sm font-medium text-slate-200 p-3.5 rounded-xl bg-slate-950 border border-slate-800 leading-relaxed select-text"></p>
+                </div>
+
+                <!-- Explanation (if present) -->
+                <div id="detail-q-exp-box" class="p-3.5 rounded-xl bg-indigo-950/20 border border-indigo-500/20">
+                    <span class="text-indigo-400 font-bold block mb-1">Izoh / Mantiqiy Asos:</span>
+                    <p id="detail-q-explanation" class="text-slate-300 leading-relaxed select-text"></p>
+                </div>
+
+                <!-- Provenance & Source Information -->
+                <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <span class="text-slate-400 font-bold uppercase tracking-wider text-[11px] block">Manba va Kelib Chiqishi (Provenance):</span>
+                    <div id="detail-q-provenance" class="grid sm:grid-cols-2 gap-2 text-slate-300">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- QA Diagnostic Findings -->
+                <div id="detail-q-qa-box" class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400 font-bold uppercase tracking-wider text-[11px]">Avtomatlashtirilgan QA Xulosasi:</span>
+                        <span id="detail-q-qa-summary" class="font-bold"></span>
+                    </div>
+                    <div id="detail-q-qa-reasons" class="space-y-1 text-slate-300"></div>
+                    <div id="detail-q-qa-actions" class="space-y-1 text-indigo-300 font-semibold pt-1 border-t border-slate-800"></div>
+                </div>
+
+                <!-- Section: EDITORIAL DECISION -->
+                <div class="p-4 rounded-xl bg-slate-950 border border-indigo-500/30 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-indigo-300 font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                            <span>👑</span>
+                            <span>Tahririyat Qarori (Owner Decision)</span>
+                        </span>
+                        <span id="detail-q-current-decision" class="font-semibold text-slate-400"></span>
+                    </div>
+                    <div>
+                        <input type="text" id="detail-q-decision-notes" placeholder="Qaror bo'yicha tahririyat izohi (ixtiyoriy)..." class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none" />
+                    </div>
+                    <div class="flex items-center gap-2 pt-1 flex-wrap">
+                        <button onclick="handleDetailSetDecision('approve')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors cursor-pointer shadow-md shadow-emerald-600/20 flex items-center gap-1.5">
+                            <span>✓ Ma'qullash (Approve)</span>
+                        </button>
+                        <button onclick="handleDetailSetDecision('needs_review')" class="px-4 py-2 rounded-xl bg-amber-600/30 hover:bg-amber-600/40 text-amber-300 border border-amber-500/30 font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5">
+                            <span>⚠️ Qayta Ko'rish (Needs Review)</span>
+                        </button>
+                        <button onclick="handleDetailSetDecision('reject')" class="px-4 py-2 rounded-xl bg-rose-600/30 hover:bg-rose-600/40 text-rose-300 border border-rose-500/30 font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5">
+                            <span>✕ Rad Etish (Reject)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section: ACCEPTED ANSWERS & SYNONYM EDITING -->
+                <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                    <span class="text-slate-300 font-bold uppercase tracking-wider text-[11px] block">Qabul Qilingan Javoblar va Sinonimlar:</span>
+                    <div id="detail-q-answers-list" class="space-y-1.5">
+                        <!-- Injected by JS -->
+                    </div>
+                    <!-- Add Synonym Form -->
+                    <form onsubmit="handleAddAcceptedAnswerSubmit(event); return false;" class="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        <input type="text" id="new-answer-text-input" required placeholder="Yangi qabul qilinadigan javob yoki sinonim..." class="flex-grow px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none" />
+                        <label class="flex items-center gap-1 text-[11px] text-slate-400 cursor-pointer whitespace-nowrap">
+                            <input type="checkbox" id="new-answer-is-primary" class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0">
+                            <span>Asosiy qilish</span>
+                        </label>
+                        <button type="submit" class="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer shadow-md shadow-indigo-600/20 whitespace-nowrap">
+                            + Qo'shish
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Section: CANDIDATE REPLACEMENTS (if available) -->
+                <div id="detail-q-candidates-box" class="p-4 rounded-xl bg-amber-950/20 border border-amber-500/30 space-y-3 hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-amber-400 font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                            <span>💡</span>
+                            <span>Tavsiya Etilgan Zaxira Savollari (Candidate Replacements)</span>
+                        </span>
+                    </div>
+                    <div id="detail-q-candidates-list" class="space-y-2.5">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Section: Quizzes Usage -->
+                <div id="detail-q-usage-box" class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                    <span class="text-slate-400 font-semibold block mb-1">Biriktirilgan Paketlar:</span>
+                    <div id="detail-q-usage" class="text-slate-300 space-y-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 4: PUBLISH CONFIRMATION -->
+    <!-- ================================================================= -->
+    <div id="modal-publish" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-2xl text-center">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-3xl flex items-center justify-center mx-auto text-emerald-300">
+                🚀
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-lg font-bold text-white">Paketni Ommaviy Arenaga Nashr Qilish</h3>
+                <p class="text-xs text-slate-400">
+                    Ushbu amal barcha 24 ta savolning o'zgarmas nusxasini (manifest) muzlatadi va paketni platforma o'yinchilariga taqdim etadi.
+                </p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-left space-y-1 text-slate-300">
+                <div>✓ 2 ta tur (1 va 2-tur) to'liq</div>
+                <div>✓ 24 ta savol to'liq kiritilgan</div>
+                <div>✓ Barcha javoblar mavjud</div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 text-xs">
+                <button onclick="closePublishModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold cursor-pointer">Bekor qilish</button>
+                <button onclick="executePublishDraft()" id="btn-confirm-publish" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer shadow-lg shadow-emerald-600/30">Tasdiqlash va Nashr Qilish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- JAVASCRIPT LOGIC -->
+    <!-- ================================================================= -->
+    <script>
+        const state = {
+            currentUser: null,
+            activeTab: 'dashboard',
+            quizzesList: [],
+            quizzesFilter: 'all',
+            currentEditorQuizId: null,
+            editorQuizDetail: null,
+            pickerTargetRoundId: null,
+            pickerTargetRoundSeq: null,
+            pickerTargetRqId: null, // if set, mode is replace
+            pickerCurrentQuestionId: null,
+            inspectingQuestionId: null,
+            inspectingRoundId: null,
+            inspectingRqId: null,
+            bankPage: 1,
+            bankPageSize: 20,
+            bankTotalPages: 1,
+            bankSearchTerm: '',
+            bankCategory: 'all',
+            searchTimeout: null,
+            currentCandidateData: null,
+        };
+
+        // 1. Initial Authorization & Boot
+        async function initOwnerApp() {
+            try {
+                // Check auth
+                const meRes = await fetch('/api/auth/me');
+                if (!meRes.ok) {
+                    showAuthDenied();
+                    return;
+                }
+                const meData = await meRes.json();
+                if (!meData.authenticated || !meData.user) {
+                    showAuthDenied();
+                    return;
+                }
+                state.currentUser = meData.user;
+
+                // Check owner status endpoint (authoritative 403 test)
+                const statusRes = await fetch('/api/owner/status');
+                if (statusRes.status === 401 || statusRes.status === 403) {
+                    showAuthDenied(statusRes.status === 403 ? "Sizning akkauntingizda tizim egasi (Owner) huquqi mavjud emas." : "Kirish talab qilinadi.");
+                    return;
+                }
+                if (!statusRes.ok) throw new Error("Status xatoligi");
+
+                const statusData = await statusRes.json();
+                renderTelemetry(statusData);
+
+                // Show main owner app
+                document.getElementById('screen-auth-denied').classList.add('hidden');
+                document.getElementById('screen-owner-app').classList.remove('hidden');
+
+                // Load initial tab data
+                await loadDashboardData();
+                await loadQuizzesList();
+            } catch (err) {
+                console.error("Owner init failed:", err);
+                showAuthDenied("Tizimga kirishda xatolik yuz berdi.");
+            }
+        }
+
+        function showAuthDenied(customDesc = null) {
+            document.getElementById('screen-owner-app').classList.add('hidden');
+            const deniedScreen = document.getElementById('screen-auth-denied');
+            deniedScreen.classList.remove('hidden');
+            if (customDesc) {
+                document.getElementById('auth-denied-desc').innerText = customDesc;
+            }
+        }
+
+        async function handleOwnerLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('owner-login-email').value;
+            const password = document.getElementById('owner-login-password').value;
+            const errBox = document.getElementById('owner-login-error');
+            errBox.classList.add('hidden');
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Email yoki parol xato");
+                }
+                await initOwnerApp();
+            } catch (err) {
+                errBox.innerText = err.message;
+                errBox.classList.remove('hidden');
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch(e) {}
+            window.location.href = '/';
+        }
+
+        function renderTelemetry(data) {
+            document.getElementById('header-owner-email').innerText = data.owner_email || 'Owner';
+            document.getElementById('dash-env-label').innerText = data.environment;
+            document.getElementById('dash-db-target-label').innerText = `DB: ${data.db_target} (${data.db_host})`;
+            document.getElementById('dash-alembic-label').innerText = `Rev: ${data.alembic_revision}`;
+            document.getElementById('env-badge-text').innerText = `${data.environment.toUpperCase()} • ${data.db_target.toUpperCase()}`;
+            document.getElementById('env-indicator-badge').classList.remove('hidden');
+
+            // Metrics
+            document.getElementById('metric-draft-count').innerText = data.metrics.draft_quizzes;
+            document.getElementById('metric-published-count').innerText = data.metrics.published_quizzes;
+            document.getElementById('metric-bank-count').innerText = data.metrics.question_bank_total;
+            document.getElementById('metric-attached-count').innerText = data.metrics.questions_attached_to_packs;
+            document.getElementById('bank-total-badge').innerText = `${data.metrics.question_bank_total} ta savol`;
+        }
+
+        // Tab Navigation
+        function switchOwnerTab(tab) {
+            state.activeTab = tab;
+            ['dashboard', 'quizzes', 'questions', 'generator'].forEach(t => {
+                const view = document.getElementById(`owner-view-${t}`);
+                const btn = document.getElementById(`nav-tab-${t}`);
+                if (!view || !btn) return;
+                if (t === tab) {
+                    view.classList.remove('hidden');
+                    btn.className = "px-4 py-3 border-b-2 border-indigo-500 text-indigo-400 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap";
+                } else {
+                    view.classList.add('hidden');
+                    btn.className = "px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap";
+                }
+            });
+
+            if (tab === 'quizzes') {
+                loadQuizzesList();
+            } else if (tab === 'questions') {
+                loadBankQuestions(1);
+            }
+        }
+
+        // 2. DASHBOARD DATA
+        async function loadDashboardData() {
+            try {
+                const res = await fetch('/api/owner/quizzes');
+                if (!res.ok) return;
+                const quizzes = await res.json();
+                const recentContainer = document.getElementById('dashboard-recent-quizzes');
+                if (!quizzes || quizzes.length === 0) {
+                    recentContainer.innerHTML = `<div class="p-6 text-center text-xs text-slate-500">Hozircha hech qanday paket mavjud emas.</div>`;
+                    return;
+                }
+                recentContainer.innerHTML = quizzes.slice(0, 4).map(q => {
+                    const statusBadge = q.status === 'published'
+                        ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Nashr qilingan</span>`
+                        : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Qoralama</span>`;
+                    return `
+                        <div class="flex items-center justify-between p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-bold text-white">${escapeHtml(q.title)}</span>
+                                    ${statusBadge}
+                                </div>
+                                <div class="text-xs text-slate-400 flex items-center gap-2">
+                                    <span>${q.round_count} ta tur</span>
+                                    <span>•</span>
+                                    <span>${q.question_count} ta savol</span>
+                                </div>
+                            </div>
+                            <button onclick="openPackEditor(${q.quiz_id})" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 font-semibold text-xs cursor-pointer">
+                                Tahrirlash →
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        // 3. QUIZZES MANAGEMENT
+        async function loadQuizzesList() {
+            try {
+                const res = await fetch('/api/owner/quizzes');
+                if (!res.ok) return;
+                state.quizzesList = await res.json();
+                renderQuizzesGrid();
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        function filterQuizzesList(filter) {
+            state.quizzesFilter = filter;
+            ['all', 'draft', 'published', 'archived'].forEach(f => {
+                const btn = document.getElementById(`btn-filter-${f}`);
+                if (f === filter) {
+                    btn.className = "px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white transition-colors cursor-pointer";
+                } else {
+                    btn.className = "px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer";
+                }
+            });
+            renderQuizzesGrid();
+        }
+
+        function renderQuizzesGrid() {
+            const grid = document.getElementById('owner-quizzes-grid');
+            let items = state.quizzesList;
+            if (state.quizzesFilter !== 'all') {
+                items = items.filter(q => q.status === state.quizzesFilter);
+            }
+
+            if (!items || items.length === 0) {
+                grid.innerHTML = `<div class="col-span-full p-8 text-center text-xs text-slate-500">Tanlangan holat bo'yicha paketlar topilmadi.</div>`;
+                return;
+            }
+
+            grid.innerHTML = items.map(q => {
+                const isPub = q.status === 'published';
+                const statusBadge = isPub
+                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Nashr qilingan</span>`
+                    : (q.status === 'archived'
+                        ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">Arxiv</span>`
+                        : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Qoralama</span>`);
+
+                const valIndicator = q.is_valid
+                    ? `<span class="text-emerald-400 text-xs font-semibold flex items-center gap-1">✓ Valid (2x12)</span>`
+                    : `<span class="text-amber-400 text-xs font-semibold flex items-center gap-1">⚠️ ${q.validation_errors_count} ta xatolik</span>`;
+
+                return `
+                    <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/40 transition-all flex flex-col justify-between space-y-4 shadow-lg">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="font-mono text-xs text-slate-500">ID: #${q.quiz_id}</span>
+                                ${statusBadge}
+                            </div>
+                            <div class="space-y-1">
+                                <h4 class="text-base font-bold text-white line-clamp-1">${escapeHtml(q.title)}</h4>
+                                <p class="text-xs text-slate-400 line-clamp-2">${escapeHtml(q.description || "Tavsif mavjud emas.")}</p>
+                            </div>
+                            <div class="text-xs text-slate-400 flex items-center gap-2 pt-1 border-t border-slate-800/80">
+                                <span>🎯 ${q.round_count} tur</span>
+                                <span>•</span>
+                                <span>❓ ${q.question_count} ta savol</span>
+                            </div>
+                            <div>${valIndicator}</div>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                            <button onclick="openPackEditor(${q.quiz_id})" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 font-bold text-xs transition-colors cursor-pointer text-center">
+                                Tahrirlash
+                            </button>
+                            ${!isPub ? `
+                                <button onclick="handleDeleteQuiz(${q.quiz_id})" class="px-3 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 text-rose-400 font-bold text-xs border border-rose-500/20 transition-colors cursor-pointer" title="O'chirish">
+                                    🗑️
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openCreateQuizModal() {
+            document.getElementById('create-quiz-title').value = '';
+            document.getElementById('create-quiz-desc').value = '';
+            document.getElementById('modal-create-quiz').classList.remove('hidden');
+        }
+
+        function closeCreateQuizModal() {
+            document.getElementById('modal-create-quiz').classList.add('hidden');
+        }
+
+        async function handleCreateQuizSubmit(e) {
+            console.log(">>> handleCreateQuizSubmit CALLED!");
+            if (e && e.preventDefault) e.preventDefault();
+            const title = document.getElementById('create-quiz-title').value;
+            const description = document.getElementById('create-quiz-desc').value;
+
+            try {
+                console.log(">>> Sending POST /api/owner/quizzes...");
+                const res = await fetch('/api/owner/quizzes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description, game_mode: 'classic_zakovat' })
+                });
+                console.log(">>> POST /api/owner/quizzes status:", res.status);
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Paket yaratib bo'lmadi");
+                }
+                const data = await res.json();
+                console.log(">>> Created quiz data:", JSON.stringify(data));
+                closeCreateQuizModal();
+                console.log(">>> Closed create modal, opening pack editor...");
+                await openPackEditor(data.quiz_id);
+                console.log(">>> Opened pack editor!");
+            } catch(err) {
+                console.error(">>> ERROR in handleCreateQuizSubmit:", err);
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        async function handleDeleteQuiz(quizId) {
+            if (!confirm(`Haqiqatan ham #${quizId} paketini o'chirmoqchimisiz?`)) return;
+            try {
+                const res = await fetch(`/api/owner/quizzes/${quizId}`, { method: 'DELETE' });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "O'chirib bo'lmadi");
+                }
+                await loadQuizzesList();
+                await loadDashboardData();
+            } catch(err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        // 4. 2x12 PACK EDITOR
+        async function openPackEditor(quizId) {
+            state.currentEditorQuizId = quizId;
+            document.getElementById('quizzes-subview-list').classList.add('hidden');
+            document.getElementById('quizzes-subview-editor').classList.remove('hidden');
+            switchOwnerTab('quizzes');
+            await refreshEditorQuiz();
+        }
+
+        function closePackEditor() {
+            state.currentEditorQuizId = null;
+            state.editorQuizDetail = null;
+            document.getElementById('quizzes-subview-editor').classList.add('hidden');
+            document.getElementById('quizzes-subview-list').classList.remove('hidden');
+            loadQuizzesList();
+        }
+
+        async function refreshEditorQuiz() {
+            if (!state.currentEditorQuizId) return;
+            try {
+                const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}`);
+                if (!res.ok) throw new Error("Paket tafsilotlarini yuklab bo'lmadi");
+                const data = await res.json();
+                state.editorQuizDetail = data;
+
+                document.getElementById('editor-quiz-title').innerText = data.title;
+                document.getElementById('editor-quiz-meta').innerText = `Zakovat (2 tur • 24 savol) • ID: #${data.quiz_id} • Holat: ${data.status}`;
+
+                // Render Validation Card
+                renderValidationCard(data.validation);
+
+                // Render Rounds
+                renderEditorRounds(data.rounds);
+
+                // Check publish button
+                const pubBtn = document.getElementById('editor-publish-btn');
+                if (data.status === 'published') {
+                    pubBtn.innerText = "✓ Nashr qilingan";
+                    pubBtn.disabled = true;
+                    pubBtn.className = "px-4 py-2 rounded-xl bg-slate-800 text-slate-400 font-bold text-xs cursor-not-allowed";
+                } else {
+                    pubBtn.innerText = "🚀 Nashr Qilish";
+                    pubBtn.disabled = !data.validation.valid;
+                    pubBtn.className = data.validation.valid
+                        ? "px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-colors cursor-pointer flex items-center gap-1.5"
+                        : "px-4 py-2 rounded-xl bg-slate-800 text-slate-500 font-bold text-xs cursor-not-allowed flex items-center gap-1.5";
+                }
+
+            } catch(e) {
+                alert(e.message);
+                closePackEditor();
+            }
+        }
+
+        function renderValidationCard(val) {
+            const readinessBadge = document.getElementById('editor-readiness-badge');
+            const valBadge = document.getElementById('editor-validation-badge');
+            const errBox = document.getElementById('editor-validation-errors-box');
+
+            const detail = state.editorQuizDetail || {};
+            const readinessState = detail.readiness_state || val.readiness_state || (val.is_ready_to_publish ? 'Ready to Publish' : 'Draft');
+            const isReady = detail.is_ready_to_publish !== undefined ? detail.is_ready_to_publish : (val.is_ready_to_publish || false);
+            const edSummary = detail.editorial_summary || val.editorial_summary || { total: 0, approved: 0, needs_review: 0, rejected: 0, unresolved: 0 };
+
+            // Readiness Badge
+            if (detail.status === 'published' || readinessState === 'Published') {
+                readinessBadge.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30";
+                readinessBadge.innerText = "✓ Nashr qilingan (Published)";
+            } else if (isReady || readinessState === 'Ready to Publish') {
+                readinessBadge.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+                readinessBadge.innerText = "✓ READY TO PUBLISH";
+            } else {
+                readinessBadge.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30";
+                readinessBadge.innerText = "⏳ DRAFT (Nashrga tayyor emas)";
+            }
+
+            // Editorial Summary Pills
+            document.getElementById('pill-approved').innerText = `${edSummary.approved} Ma'qullangan`;
+            document.getElementById('pill-needs-review').innerText = `${edSummary.needs_review} Qayta ko'rish`;
+            document.getElementById('pill-rejected').innerText = `${edSummary.rejected} Rad etilgan`;
+            document.getElementById('pill-unresolved').innerText = `${edSummary.unresolved} Kutilmoqda`;
+
+            // Validation Structure Badge
+            if (val.valid) {
+                valBadge.className = "px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+                valBadge.innerText = "✓ 2x12 Strukturasi to'liq";
+            } else {
+                valBadge.className = "px-2.5 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
+                valBadge.innerText = `✕ ${val.errors.length} ta xatolik`;
+            }
+
+            // Errors box
+            if (val.errors && val.errors.length > 0) {
+                errBox.innerHTML = val.errors.map(e => `<div>• ${escapeHtml(e)}</div>`).join('');
+                errBox.classList.remove('hidden');
+            } else {
+                errBox.classList.add('hidden');
+                errBox.innerHTML = '';
+            }
+
+            const rounds = detail.rounds || [];
+            const r1 = rounds[0];
+            const r2 = rounds[1];
+
+            const r1Count = r1 ? r1.questions.length : 0;
+            const r2Count = r2 ? r2.questions.length : 0;
+
+            document.getElementById('chk-r1-count').innerHTML = `
+                <span>${r1Count === 12 ? '✅' : '⚠️'}</span>
+                <span>1-tur: ${r1Count}/12 savol</span>
+            `;
+            document.getElementById('chk-r2-count').innerHTML = `
+                <span>${r2Count === 12 ? '✅' : '⚠️'}</span>
+                <span>2-tur: ${r2Count}/12 savol</span>
+            `;
+            document.getElementById('chk-rounds').innerHTML = `
+                <span>${rounds.length === 2 ? '✅' : '⚠️'}</span>
+                <span>${rounds.length} ta tur mavjud</span>
+            `;
+
+            document.getElementById('r1-count-badge').innerText = `${r1Count} / 12`;
+            document.getElementById('r2-count-badge').innerText = `${r2Count} / 12`;
+        }
+
+        async function batchApprovePackQuestions() {
+            if (!state.currentEditorQuizId) return;
+            if (!confirm("Haqiqatan ham ushbu paketdagi barcha savollarni ma'qullashni (Approve) xohlaysizmi?\n\nBu har bir savolga 'approved' maqomini beradi.")) return;
+
+            try {
+                const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}/decision`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ decision: 'approve', notes: "Owner paneli orqali barchasi ma'qullandi" })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Ommaviy tasdiqlashda xatolik yuz berdi");
+                }
+                await refreshEditorQuiz();
+            } catch(err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        async function quickSetDecision(qid, decision) {
+            try {
+                const res = await fetch(`/api/owner/questions/${qid}/decision`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ decision: decision, notes: `Tezkor qaror: ${decision}` })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Qarorni saqlab bo'lmadi");
+                }
+                await refreshEditorQuiz();
+            } catch(err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        function renderEditorRounds(rounds) {
+            const c1 = document.getElementById('r1-questions-container');
+            const c2 = document.getElementById('r2-questions-container');
+
+            const r1 = rounds[0];
+            const r2 = rounds[1];
+
+            c1.innerHTML = renderRoundQuestionsList(r1);
+            c2.innerHTML = renderRoundQuestionsList(r2);
+        }
+
+        function renderRoundQuestionsList(round) {
+            if (!round || !round.questions || round.questions.length === 0) {
+                return `<div class="p-6 text-center text-xs text-slate-500 bg-slate-950/40 rounded-xl border border-dashed border-slate-800">Savollar yo'q. Quyidagi tugma orqali savol qo'shing.</div>`;
+            }
+
+            return round.questions.map((q, idx) => {
+                const isFirst = idx === 0;
+                const isLast = idx === round.questions.length - 1;
+
+                // QA badge
+                let qaBadge = `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">QA: -</span>`;
+                if (q.qa_info && q.qa_info.status) {
+                    if (q.qa_info.status === 'PASS') {
+                        qaBadge = `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-950/70 text-emerald-400 border border-emerald-500/30">QA: PASS</span>`;
+                    } else if (q.qa_info.status === 'REVIEW') {
+                        qaBadge = `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-950/70 text-amber-300 border border-amber-500/30">QA: REVIEW</span>`;
+                    } else if (q.qa_info.status === 'REJECT') {
+                        qaBadge = `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-950/70 text-rose-300 border border-rose-500/30">QA: REJECT</span>`;
+                    }
+                }
+
+                // Editorial badge
+                let edBadge = `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">⏳ Kutilmoqda</span>`;
+                if (q.editorial_status === 'approved') {
+                    edBadge = `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-900/50 text-emerald-300 border border-emerald-500/40">✓ Ma'qullangan</span>`;
+                } else if (q.editorial_status === 'needs_review') {
+                    edBadge = `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-300 border border-amber-500/40">⚠️ Ko'rish kerak</span>`;
+                } else if (q.editorial_status === 'rejected') {
+                    edBadge = `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-900/50 text-rose-300 border border-rose-500/40">✕ Rad etilgan</span>`;
+                }
+
+                // Candidate indicator
+                const hasCandidates = q.candidate_replacements && q.candidate_replacements.length > 0;
+                const candidatePill = hasCandidates
+                    ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30" title="Tavsiya etilgan zaxira savoli mavjud">💡 Zaxira</span>`
+                    : '';
+
+                return `
+                    <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 flex items-start justify-between gap-3 text-xs transition-colors">
+                        <div class="space-y-1.5 flex-grow min-w-0">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="font-mono font-bold text-indigo-400">#${q.global_sequence}</span>
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300">Bank #${q.question_id}</span>
+                                ${qaBadge}
+                                ${edBadge}
+                                ${candidatePill}
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30 font-bold truncate max-w-[160px]" title="${escapeHtml(q.primary_answer || '')}">
+                                    ✓ ${escapeHtml(q.primary_answer || '')}
+                                </span>
+                            </div>
+                            <p class="text-slate-200 line-clamp-2 leading-relaxed font-medium">${escapeHtml(q.text)}</p>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <!-- Quick Editorial Decision buttons -->
+                            <button onclick="quickSetDecision(${q.question_id}, 'approve')" class="p-1.5 rounded-lg bg-emerald-950/50 hover:bg-emerald-900/70 text-emerald-400 border border-emerald-500/30 cursor-pointer" title="Tez ma'qullash">✓</button>
+                            <button onclick="quickSetDecision(${q.question_id}, 'reject')" class="p-1.5 rounded-lg bg-rose-950/50 hover:bg-rose-900/70 text-rose-400 border border-rose-500/30 cursor-pointer" title="Rad etish">✕</button>
+                            
+                            <!-- Inspector & Modifiers -->
+                            <button onclick="inspectQuestionDetail(${q.question_id}, ${round.round_id}, ${q.round_question_id})" class="p-1.5 rounded-lg bg-indigo-950/50 hover:bg-indigo-900/70 text-indigo-300 border border-indigo-500/30 cursor-pointer" title="Batafsil tahririyat tekshiruvi">👁️</button>
+                            <button onclick="moveQuestion(${round.round_id}, ${idx}, -1)" ${isFirst ? 'disabled' : ''} class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 cursor-pointer" title="Yuqoriga">▲</button>
+                            <button onclick="moveQuestion(${round.round_id}, ${idx}, 1)" ${isLast ? 'disabled' : ''} class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 cursor-pointer" title="Pastga">▼</button>
+                            <button onclick="openQuestionReplacePicker(${round.round_id}, ${round.sequence}, ${q.round_question_id}, ${q.question_id})" class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 cursor-pointer" title="Almashtirish">🔄</button>
+                            <button onclick="removeQuestionFromRound(${round.round_id}, ${q.round_question_id})" class="p-1.5 rounded-lg bg-slate-900 hover:bg-rose-900/40 text-rose-400 cursor-pointer" title="O'chirish">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function triggerValidateDraft() {
+            if (!state.currentEditorQuizId) return;
+            try {
+                const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}/validate`, { method: 'POST' });
+                const val = await res.json();
+                renderValidationCard(val);
+                if (val.valid) {
+                    alert("✓ Validatsiya muvaffaqiyatli: 2x12 to'liq va barcha talablarga javob beradi!");
+                } else {
+                    alert(`✕ Validatsiya xatosi:\n${val.errors.join('\n')}`);
+                }
+            } catch(err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        function previewInStaging() {
+            if (!state.currentEditorQuizId) return;
+            window.location.href = `/staging/${state.currentEditorQuizId}`;
+        }
+
+        // Move Question in Round
+        async function moveQuestion(roundId, fromIndex, direction) {
+            const round = state.editorQuizDetail.rounds.find(r => r.round_id === roundId);
+            if (!round) return;
+            const toIndex = fromIndex + direction;
+            if (toIndex < 0 || toIndex >= round.questions.length) return;
+
+            const list = [...round.questions];
+            const temp = list[fromIndex];
+            list[fromIndex] = list[toIndex];
+            list[toIndex] = temp;
+
+            const orderedIds = list.map(q => q.round_question_id);
+
+            try {
+                const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}/rounds/${roundId}/questions/reorder`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ordered_rq_ids: orderedIds })
+                });
+                if (!res.ok) throw new Error("Qayta tartiblashda xatolik");
+                await refreshEditorQuiz();
+            } catch(e) {
+                alert(e.message);
+            }
+        }
+
+        // Remove Question
+        async function removeQuestionFromRound(roundId, rqId) {
+            try {
+                const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}/rounds/${roundId}/questions/${rqId}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) throw new Error("Savolni olib tashlab bo'lmadi");
+                await refreshEditorQuiz();
+            } catch(e) {
+                alert(e.message);
+            }
+        }
+
+        // 5. QUESTION BANK PICKER MODAL (Attach / Replace)
+        function openQuestionPicker(roundSeq) {
+            const round = state.editorQuizDetail.rounds.find(r => r.sequence === roundSeq);
+            if (!round) return;
+            state.pickerTargetRoundId = round.round_id;
+            state.pickerTargetRoundSeq = roundSeq;
+            state.pickerTargetRqId = null; // attach mode
+            state.pickerCurrentQuestionId = null;
+
+            document.getElementById('picker-modal-title').innerText = "Savollar Bankidan Savol Tanlash";
+            document.getElementById('picker-modal-subtitle').innerText = `${roundSeq}-tur uchun yangi savol biriktirish`;
+            document.getElementById('picker-search-input').value = '';
+            document.getElementById('modal-picker').classList.remove('hidden');
+            searchPickerQuestions('');
+        }
+
+        function openQuestionReplacePicker(roundId, roundSeq, rqId, questionId = null) {
+            state.pickerTargetRoundId = roundId;
+            state.pickerTargetRoundSeq = roundSeq;
+            state.pickerTargetRqId = rqId; // replace mode
+            state.pickerCurrentQuestionId = questionId;
+
+            document.getElementById('picker-modal-title').innerText = "Savolni Almashtirish";
+            document.getElementById('picker-modal-subtitle').innerText = `${roundSeq}-tur savolini yangi savol bilan almashtirish`;
+            document.getElementById('picker-search-input').value = '';
+            document.getElementById('modal-picker').classList.remove('hidden');
+            searchPickerQuestions('');
+        }
+
+        function closeQuestionPicker() {
+            document.getElementById('modal-picker').classList.add('hidden');
+        }
+
+        function debouncePickerSearch() {
+            clearTimeout(state.searchTimeout);
+            state.searchTimeout = setTimeout(() => {
+                const q = document.getElementById('picker-search-input').value;
+                searchPickerQuestions(q);
+            }, 300);
+        }
+
+        async function searchPickerQuestions(term) {
+            const listEl = document.getElementById('picker-results-list');
+            listEl.innerHTML = `<div class="p-6 text-center text-xs text-slate-500">Qidirilmoqda...</div>`;
+
+            try {
+                let candidateHtml = '';
+                if (state.pickerTargetRqId && state.pickerCurrentQuestionId && state.editorQuizDetail) {
+                    let currentQ = null;
+                    for (const r of state.editorQuizDetail.rounds || []) {
+                        const found = (r.questions || []).find(q => q.question_id === state.pickerCurrentQuestionId);
+                        if (found) { currentQ = found; break; }
+                    }
+                    if (currentQ && currentQ.candidate_replacements && currentQ.candidate_replacements.length > 0) {
+                        candidateHtml = `
+                            <div class="p-3.5 rounded-xl bg-amber-950/20 border border-amber-500/40 space-y-2.5 mb-3">
+                                <div class="text-amber-400 font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                                    <span>💡</span>
+                                    <span>Tavsiya Etilgan Zaxira Savollari (Candidate Recommendations)</span>
+                                </div>
+                                <div class="space-y-2">
+                                    ${currentQ.candidate_replacements.map(c => `
+                                        <div class="p-3 rounded-lg bg-slate-900 border border-amber-500/30 flex items-start justify-between gap-3 text-xs">
+                                            <div class="space-y-1 flex-grow">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-mono font-bold text-amber-300">#${c.candidate_id}</span>
+                                                    <span class="px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 font-bold border border-emerald-500/30 text-[10px]">
+                                                        ✓ ${escapeHtml(c.primary_answer)}
+                                                    </span>
+                                                </div>
+                                                <p class="text-slate-200 font-medium">${escapeHtml(c.text)}</p>
+                                                ${c.reason ? `<p class="text-[11px] text-amber-300/80 italic">Izoh: ${escapeHtml(c.reason)}</p>` : ''}
+                                            </div>
+                                            <button onclick="handlePickerSelect(${c.candidate_id})" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shrink-0 cursor-pointer shadow-md shadow-amber-500/20">
+                                                Tanlash
+                                            </button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                let url = `/api/owner/questions?page=1&page_size=30&exclude_quiz_id=${state.currentEditorQuizId}`;
+                if (term && term.trim()) url += `&search=${encodeURIComponent(term.trim())}`;
+
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("Yuklab bo'lmadi");
+                const data = await res.json();
+
+                let generalResults = '';
+                if (!data.items || data.items.length === 0) {
+                    generalResults = `<div class="p-6 text-center text-xs text-slate-500">Mos keluvchi savollar topilmadi.</div>`;
+                } else {
+                    generalResults = data.items.map(item => `
+                        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-indigo-500/50 flex items-start justify-between gap-3 text-xs transition-colors">
+                            <div class="space-y-1 flex-grow">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono font-bold text-indigo-400">#${item.id}</span>
+                                    <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-semibold">${escapeHtml(item.category || 'Umumiy')}</span>
+                                    <span class="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 font-bold border border-emerald-500/30">
+                                        ✓ ${escapeHtml(item.primary_answer || '')}
+                                    </span>
+                                </div>
+                                <p class="text-slate-200 font-medium leading-relaxed">${escapeHtml(item.text)}</p>
+                            </div>
+                            <button onclick="handlePickerSelect(${item.id})" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shrink-0 cursor-pointer shadow-md shadow-indigo-600/20">
+                                Tanlash
+                            </button>
+                        </div>
+                    `).join('');
+                }
+
+                listEl.innerHTML = candidateHtml + generalResults;
+            } catch(e) {
+                listEl.innerHTML = `<div class="p-6 text-center text-xs text-rose-400">Xatolik: ${escapeHtml(e.message)}</div>`;
+            }
+        }
+
+        async function handlePickerSelect(questionId) {
+            try {
+                if (state.pickerTargetRqId) {
+                    // Replace mode
+                    const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}/rounds/${state.pickerTargetRoundId}/questions/${state.pickerTargetRqId}/replace`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ new_question_id: questionId })
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.detail || "Almashtirib bo'lmadi");
+                    }
+                } else {
+                    // Attach mode
+                    const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}/rounds/${state.pickerTargetRoundId}/attach-question`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ question_id: questionId })
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.detail || "Savol biriktirib bo'lmadi");
+                    }
+                }
+
+                closeQuestionPicker();
+                await refreshEditorQuiz();
+            } catch(err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        // 6. PUBLISHING MODAL & ACTION
+        function openPublishModal() {
+            if (!state.editorQuizDetail || !state.editorQuizDetail.validation.valid) {
+                alert("Paketda xatoliklar mavjud. Nashr qilishdan oldin ularni bartaraf eting.");
+                return;
+            }
+            document.getElementById('modal-publish').classList.remove('hidden');
+        }
+
+        function closePublishModal() {
+            document.getElementById('modal-publish').classList.add('hidden');
+        }
+
+        async function executePublishDraft() {
+            const btn = document.getElementById('btn-confirm-publish');
+            btn.disabled = true;
+            btn.innerText = "Nashr qilinmoqda...";
+
+            try {
+                const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}/publish`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ visibility: 'public', category: 'Zakovat' })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Nashr qilib bo'lmadi");
+                }
+                const result = await res.json();
+                closePublishModal();
+                alert(`✓ Viktorina muvaffaqiyatli nashr qilindi! Endi u ommaviy Arenada barcha o'yinchilar uchun ochiq.`);
+                await refreshEditorQuiz();
+                await loadDashboardData();
+            } catch(err) {
+                alert("Nashr qilishda xatolik: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Tasdiqlash va Nashr Qilish";
+            }
+        }
+
+        // 7. QUESTION BANK EXPLORER TAB
+        function debounceBankSearch() {
+            clearTimeout(state.searchTimeout);
+            state.searchTimeout = setTimeout(() => {
+                state.bankSearchTerm = document.getElementById('bank-search-input').value;
+                loadBankQuestions(1);
+            }, 300);
+        }
+
+        function changeBankPage(delta) {
+            const next = state.bankPage + delta;
+            if (next >= 1 && next <= state.bankTotalPages) {
+                loadBankQuestions(next);
+            }
+        }
+
+        async function loadBankQuestions(page = 1) {
+            state.bankPage = page;
+            const grid = document.getElementById('bank-questions-grid');
+            grid.innerHTML = `<div class="p-8 text-center text-xs text-slate-500">Savollar yuklanmoqda...</div>`;
+
+            try {
+                let url = `/api/owner/questions?page=${page}&page_size=${state.bankPageSize}`;
+                if (state.bankSearchTerm && state.bankSearchTerm.trim()) {
+                    url += `&search=${encodeURIComponent(state.bankSearchTerm.trim())}`;
+                }
+                const cat = document.getElementById('bank-category-filter').value;
+                if (cat && cat !== 'all') {
+                    url += `&category=${encodeURIComponent(cat)}`;
+                }
+
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("Savollar Bankini yuklab bo'lmadi");
+                const data = await res.json();
+
+                state.bankTotalPages = data.total_pages;
+                document.getElementById('bank-page-info').innerText = `Sahifa ${data.page} / ${data.total_pages}`;
+                document.getElementById('bank-prev-btn').disabled = data.page <= 1;
+                document.getElementById('bank-next-btn').disabled = data.page >= data.total_pages;
+
+                if (!data.items || data.items.length === 0) {
+                    grid.innerHTML = `<div class="p-8 text-center text-xs text-slate-500">Savollar topilmadi.</div>`;
+                    return;
+                }
+
+                grid.innerHTML = data.items.map(q => `
+                    <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 space-y-2 text-xs">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono font-bold text-indigo-400">#${q.id}</span>
+                                <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-semibold">${escapeHtml(q.category || 'Umumiy')}</span>
+                                ${q.times_used_in_packs > 0 
+                                    ? `<span class="px-2 py-0.5 rounded bg-purple-950/60 text-purple-300 font-bold border border-purple-500/30">${q.times_used_in_packs} ta paketda</span>`
+                                    : `<span class="text-slate-500">Ishlatilmagan</span>`}
+                            </div>
+                            <button onclick="inspectQuestionDetail(${q.id})" class="text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer">
+                                Batafsil →
+                            </button>
+                        </div>
+                        <p class="text-slate-200 font-medium leading-relaxed">${escapeHtml(q.text)}</p>
+                        <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-slate-400">
+                            <div>Javob: <span class="font-bold text-emerald-400">${escapeHtml(q.primary_answer || '')}</span></div>
+                            <div class="font-mono text-[10px] text-slate-500">${escapeHtml(q.question_type)}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch(err) {
+                grid.innerHTML = `<div class="p-8 text-center text-xs text-rose-400">Xatolik: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        async function inspectQuestionDetail(qid, roundId = null, rqId = null) {
+            state.inspectingQuestionId = qid;
+            state.inspectingRoundId = roundId;
+            state.inspectingRqId = rqId;
+
+            try {
+                const res = await fetch(`/api/owner/questions/${qid}`);
+                if (!res.ok) throw new Error("Savol tafsilotini yuklab bo'lmadi");
+                const q = await res.json();
+
+                // Header
+                document.getElementById('detail-q-id').innerText = `Bank ID: #${q.id}`;
+                document.getElementById('detail-q-category-badge').innerText = q.category || 'Umumiy';
+
+                // QA Badge in Header
+                const qaBadge = document.getElementById('detail-q-qa-badge');
+                if (q.qa_info && q.qa_info.status) {
+                    if (q.qa_info.status === 'PASS') {
+                        qaBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-500/30";
+                        qaBadge.innerText = "QA: PASS";
+                    } else if (q.qa_info.status === 'REVIEW') {
+                        qaBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/70 text-amber-300 border border-amber-500/30";
+                        qaBadge.innerText = "QA: REVIEW";
+                    } else if (q.qa_info.status === 'REJECT') {
+                        qaBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950/70 text-rose-300 border border-rose-500/30";
+                        qaBadge.innerText = "QA: REJECT";
+                    }
+                } else {
+                    qaBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400";
+                    qaBadge.innerText = "QA: -";
+                }
+
+                // Editorial Badge in Header
+                const edBadge = document.getElementById('detail-q-ed-badge');
+                if (q.editorial_status === 'approved') {
+                    edBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-900/50 text-emerald-300 border border-emerald-500/40";
+                    edBadge.innerText = "✓ Ma'qullangan";
+                } else if (q.editorial_status === 'needs_review') {
+                    edBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/50 text-amber-300 border border-amber-500/40";
+                    edBadge.innerText = "⚠️ Ko'rib chiqish";
+                } else if (q.editorial_status === 'rejected') {
+                    edBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-rose-900/50 text-rose-300 border border-rose-500/40";
+                    edBadge.innerText = "✕ Rad etilgan";
+                } else {
+                    edBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700";
+                    edBadge.innerText = "⏳ Kutilmoqda";
+                }
+
+                // Text & Explanation
+                document.getElementById('detail-q-text').innerText = q.text;
+                const expBox = document.getElementById('detail-q-exp-box');
+                if (q.explanation && q.explanation.trim()) {
+                    document.getElementById('detail-q-explanation').innerText = q.explanation;
+                    expBox.classList.remove('hidden');
+                } else {
+                    expBox.classList.add('hidden');
+                }
+
+                // Provenance & Source Information
+                const meta = q.source_meta || {};
+                const provEl = document.getElementById('detail-q-provenance');
+                provEl.innerHTML = `
+                    <div><span class="text-slate-500">Telegram Manba:</span> <span class="font-semibold text-slate-200">${escapeHtml(meta.telegram_pack || meta.source_channel || 'Bank')}</span></div>
+                    <div><span class="text-slate-500">Telegram Xabar ID:</span> <span class="font-semibold text-slate-200">${escapeHtml(meta.telegram_message_id || '-')}</span></div>
+                    <div><span class="text-slate-500">Staging Paket Tartibi:</span> <span class="font-semibold text-slate-200">${escapeHtml(meta.staged_pack_seq ? 'Pack ' + meta.staged_pack_seq : '-')}</span></div>
+                    <div><span class="text-slate-500">Import/Muallif:</span> <span class="font-semibold text-slate-200">${escapeHtml(meta.author || meta.creator_email || 'Telegram Pipeline')}</span></div>
+                `;
+
+                // QA Findings
+                const qaInfo = q.qa_info || { status: 'PASS', reasons: [], actions: [], flags: [] };
+                const qaSumEl = document.getElementById('detail-q-qa-summary');
+                qaSumEl.innerText = qaInfo.status || 'PASS';
+                qaSumEl.className = qaInfo.status === 'PASS' ? 'text-emerald-400 font-bold' : (qaInfo.status === 'REVIEW' ? 'text-amber-400 font-bold' : 'text-rose-400 font-bold');
+
+                const reasonsEl = document.getElementById('detail-q-qa-reasons');
+                if (qaInfo.reasons && qaInfo.reasons.length > 0) {
+                    reasonsEl.innerHTML = qaInfo.reasons.map(r => `<div>⚠️ ${escapeHtml(r)}</div>`).join('');
+                } else {
+                    reasonsEl.innerHTML = `<div class="text-emerald-400">✓ Hech qanday sintaktik yoki semantik muammo aniqlanmadi.</div>`;
+                }
+
+                const actionsEl = document.getElementById('detail-q-qa-actions');
+                if (qaInfo.actions && qaInfo.actions.length > 0) {
+                    actionsEl.innerHTML = qaInfo.actions.map(a => `<div>💡 Tavsiya: ${escapeHtml(a)}</div>`).join('');
+                    actionsEl.classList.remove('hidden');
+                } else {
+                    actionsEl.innerHTML = '';
+                    actionsEl.classList.add('hidden');
+                }
+
+                // Editorial Decision info
+                const curDecEl = document.getElementById('detail-q-current-decision');
+                const edMeta = q.editorial || {};
+                if (edMeta.decision) {
+                    const byWho = edMeta.decided_by ? ` (${edMeta.decided_by})` : '';
+                    curDecEl.innerText = `Joriy: ${edMeta.decision.toUpperCase()}${byWho}`;
+                } else {
+                    curDecEl.innerText = `Joriy: Qaror qabul qilinmagan (Draft)`;
+                }
+                document.getElementById('detail-q-decision-notes').value = edMeta.notes || '';
+
+                // Accepted Answers
+                renderModalAnswersList(q.accepted_answers || []);
+
+                // Candidate Replacements
+                const candBox = document.getElementById('detail-q-candidates-box');
+                const candList = document.getElementById('detail-q-candidates-list');
+                if (q.candidate_replacements && q.candidate_replacements.length > 0) {
+                    candList.innerHTML = q.candidate_replacements.map(c => `
+                        <div class="p-3 rounded-xl bg-slate-900 border border-amber-500/20 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono font-bold text-amber-300">#${c.candidate_id}</span>
+                                    <span class="px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 font-bold border border-emerald-500/30">
+                                        ✓ ${escapeHtml(c.primary_answer)}
+                                    </span>
+                                </div>
+                                ${state.inspectingRqId ? `
+                                    <button onclick="handleCandidateReplace(${c.candidate_id})" class="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer shadow-md shadow-amber-500/20">
+                                        Ushbu savol bilan almashtirish
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <p class="text-slate-200 font-medium">${escapeHtml(c.text)}</p>
+                            ${c.reason ? `<p class="text-[11px] text-amber-300/80 italic">Izoh: ${escapeHtml(c.reason)}</p>` : ''}
+                        </div>
+                    `).join('');
+                    candBox.classList.remove('hidden');
+                } else {
+                    candBox.classList.add('hidden');
+                    candList.innerHTML = '';
+                }
+
+                // Quizzes usage
+                const usageBox = document.getElementById('detail-q-usage-box');
+                const usageList = document.getElementById('detail-q-usage');
+                if (q.used_in_quizzes && q.used_in_quizzes.length > 0) {
+                    usageList.innerHTML = q.used_in_quizzes.map(u => `
+                        <div class="text-slate-300">• <strong>${escapeHtml(u.quiz_title)}</strong> (ID: #${u.quiz_id}, ${u.round_sequence}-tur, #${u.question_sequence}-savol) - <em>${u.version_status}</em></div>
+                    `).join('');
+                    usageBox.classList.remove('hidden');
+                } else {
+                    usageList.innerHTML = `<div class="text-slate-500">Hech qaysi paketda ishlatilmagan.</div>`;
+                    usageBox.classList.remove('hidden');
+                }
+
+                document.getElementById('modal-question-detail').classList.remove('hidden');
+            } catch(e) {
+                alert(e.message);
+            }
+        }
+
+        function renderModalAnswersList(answers) {
+            const listEl = document.getElementById('detail-q-answers-list');
+            if (!answers || answers.length === 0) {
+                listEl.innerHTML = `<div class="text-slate-500 italic">Javoblar kiritilmagan.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = answers.map(a => `
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        ${a.is_primary 
+                            ? `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">ASOSIY JAVOB</span>` 
+                            : `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-semibold">Sinonim</span>`}
+                        <span class="text-slate-200 font-semibold select-text">${escapeHtml(a.answer_text)}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        ${!a.is_primary ? `
+                            <button onclick="handleSetPrimaryAnswer(${a.id})" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[10px] font-bold cursor-pointer">
+                                Asosiy qilish
+                            </button>
+                            <button onclick="handleDeleteAcceptedAnswer(${a.id})" class="px-2 py-1 rounded bg-rose-950/40 hover:bg-rose-900/50 text-rose-400 text-[10px] font-bold border border-rose-500/20 cursor-pointer" title="O'chirish">
+                                🗑️
+                            </button>
+                        ` : `
+                            <span class="text-[10px] text-slate-500 italic">Birlamchi</span>
+                        `}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function handleDetailSetDecision(decision) {
+            if (!state.inspectingQuestionId) return;
+            const notes = document.getElementById('detail-q-decision-notes').value;
+
+            try {
+                const res = await fetch(`/api/owner/questions/${state.inspectingQuestionId}/decision`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ decision, notes })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Qaror saqlanmadi");
+                }
+                await inspectQuestionDetail(state.inspectingQuestionId, state.inspectingRoundId, state.inspectingRqId);
+                if (state.currentEditorQuizId) {
+                    await refreshEditorQuiz();
+                }
+            } catch(err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        async function handleAddAcceptedAnswerSubmit(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            if (!state.inspectingQuestionId) return;
+
+            const input = document.getElementById('new-answer-text-input');
+            const isPrimaryBox = document.getElementById('new-answer-is-primary');
+            const text = input.value.trim();
+            if (!text) return;
+
+            try {
+                const res = await fetch(`/api/owner/questions/${state.inspectingQuestionId}/answers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answer_text: text, is_primary: isPrimaryBox.checked })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Javob qo'shilmadi");
+                }
+                input.value = '';
+                isPrimaryBox.checked = false;
+                await inspectQuestionDetail(state.inspectingQuestionId, state.inspectingRoundId, state.inspectingRqId);
+                if (state.currentEditorQuizId) {
+                    await refreshEditorQuiz();
+                }
+            } catch(err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        async function handleDeleteAcceptedAnswer(answerId) {
+            if (!state.inspectingQuestionId) return;
+            if (!confirm("Ushbu javobni o'chirishni tasdiqlaysizmi?")) return;
+
+            try {
+                const res = await fetch(`/api/owner/questions/${state.inspectingQuestionId}/answers/${answerId}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Javobni o'chirib bo'lmadi");
+                }
+                await inspectQuestionDetail(state.inspectingQuestionId, state.inspectingRoundId, state.inspectingRqId);
+                if (state.currentEditorQuizId) {
+                    await refreshEditorQuiz();
+                }
+            } catch(err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        async function handleSetPrimaryAnswer(answerId) {
+            if (!state.inspectingQuestionId) return;
+
+            try {
+                const res = await fetch(`/api/owner/questions/${state.inspectingQuestionId}/answers/${answerId}/primary`, {
+                    method: 'PUT'
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Asosiy javobni yangilab bo'lmadi");
+                }
+                await inspectQuestionDetail(state.inspectingQuestionId, state.inspectingRoundId, state.inspectingRqId);
+                if (state.currentEditorQuizId) {
+                    await refreshEditorQuiz();
+                }
+            } catch(err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        async function handleCandidateReplace(candidateId) {
+            if (!state.inspectingRqId || !state.inspectingRoundId || !state.currentEditorQuizId) {
+                alert("Savol paket kontekstida tahrirlanmayapti.");
+                return;
+            }
+            if (!confirm(`Haqiqatan ham ushbu savolni tavsiya etilgan zaxira savoli (#${candidateId}) bilan almashtirmoqchimisiz?`)) return;
+
+            try {
+                const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}/rounds/${state.inspectingRoundId}/questions/${state.inspectingRqId}/replace`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_question_id: candidateId })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Almashtirishda xatolik");
+                }
+                closeQuestionDetailModal();
+                await refreshEditorQuiz();
+            } catch(err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
+
+        function closeQuestionDetailModal() {
+            state.inspectingQuestionId = null;
+            state.inspectingRoundId = null;
+            state.inspectingRqId = null;
+            document.getElementById('modal-question-detail').classList.add('hidden');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // 8. PACK GENERATOR v1 LOGIC
+        function randomizeGeneratorSeed() {
+            const seed = Math.floor(Math.random() * 900000) + 100000;
+            document.getElementById('gen-seed-input').value = seed;
+        }
+
+        async function handlePreviewCandidatePack() {
+            const seedInput = document.getElementById('gen-seed-input');
+            const seedVal = parseInt(seedInput.value, 10);
+            if (isNaN(seedVal)) {
+                alert("Iltimos, to'g'ri son shaklidagi seed kiriting.");
+                return;
+            }
+            const gameMode = document.getElementById('gen-game-mode-select').value;
+            const excludeAttached = document.getElementById('gen-exclude-attached-check').checked;
+
+            const btn = document.getElementById('btn-gen-preview');
+            const oldText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span>⏳ Generatsiya qilinmoqda...</span>`;
+
+            try {
+                const res = await fetch('/api/owner/pack-generator/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        seed: seedVal,
+                        game_mode: gameMode,
+                        exclude_attached: excludeAttached
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Generatsiya xatoligi");
+                }
+
+                const data = await res.json();
+                state.currentCandidateData = data;
+                renderCandidatePreview(data);
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = oldText;
+            }
+        }
+
+        function renderCandidatePreview(data) {
+            document.getElementById('gen-preview-seed-badge').innerText = `Seed: ${data.seed}`;
+            document.getElementById('gen-metric-sources').innerText = data.source_diversity.unique_source_units;
+            document.getElementById('gen-metric-max-source').innerText = data.source_diversity.max_per_source_unit;
+
+            // Auto-fill default title
+            const d = new Date().toISOString().split('T')[0];
+            document.getElementById('gen-commit-title').value = `Generated Zakovat Pack — ${d} — Seed ${data.seed}`;
+            document.getElementById('gen-commit-desc').value = `Pack Generator v1 (Seed: ${data.seed})`;
+
+            const r1Box = document.getElementById('gen-preview-round-1');
+            const r2Box = document.getElementById('gen-preview-round-2');
+
+            function renderCard(q) {
+                return `
+                    <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-mono font-bold text-indigo-400">#${q.global_sequence} (ID: ${q.question_id})</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 font-mono">${escapeHtml(q.source_unit || '')}</span>
+                        </div>
+                        <div class="text-xs text-slate-200 font-medium leading-relaxed">
+                            ${escapeHtml(q.text)}
+                        </div>
+                        <div class="p-2 rounded-lg bg-slate-950 border border-slate-800/80 text-[11px] flex items-baseline gap-1.5">
+                            <span class="text-emerald-400 font-bold shrink-0">Javob:</span>
+                            <span class="text-white font-medium">${escapeHtml(q.primary_answer || '')}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            r1Box.innerHTML = data.round_1_questions.map(renderCard).join('');
+            r2Box.innerHTML = data.round_2_questions.map(renderCard).join('');
+
+            const container = document.getElementById('gen-preview-container');
+            container.classList.remove('hidden');
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        async function handleCommitGeneratedPack() {
+            if (!state.currentCandidateData) {
+                alert("Avval paketni ko'rish (preview) orqali generatsiya qiling.");
+                return;
+            }
+            const seed = state.currentCandidateData.seed;
+            const gameMode = state.currentCandidateData.game_mode;
+            const excludeAttached = document.getElementById('gen-exclude-attached-check').checked;
+            const title = document.getElementById('gen-commit-title').value.trim();
+            const desc = document.getElementById('gen-commit-desc').value.trim();
+
+            if (!confirm(`Haqiqatan ham ushbu 24-savolli paketni DRAFT sifatida saqlamoqchimisiz?\n\nSeed: ${seed}`)) {
+                return;
+            }
+
+            const btn = document.getElementById('btn-gen-commit');
+            const oldText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span>⏳ Saqlanmoqda...</span>`;
+
+            try {
+                const res = await fetch('/api/owner/pack-generator/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        seed: seed,
+                        game_mode: gameMode,
+                        title: title || undefined,
+                        description: desc || undefined,
+                        exclude_attached: excludeAttached
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Saqlashda xatolik yuz berdi");
+                }
+
+                const result = await res.json();
+                alert(`Muvaffaqiyatli saqlandi! Viktorina ID: #${result.quiz_id} ("${result.title}").\n\nEndi 2x12 Pack Editorda tahririyat ko'rigiga yo'naltirilmoqda.`);
+
+                // Refresh dashboard and quizzes list
+                await loadDashboardData();
+                await loadQuizzesList();
+
+                // Switch to quizzes view and open pack editor directly
+                openPackEditor(result.quiz_id);
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = oldText;
+            }
+        }
+
+        // Init on DOMContentLoaded
+        window.addEventListener('DOMContentLoaded', initOwnerApp);
+    </script>
+</body>
+</html>
