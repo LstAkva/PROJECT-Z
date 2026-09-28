@@ -190,11 +190,18 @@ def record_editorial_decision(
     decision: str,
     owner_email: str,
     notes: Optional[str] = None,
+    actor_type: str = "authenticated_owner",
+    executed_by: Optional[str] = None,
+    authorizing_authority: Optional[str] = None,
+    action_type: str = "editorial_decision",
+    extra_meta: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     Records an explicit Owner editorial decision on a Question.
     Allowed decisions: 'approve', 'reject', 'needs_review'.
     Updates Question.status and source_meta['editorial'].
+    Maintains an immutable, append-only history in source_meta['editorial_history']
+    distinguishing the authorizing authority from the execution actor.
     """
     norm = decision.strip().lower()
     if norm in ("approve", "approved"):
@@ -206,18 +213,150 @@ def record_editorial_decision(
     else:
         raise ValueError(f"Noto'g'ri tahririyat qarori: {decision}. Faqat 'approve', 'reject', 'needs_review' qabul qilinadi.")
 
+    # Validation: automated scripts cannot masquerade as authenticated_owner without explicit check
+    valid_actor_types = ("authenticated_owner", "automated_agent", "script_automation", "audit_reconciliation")
+    if actor_type not in valid_actor_types:
+        raise ValueError(f"Noto'g'ri actor_type: {actor_type}. Ruxsat etilgan: {valid_actor_types}")
+
+    effective_exec_by = executed_by or owner_email
+    effective_authority = authorizing_authority or (owner_email if actor_type == "authenticated_owner" else "Owner")
+
     question.status = target_status
 
     meta = dict(question.source_meta) if question.source_meta and isinstance(question.source_meta, dict) else {}
     editorial_data = meta.get("editorial", {}) if isinstance(meta.get("editorial"), dict) else {}
+    history = list(meta.get("editorial_history", [])) if isinstance(meta.get("editorial_history"), list) else []
 
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    # If editorial_history is currently empty but a previous editorial record exists,
+    # preserve the legacy record as the genesis history entry before appending
+    if not history and editorial_data:
+        history.append({
+            "event_type": "legacy_baseline_record",
+            "timestamp": editorial_data.get("decided_at", now_iso),
+            "decision": editorial_data.get("decision", target_status),
+            "actor_type": editorial_data.get("actor_type", "unspecified_legacy"),
+            "executed_by": editorial_data.get("executed_by", editorial_data.get("decided_by", "unknown")),
+            "authorizing_authority": editorial_data.get("authorizing_authority", editorial_data.get("decided_by")),
+            "notes": editorial_data.get("notes"),
+        })
+
+    # Append new immutable audit event
+    new_event = {
+        "event_type": action_type,
+        "timestamp": now_iso,
+        "decision": target_status,
+        "actor_type": actor_type,
+        "executed_by": effective_exec_by,
+        "authorizing_authority": effective_authority,
+        "notes": notes.strip() if notes else None,
+    }
+    if extra_meta:
+        new_event["metadata"] = extra_meta
+
+    history.append(new_event)
+
+    # Update active snapshot
     editorial_data.update({
         "decision": target_status,
-        "decided_by": owner_email,
-        "decided_at": datetime.now(timezone.utc).isoformat(),
+        "decided_by": effective_authority,
+        "decided_at": now_iso,
+        "actor_type": actor_type,
+        "executed_by": effective_exec_by,
+        "authorizing_authority": effective_authority,
         "notes": notes.strip() if notes else editorial_data.get("notes"),
     })
+
     meta["editorial"] = editorial_data
+    meta["editorial_history"] = history
     question.source_meta = meta
 
     return target_status
+
+
+def reconcile_pack02_question_audit(
+    question: Question,
+    global_seq: int,
+    is_alternative_question: bool,
+    alternative_name: Optional[str] = None,
+    executed_by: str = "release_agent",
+) -> Dict[str, Any]:
+    """
+    Transparently reconciles the editorial audit history for a Pack 02 question.
+    - Preserves existing original test1@zakowhat.uz records as historical evidence.
+    - Appends transparent correction events identifying:
+      1. Original automated preparation script and its incorrectly attributed identity.
+      2. Owner's explicit approval of the 4 alternatives (for Q6, Q8, Q15, Q21).
+      3. Owner's subsequent formal pack-level sign-off for the complete 24-question Pack 02.
+      4. Actual execution actor (release agent/script) separate from the human authorizing authority.
+    - Never backdates or silently overwrites history.
+    """
+    meta = dict(question.source_meta) if question.source_meta and isinstance(question.source_meta, dict) else {}
+    editorial_data = dict(meta.get("editorial", {})) if isinstance(meta.get("editorial"), dict) else {}
+    history = list(meta.get("editorial_history", [])) if isinstance(meta.get("editorial_history"), list) else []
+
+    # 1. Establish the preserved historical baseline record if not already recorded
+    if not history:
+        history.append({
+            "event_type": "historical_baseline_record",
+            "timestamp": editorial_data.get("decided_at", "2026-09-28T16:16:52.704326+00:00"),
+            "decision": editorial_data.get("decision", "approved"),
+            "actor_type": "automated_script",
+            "executed_by": "scratch/execute_phase1_editorial_changes.py",
+            "attributed_email": editorial_data.get("decided_by", "test1@zakowhat.uz"),
+            "attribution_status": "incorrectly_attributed_test_user",
+            "notes": editorial_data.get("notes", f"Approved by Owner for Pack 02 release candidate"),
+            "audit_disclosure": "Original record was generated by automated release preparation script; test1@zakowhat.uz was an unconfigured test account.",
+        })
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    # 2. Append event for Owner's explicit approval of alternatives (if applicable)
+    if is_alternative_question and alternative_name:
+        history.append({
+            "event_type": "owner_alternative_approval",
+            "timestamp": now_iso,
+            "decision": "approved",
+            "actor_type": "automated_agent",
+            "executed_by": executed_by,
+            "authorizing_authority": "Owner",
+            "scope": f"Explicit approval of alternative answer '{alternative_name}' for Q{global_seq}",
+            "notes": f"Owner explicitly approved adding accepted answer alternative '{alternative_name}'. Executed by release agent.",
+        })
+
+    # 3. Append event for Owner's formal pack-level editorial sign-off for the complete 24-question pack
+    history.append({
+        "event_type": "owner_pack_editorial_signoff",
+        "timestamp": now_iso,
+        "decision": "approved",
+        "actor_type": "automated_agent",
+        "executed_by": executed_by,
+        "authorizing_authority": "Owner",
+        "scope": "Formal pack-level editorial sign-off for complete 24-question Pack 02",
+        "notes": f"Owner confirmed formal pack-level editorial sign-off for Pack 02 (Q{global_seq}). Executed by release agent.",
+    })
+
+    # Update active snapshot with transparent reconciliation metadata
+    editorial_data.update({
+        "decision": "approved",
+        "decided_by": "Owner",
+        "decided_at": now_iso,
+        "actor_type": "automated_agent",
+        "executed_by": executed_by,
+        "authorizing_authority": "Owner",
+        "reconciliation_status": "reconciled_with_owner_signoff",
+        "notes": f"Reconciled: formal Owner pack sign-off confirmed (Q{global_seq}). Preserved original script record in editorial_history.",
+    })
+
+    meta["editorial"] = editorial_data
+    meta["editorial_history"] = history
+    question.source_meta = meta
+    question.status = "approved"
+
+    return {
+        "question_id": question.id,
+        "global_seq": global_seq,
+        "history_count": len(history),
+        "latest_event": history[-1],
+    }

@@ -1,0 +1,573 @@
+{
+  "title": "Classic Zakovat — Pack 02",
+  "description": "1-kitob, 2-to'plam (24 ta klassik savol, 2 ta tur)",
+  "game_mode": "classic_zakovat",
+  "category": "Zakovat",
+  "visibility": "public",
+  "source_unit": 2,
+  "pack_number": 2,
+  "rounds": [
+    {
+      "sequence": 1,
+      "round_type": "zakovat_classic",
+      "name": "1-tur",
+      "questions": [
+        {
+          "sequence": 1,
+          "global_sequence": 1,
+          "text": "Marigold gullari kuchli hidi va yorqin rangi tufayli ruhlarga uylariga boradigan yo‘lni ko‘rsatadi deb ishoniladi. Marigold gulidan Bu davlatning an’anaviy bayramida keng foydalaniladi.\nSavol: Qaysi davlat?",
+          "explanation": "Marigold gullari meksikaliklar tomonidan keng nishonlanuvchi “O‘liklar kuni” bayramining atributlaridan biri hisoblanadi",
+          "points": 1,
+          "primary_answer": "Meksika",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 1,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 2,
+          "global_sequence": 2,
+          "text": "“Semiz va oriq” hikoyasida personajlardan biri sherigiga muhim bo‘lgan hukumat kitobini papiros bilan kuydurgani sabab U deb laqab qo‘yganini aytadi. Vayron qilingan madaniy meroslar taqdiri haqidagi maqolada U tirik ekanligi yozilgan.\nSavol: U kim?",
+          "explanation": "Gerostrat tarixda qolish uchun Artemida ibodatxonasini yoqib yuborgan. Shundan beri mashhurlik uchun barcha ishga qo‘l urishga tayyor insonlar Gerostratga tenglashtiriladi.",
+          "points": 1,
+          "primary_answer": "Gerostrat",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 2,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 3,
+          "global_sequence": 3,
+          "text": "Uning etimologiyasi haqida yozilar ekan, bir sahifada tipratikan ham eslab o‘tilgan. She’riyatda U nayzaga qisyoslanadi.\nSavol: Uni unlilari bir xil so‘z bilan yozib bering.",
+          "explanation": "Kiprik so‘zi etimologiyasi kirpi ya’ni tipratikan so‘ziga borib taqalishi haqida vaersiya keltirib o‘tilgan.",
+          "points": 1,
+          "primary_answer": "Kiprik",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 3,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 4,
+          "global_sequence": 4,
+          "text": "Rejisyor Stiven Spilbergning uncha mashhur bo‘lmagan filmiga sharh berar ekan, tanqidchi filmda ko‘plab muhim tafsilotlar yo‘qligi faqat rejissyorning nomi filmni qulashdan saqlab turganini aytar ekan, Uni tilga oladi. Uning atributlarini tayyorlashda qayin daraxti yog‘ochidan foydalaniladi.\nSavol: Uni suaxili tilidan kelib chiqqan so‘z bilan yozib bering?",
+          "explanation": "Jenga maxsus yog‘och bloklardan iborat o‘yin turi bo‘lib, blokni shunday aniqlik bilan olish kerakki, minora qulab ketmasligi kerak.",
+          "points": 1,
+          "primary_answer": "Jenga",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 4,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 5,
+          "global_sequence": 5,
+          "text": "Kabardin xalq maqoliga ko‘ra, U sovuq qorga o‘xshaydi. Ahmad Lutfiy Qozonchining asarida U Fotima edi.\nSavol: Uni unli harflardan boshlanuvchi ikki so‘zda yozib bering.",
+          "explanation": "Ahmad Lutfiy Qozonchining “O‘gay ona” asari haqida gap botayotgan edi.",
+          "points": 1,
+          "primary_answer": "O‘gay ona",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 5,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 6,
+          "global_sequence": 6,
+          "text": "1980-yilda “Havo piyodalari” hujjatli filmi suratga olingan. Qizig‘i, bu biografik filmdagi oila asoschisi poytaxtda emas, Asakada tug‘ilgan.\nSavol: Filmdagi ushbu oila qaysi kasb egasi ekanligini yozib bering?",
+          "explanation": "Mashhur dorbozlar sulolasi asoschisi Toshkenboy Egamberdiyev Toshkentda emas, Asakada tug‘ilgan.",
+          "points": 1,
+          "primary_answer": "Dorboz",
+          "alternative_answers": [
+            "Dorbozlik"
+          ],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 6,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 7,
+          "global_sequence": 7,
+          "text": "Chexovning bir asarida personaj o‘zining chaqimchi ekanligi sabab odamlar U deb laqab qo‘yishganini aytib o‘tgan. “300 spartalik” filmida Uning rolini Kiron Mur ijro etgan.\nSavol: Uning kimligini toping.",
+          "explanation": "“Fermopil” jangi vaqtida forslarga aylanma yo‘lni ko‘rsatgan, sotqin deb qaraluvchi insonlardan biri.",
+          "points": 1,
+          "primary_answer": "Efialt",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 7,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 8,
+          "global_sequence": 8,
+          "text": "“Rosaliya” bayrami Ruminiya va Moldovada mashhur bayram hisoblanadi. Bu bayramning Rimdagi variantida Panteon ibodatxonasi gumbazidan minglab Ular pastga sepiladi.\nSavol: Ularni yozib bering.",
+          "explanation": "“Rose” atirgul degan ma’noni anglatadi. Bayram nomi javobga yetib borishingizga yordam berdi deb o‘ylaymiz.",
+          "points": 1,
+          "primary_answer": "Atirgullar",
+          "alternative_answers": [
+            "Atirgul"
+          ],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 8,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 9,
+          "global_sequence": 9,
+          "text": "Savolda bir so‘z biroz o‘zgartirilgan Bir karikaturaning izohida shotland shifokori kasal qo‘yga nafas berayotib KALINKAni yaratgani aytiladi. Ba’zi manbalarda Rim imperatori Neron Kalinka ijrosi vaqtida qo‘lining ostiga xaltani qisib olgani yozilgan.\nSavol: Matnda o‘zgartirilgan so‘zni asl holida yozib bering?",
+          "explanation": "Volinka musiqiy asbobi puflab chalinadigan asbob hisoblanadi. Uni Neron shu tarzda chalgan ekan. Odatda Volinka ko‘proq shotland madaniyatiga xosdek ko‘rinadi.",
+          "points": 1,
+          "primary_answer": "Volinka",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 9,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 10,
+          "global_sequence": 10,
+          "text": "Savolda almashtirishlar bor. “Otamdan qolgan dalalar” asarida surxonliklar GO‘RO‘G‘LIni “gulligich” deb atashlari yozilgan. Mashhur GO‘R O‘G‘Lilardan biri To‘rabeka xonim hisoblanadi.\nSavol: Almashtirilgan bir yoki ikki so‘zni yozib bering?",
+          "explanation": "Asarda surxonliklar xonqizi hasharotini shunday nomlashlari aytiladi. O‘zbekxonning qizi esa To‘rabeka xonim hisoblanadi.",
+          "points": 1,
+          "primary_answer": "Xonqizi",
+          "alternative_answers": [
+            "Xon qizi"
+          ],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 10,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 11,
+          "global_sequence": 11,
+          "text": "Abdulkarim Hasanning “Virtual olam bolalari” asaridagi qahramonlardan biri fantastik filmlarga qiziqmasada o‘g‘liga U deb ism qo‘yadi. Boshqa bir Unga DETEKTIV raqobatchidir.\nSavol: Uni yozib bering.",
+          "explanation": "“Marvel” studiyasining asosiy raqobatchisi DC ya’ni “Detektiv Comics” hisoblanadi. Asardagi Marvel ismi futbolchi sharafiga qo‘yilgan.",
+          "points": 1,
+          "primary_answer": "Marvel",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 11,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 12,
+          "global_sequence": 12,
+          "text": "Bir xorijiy filmda ikki personaj keksa bo‘lishiga qaramay BU ISHni o‘zlarining o‘lguncha bajarilishi kerak bo‘lgan orzulari ro‘yxatiga qo‘shib qo‘yishadi. Davlat qonunlariga ko‘ra sayyohlarning tajribasidan qat’iy nazar BU ISH uchun sherplarining hamrohlik qilishi shart qilib belgilangan.\nSavol: BU ISHni aniq yozib bering?",
+          "explanation": "Everestga chiqish juda mashaqqatli va xavfli ish. Shunga qaramay, filmda qariyalar cho‘qqini zabt etishni maqsad qilishadi. Nepal hukumati Everestga chiqish uchun maxsus sherp gidlar hamrohligini talab qiladi.",
+          "points": 1,
+          "primary_answer": "Everestga chiqish",
+          "alternative_answers": [
+            "Jomalungmaga chiqish"
+          ],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 12,
+            "round_sequence": 1,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "sequence": 2,
+      "round_type": "zakovat_classic",
+      "name": "2-tur",
+      "questions": [
+        {
+          "sequence": 1,
+          "global_sequence": 13,
+          "text": "Savolda bir so‘zdan ikki o‘rinda harflar tushirib qoldirilgan. Tadqiqotlarga ko‘ra, Buyvol qushi hayvonlar terisidagi hasharotlarni yeyishdan ko‘ra, ularning jarohatlarini cho‘qilab, bitishiga to‘sqinlik qilishi hamda qon va to‘qimalar bilan oziqlanishini aniqlangan. Shu sababli ayrim olimlar Buyvol qushini ARIga qiyoslaydi. So‘zlashuvda keraksiz so‘zlarni tez-tez ishlatish haqida gap ketganda ARI so‘zi ham eslab o‘tiladi.\nSavol: Harflari tushirib qoldirilgan so‘zni asl holida yozib bering.",
+          "explanation": "Buyvol qushlari uzoq vaqt simbiotik tozalovchilar deb hisoblangan bo‘lsa-da, ayrim tadqiqotlar ularning mezbon hayvon hisobidan yashab, unga zarar yetkazishini ko‘rsatgan.So‘zlashuvda to‘xtalib anaqa, haligii kabi so‘zlardan tez-tez foydalanib turish “parazit pauza” deb ataladi.",
+          "points": 1,
+          "primary_answer": "Parazit",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 1,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 2,
+          "global_sequence": 14,
+          "text": "O‘rta asr me’morlari ulkan gumbazli binolar ichida aks-sadoni yo‘qotish va ovoz tiniqligini ta’minlash uchun gumbazning ichki devorlari orasiga IKSlarning og‘zini ichkari tomonga qaratib ko‘mib ketishgan. Bu usul akustikani yaxshilash bilan birga, gumbazning umumiy og‘irligini ham sezilarli darajada kamaytirgan.\nSavol: IKS o‘rnidagi uy-ro‘zg‘or buyumini yozib bering",
+          "explanation": "Gumbaz konstruksiyasining ichki qismiga joylashtirilgan bo‘sh sopol xumlar zamonaviy tilda “akustik rezonator” vazifasini o‘tagan. Ular ortiqcha aks-sadoni yutib, ovoz bino burchaklariga tiniq yetib borishini\n\nta’minlagan, shu bilan birga ichi bo‘sh bo‘lgani uchun ulkan gumbaz og‘irligini yengillatgan.",
+          "points": 1,
+          "primary_answer": "Xum",
+          "alternative_answers": [
+            "Ko‘za"
+          ],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 2,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 3,
+          "global_sequence": 15,
+          "text": "Savolda bir so‘zdan harflar tushirib qoldirilgan. Mumtoz musiqada tanbur torlaridan taraluvchi dardli navoni “qalbning tirnalishi”ga qiyoslashadi. Bunga sabab tanburni chalishda ishlatiluvchi Noxun nomli kichik metall moslamadir. Rivoyatlarda inson vujudi va ipak torlar o‘rtasidagi “temir ko‘prik” deb ta’riflanuvchi noxun tashqi shakli va qo‘llanilish usuli sababli NINA ga qiyoslanadi\nSavol: Harflari tushirib qoldirilgan so‘zni asl xolida yozib bering",
+          "explanation": "Tanbur chalganda ko‘rsatkich barmoqqa kiyiladigan ushbu metall moslama xuddi tikuvchilarning angishvonasiga o‘xshaydi. Uning yordamida torlar “tirnalib” chalingani bois, musiqa o‘ta ta’sirchan va dardli chiqadi.",
+          "points": 1,
+          "primary_answer": "Angishvona",
+          "alternative_answers": [
+            "O‘ymoq"
+          ],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 3,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 4,
+          "global_sequence": 16,
+          "text": "Hozirda turmush qurgan erkakka nisbatan “uylandi” so‘zi ishlatiladi. Ayollarga nisbatan esa bunday yagona so‘z tilimizda deyarli ishlatilmaydi. Mahmud Qoshg‘ariyning lug‘atida keltirilishicha, X–XI asrlarda turmush qurgan ayollarga nisbatan “Belandi” so‘zi ishlatilgan.\nSavol: Matnda harfi tushib qolgan so‘zni asl holida yozib bering.",
+          "explanation": "O‘sha paytlarda turmush qurgan ayollarga nisbatan “beklandi” so‘zi ishlatilgan ekan.",
+          "points": 1,
+          "primary_answer": "Beklandi",
+          "alternative_answers": [
+            "Beglandi"
+          ],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 4,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 5,
+          "global_sequence": 17,
+          "text": "Savol matnida bir so‘zdan ikki o‘rinda harflar tushirib qoldirilgan Sholi aslida o‘sishi uchun unchalik ko‘p suv talab qilmaydi. Uning atrofidagi ko‘p miqdordagi suv esa ko‘proq zararkunandalardan himoya va tabiiy ET vazifasini o‘taydi. Amazon o‘rmonlarida chumolilar ma’lum daraxt turidan boshqa barcha daraxtlarga chumoli kislotasini ET sifatida yuboradi. Natijada faqat bir turdagi daraxtlar o‘suvchi hududlar hosil bo‘ladi.\nSavol: Savol matnida harflari tushirib qoldirilgan so‘zni asl holida yozib bering.",
+          "explanation": "Sholi dalalaridagi suv qatlami begona o‘tlarning rivojlanishini cheklab, tabiiy gerbitsid vazifasini bajaradi. Amazon o‘rmonlaridagi ayrim chumolilar ham o‘ziga kerak bo‘lmagan o‘simliklarni chumoli kislotasi yordamida yo‘q qiladi. Bu hodisa “Iblis bog‘lari” (Devil's Gardens) nomi bilan mashhur.",
+          "points": 1,
+          "primary_answer": "Gerbitsid",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 5,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 6,
+          "global_sequence": 18,
+          "text": "Yaqinda Oq Uy “NVIDIA” kompaniyasining eng kuchli mikrochiplarini eksport qilishga oid cheklovlarni yumshatdi. Bu holat Saudiya Arabistoni va Birlashgan Arab Amirliklarini Ko‘rfaz mintaqasining sun’iy intellekt markaziga aylantirishi mumkin. Bu haqdagi maqolada sun’iy intellekt arablar uchun yangi “PAXTA” deb ataladi.\nSavol: Savol matnida almashgan qisqa so‘zni yozib bering.",
+          "explanation": "Sun’iy intellekt texnologiyalari esa kelajakda mintaqa uchun xuddi neft kabi strategik resursga aylanishi mumkinligi sababli maqolada “yangi neft” iborasi qo‘llangan. Savolda “qora oltin” va “oq oltin” deb ataluvchi boyliklar o‘zaro almashtirilgan.",
+          "points": 1,
+          "primary_answer": "Neft",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 6,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 7,
+          "global_sequence": 19,
+          "text": "Street art ustasi Inkuzart nega IKSni tanlaganini aytarkan, asosan kechasi ijod qilishini va yorugʻlikka intilishini keltiradi. 1966-yilda Uyg‘unning peyesasi asosida sahnalashtirlgan manba nomi ham IKS.\nSavol: IKSni bir so‘z bilan yozib bering.",
+          "explanation": "Inkuzart nega logosi uchun parvonanini tanlaganini yuqoridagi kabi izohlagan. 1966-yilda “Parvona” spektakli sahnalashtirilgan",
+          "points": 1,
+          "primary_answer": "Parvona",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 7,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 8,
+          "global_sequence": 20,
+          "text": "Go‘ri Amir maqbarasida Amir Temurning ramziy qabrtoshi yonida uzun yog‘och dasta o‘rnatilgan bo‘lib, uning uchiga ot yoli bog‘langan tug‘ osib qo‘yilgan. Ushbu belgi sarkardaning harbiy va sarkardalik qudratini anglatishidan tashqari, diniy qarashlarga ko‘ra, o‘ta ingichka ot yoli bir Uni eslatib turishi lozim bo‘lgan.\nSavol: Uni ikki so‘zda yozib bering.",
+          "explanation": "Markaziy Osiyodagi buyuk shaxslar va aziz-avliyolar qadamjolarida qabr ustiga ot yoli bog‘langan\n\ntug‘lar o‘rnatish odati mavjud. Tasavvufiy qarashlarda qabr ustidagi ushbu ingichka ot yoli inson vafotidan keyin o‘tadigan Sirot ko‘prigini tiriklarga eslatib turuvchi ramziy timsol hisoblangan.",
+          "points": 1,
+          "primary_answer": "Sirot ko‘prigi",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 8,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 9,
+          "global_sequence": 21,
+          "text": "Yaponiyaning chekka hududlaridan biri bo‘lgan Tokushima prefekturasida turli sohalarni o‘zida jamlagan texnologik maktab ochilishi va unga yirik kompaniyalar investitsiya kiritishi haqida yozilgan maqola: “Uyqudagi yapon shahri Osiyoning ALFAsiga aylanishi mumkinmi?” deb nomlangan. Ma’lumotlarga ko‘ra, Hyulett-Pakkard kompaniyasining oskillator ishlab chiqarishi ALFA g‘oyasining boshlanish nuqtalaridan biri bo‘lgan.\nSavol: ALFA bilan almashgan ikki so‘zni yozib bering.",
+          "explanation": "Hyulett-Pakkard (Hewlett-Packard) kompaniyasining 1939-yilda Kaliforniyadagi garajda oskillator ishlab chiqarishni boshlagani Silikon vodiysi tarixidagi ramziy boshlanish nuqtalaridan biri sifatida qaraladi.",
+          "points": 1,
+          "primary_answer": "Silikon vodiysi",
+          "alternative_answers": [
+            "Kremniy vodiysi"
+          ],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 9,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 10,
+          "global_sequence": 22,
+          "text": "Qadim ajdodlarimizning ishonishicha, insonning joni qush koʻrinishida tasvirlanib, odam oʻlgach tanani tark etgan. Tilimizdagi “qoʻrqib ketmoq” maʼnosidagi iboraning paydo boʻlishi yuqoridagi tasavvur bilan bogʻlanadi.\n\nSavol: Bu iborani ikki soʻzda yozib bering.",
+          "explanation": "Tilimizda “uchib tushdi” iborasi qoʻrqib ketdi maʼnosida ishlatiladi. Ajdodlarimiz ishonishicha inson joni qush boʻlib qoʻrqqan paytda tanani tark etadi.",
+          "points": 1,
+          "primary_answer": "Uchib tushmoq",
+          "alternative_answers": [
+            "Uchib tushdi"
+          ],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 10,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 11,
+          "global_sequence": 23,
+          "text": "Savolda almashtirish bor. “Odam bo‘lish qiyin” asarida odamlarga doimo yaxshilik qiluvchi, o‘zida bor narsani o‘ylab o‘tirmasdan boshqalarga tuhfa qilib yuboruvchi qahramon o‘z ishlari haqida gapirar ekan: “Odamdan yaxshi ISBOT qolgandan ko‘ra, yaxshi ot qolgani yaxshi”, deydi. ISBOT arab tilida dastlab “gilam”, “yoyiladigan narsa” ma’nolarini anglatgan. Keyinchalik esa tilimizdagi hozirgi ma’nosida qo‘llanila boshlagan.\nSavol: Savolda almashtirilgan so‘zni asl holida yozib bering.",
+          "explanation": "Bisot so‘zi keyinchalik o‘zbek tilida kishining bor-budlari, mol-mulki, boyligi ma’nosida qo‘llanila boshlagan. Qahramonning “yaxshi ot qoldirish” haqidagi gapi ham aynan inson ortidan qoladigan bisotga ishora qiladi.",
+          "points": 1,
+          "primary_answer": "Bisot",
+          "alternative_answers": [],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 11,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        },
+        {
+          "sequence": 12,
+          "global_sequence": 24,
+          "text": "“Abr” so‘zi forscha “bulut” degan ma’noni beradi. Rivoyatga ko‘ra usta ariq bo‘yida o‘tirib, suvda aks etgan bulutlar, moviy osmon hamda atrof tilla rangining jilvasini ko‘rib qoladi va bu manzarani ipga tushiradi. Natijada IKS paydo bo‘ladi.\nSavol: IKSni unlilari bir xil so‘zda yozib bering",
+          "explanation": "“Abrbandi” (bulut bog‘lash) usuli bilan tayyorlanadigan o‘zbek milliy matolari — Atlas va Adrasning yaratilishi suvda aks etgan bulutlar jilvasidan ilhomlanilgani haqida Marg‘ilon hunarmandlari orasida go‘zal afsonalar mavjud.",
+          "points": 1,
+          "primary_answer": "Atlas",
+          "alternative_answers": [
+            "Adras"
+          ],
+          "source_meta": {
+            "source_unit": 2,
+            "pack_number": 2,
+            "question_index": 12,
+            "round_sequence": 2,
+            "editorial": {
+              "decision": "approved",
+              "decided_by": "Owner",
+              "authorizing_authority": "Owner",
+              "reconciliation_status": "reconciled_with_owner_signoff",
+              "notes": "Formally approved by Owner for Pack 02 publication"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -730,6 +730,10 @@ def set_question_editorial_decision(
             decision=payload.decision,
             owner_email=current_owner.email,
             notes=payload.notes,
+            actor_type="authenticated_owner",
+            executed_by=current_owner.email,
+            authorizing_authority=current_owner.email,
+            action_type="owner_single_decision",
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -792,6 +796,10 @@ def set_quiz_batch_editorial_decision(
             decision=payload.decision,
             owner_email=current_owner.email,
             notes=payload.notes,
+            actor_type="authenticated_owner",
+            executed_by=current_owner.email,
+            authorizing_authority=current_owner.email,
+            action_type="owner_batch_decision",
         )
         updated_ids.append(q.id)
 

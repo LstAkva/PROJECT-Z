@@ -368,3 +368,155 @@ def test_pack_publish_readiness_states_and_publish_gate(client, db_session, owne
     assert len(version.published_manifest["rounds"]) == 2
     total_manifest_qs = sum(len(r["questions"]) for r in version.published_manifest["rounds"])
     assert total_manifest_qs == 24
+
+
+# =============================================================================
+# ACTOR PROVENANCE & AUDIT HISTORY INTEGRITY TESTS
+# =============================================================================
+
+def test_record_editorial_decision_actor_provenance_and_history_integrity(db_session, owner_email_env):
+    """
+    Verifies that record_editorial_decision maintains an append-only audit history,
+    distinguishes execution actor from authorizing authority, and rejects invalid actor types.
+    """
+    q = Question(text="Audit test question", status="draft")
+    db_session.add(q)
+    db_session.flush()
+
+    # 1. Invalid actor_type raises ValueError
+    with pytest.raises(ValueError, match="Noto'g'ri actor_type"):
+        record_editorial_decision(
+            question=q,
+            decision="approve",
+            owner_email=owner_email_env,
+            actor_type="unauthorized_impostor",
+        )
+
+    # 2. Record initial decision by authenticated owner
+    record_editorial_decision(
+        question=q,
+        decision="needs_review",
+        owner_email=owner_email_env,
+        notes="Needs verification of facts",
+        actor_type="authenticated_owner",
+        executed_by=owner_email_env,
+        authorizing_authority=owner_email_env,
+    )
+    assert q.status == "needs_review"
+    assert len(q.source_meta["editorial_history"]) == 1
+    evt1 = q.source_meta["editorial_history"][0]
+    assert evt1["actor_type"] == "authenticated_owner"
+    assert evt1["executed_by"] == owner_email_env
+    assert evt1["authorizing_authority"] == owner_email_env
+    assert evt1["decision"] == "needs_review"
+
+    # 3. Subsequent decision by automated agent on behalf of owner sign-off
+    record_editorial_decision(
+        question=q,
+        decision="approve",
+        owner_email="Owner",
+        notes="Approved via automated batch sign-off",
+        actor_type="automated_agent",
+        executed_by="release_agent_rc1",
+        authorizing_authority="Owner",
+        action_type="agent_reconciled_signoff",
+    )
+    assert q.status == "approved"
+    assert len(q.source_meta["editorial_history"]) == 2
+
+    # Verify history is append-only and preserved
+    evt2 = q.source_meta["editorial_history"][1]
+    assert evt2["event_type"] == "agent_reconciled_signoff"
+    assert evt2["actor_type"] == "automated_agent"
+    assert evt2["executed_by"] == "release_agent_rc1"
+    assert evt2["authorizing_authority"] == "Owner"
+    assert evt2["decision"] == "approved"
+
+    # Active snapshot matches latest decision
+    assert q.source_meta["editorial"]["decision"] == "approved"
+    assert q.source_meta["editorial"]["executed_by"] == "release_agent_rc1"
+    assert q.source_meta["editorial"]["authorizing_authority"] == "Owner"
+
+
+def test_reconcile_pack02_question_audit_transparency(db_session):
+    """
+    Verifies transparent reconciliation:
+    - Preserves existing legacy script record in editorial_history
+    - Appends owner alternative approval and pack sign-off
+    - Does not fabricate or overwrite past entries
+    """
+    from services.editorial import reconcile_pack02_question_audit
+
+    # Create question with legacy test1@zakowhat.uz record
+    q = Question(
+        text="Sample Pack 02 Q6 question",
+        status="approved",
+        source_meta={
+            "editorial": {
+                "decision": "approved",
+                "decided_by": "test1@zakowhat.uz",
+                "decided_at": "2026-09-28T16:16:52.704326+00:00",
+                "notes": "Approved by Owner for Pack 02 release candidate (Round 1, Seq 6)",
+            }
+        }
+    )
+    db_session.add(q)
+    db_session.flush()
+
+    # Reconcile for alternative question (Q6)
+    res = reconcile_pack02_question_audit(
+        question=q,
+        global_seq=6,
+        is_alternative_question=True,
+        alternative_name="Dorbozlik",
+        executed_by="release_agent",
+    )
+
+    history = q.source_meta["editorial_history"]
+    assert len(history) == 3
+
+    # Event 1: Preserved legacy baseline record
+    assert history[0]["event_type"] == "historical_baseline_record"
+    assert history[0]["attributed_email"] == "test1@zakowhat.uz"
+    assert history[0]["actor_type"] == "automated_script"
+    assert history[0]["timestamp"] == "2026-09-28T16:16:52.704326+00:00"
+
+    # Event 2: Explicit Owner approval of alternative
+    assert history[1]["event_type"] == "owner_alternative_approval"
+    assert history[1]["authorizing_authority"] == "Owner"
+    assert history[1]["executed_by"] == "release_agent"
+    assert "Dorbozlik" in history[1]["scope"]
+
+    # Event 3: Owner pack-level editorial sign-off
+    assert history[2]["event_type"] == "owner_pack_editorial_signoff"
+    assert history[2]["authorizing_authority"] == "Owner"
+    assert history[2]["executed_by"] == "release_agent"
+    assert "Pack 02" in history[2]["scope"]
+
+
+def test_owner_portal_api_records_authenticated_owner_provenance(client, db_session, owner_email_env):
+    """
+    Verifies that calling the owner decision endpoint via HTTP API
+    automatically attaches actor_type='authenticated_owner' and the authenticated owner's email.
+    """
+    register_and_login_user(client, owner_email_env, "Portal Owner")
+
+    q = Question(text="Question for API decision test", status="draft")
+    db_session.add(q)
+    db_session.flush()
+
+    res = client.post(
+        f"/api/owner/questions/{q.id}/decision",
+        json={"decision": "approve", "notes": "Approved via Owner web portal"}
+    )
+    assert res.status_code == status.HTTP_200_OK
+
+    db_session.refresh(q)
+    assert q.status == "approved"
+    assert q.source_meta["editorial"]["actor_type"] == "authenticated_owner"
+    assert q.source_meta["editorial"]["executed_by"] == owner_email_env
+    assert q.source_meta["editorial"]["authorizing_authority"] == owner_email_env
+    assert len(q.source_meta["editorial_history"]) >= 1
+    latest_evt = q.source_meta["editorial_history"][-1]
+    assert latest_evt["actor_type"] == "authenticated_owner"
+    assert latest_evt["executed_by"] == owner_email_env
