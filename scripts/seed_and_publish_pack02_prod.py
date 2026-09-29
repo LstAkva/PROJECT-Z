@@ -29,6 +29,22 @@ if hasattr(sys.stdout, "reconfigure"):
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Early override of DATABASE_URL before importing models/database
+early_url = None
+for i, arg in enumerate(sys.argv):
+    if arg == "--url" and i + 1 < len(sys.argv):
+        early_url = sys.argv[i + 1]
+    elif arg.startswith("--url="):
+        early_url = arg.split("=", 1)[1]
+
+if not early_url:
+    early_url = os.getenv("TARGET_DATABASE_URL")
+
+if early_url:
+    if early_url.startswith("postgres://"):
+        early_url = early_url.replace("postgres://", "postgresql://", 1)
+    os.environ["DATABASE_URL"] = early_url
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
