@@ -323,16 +323,24 @@ def main():
     args = parser.parse_args()
 
     # Safety checks
-    db_url = args.url or os.getenv("DATABASE_URL")
+    db_url = args.url or os.getenv("TARGET_DATABASE_URL") or os.getenv("DATABASE_URL")
     if not db_url:
         print("ERROR: DATABASE_URL not provided.")
         sys.exit(1)
+
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
 
     parsed = urllib.parse.urlparse(db_url)
     hostname = (parsed.hostname or "").lower()
 
     env = (os.getenv("ENVIRONMENT") or "").strip().lower()
     target = (os.getenv("DB_TARGET") or "").strip().lower()
+
+    if env == "production" and "ep-damp-frog-b1y9sc7x" in hostname:
+        print("\n[FATAL SAFETY VIOLATION] Target host matches development host 'ep-damp-frog-b1y9sc7x'!")
+        print("Refusing to run production seeder against DEV database.")
+        sys.exit(1)
 
     print(f"Environment: {env}")
     print(f"DB Target:   {target}")
