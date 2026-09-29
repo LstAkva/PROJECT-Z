@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 2. Import our Base and Models so Alembic knows what tables to create
-from database import Base
+from database import Base, normalize_database_url
 import models 
 
 # this is the Alembic Config object, which provides
@@ -17,10 +17,9 @@ import models
 config = context.config
 
 # 3. Override the sqlalchemy.url in the config with our secure DATABASE_URL
-database_url = os.getenv("DATABASE_URL")
-if database_url and database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
-config.set_main_option("sqlalchemy.url", database_url)
+database_url = normalize_database_url(os.getenv("DATABASE_URL"))
+if database_url:
+    config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

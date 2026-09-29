@@ -9,6 +9,30 @@ from sqlalchemy.exc import OperationalError
 load_dotenv()
 
 
+def normalize_database_url(url: str | None) -> str | None:
+    """
+    Normalizes PostgreSQL connection URL for universal driver compatibility.
+    1. Converts legacy postgres:// to postgresql://.
+    2. If generic postgresql:// is provided and psycopg2 is missing, falls back to psycopg (v3).
+    3. Preserves explicit driver schemes (e.g. postgresql+psycopg://, postgresql+psycopg2://).
+    """
+    if not url:
+        return url
+    normalized = url.strip()
+    if normalized.startswith("postgres://"):
+        normalized = normalized.replace("postgres://", "postgresql://", 1)
+    if normalized.startswith("postgresql://"):
+        try:
+            import psycopg2  # noqa: F401
+        except (ImportError, Exception):
+            try:
+                import psycopg  # noqa: F401
+                normalized = normalized.replace("postgresql://", "postgresql+psycopg://", 1)
+            except (ImportError, Exception):
+                pass
+    return normalized
+
+
 def validate_database_environment(
     url: str | None = None,
     environment: str | None = None,
@@ -54,9 +78,7 @@ def validate_database_environment(
     if env != "production" and target == "production":
         raise RuntimeError("Configuration safety violation: DB_TARGET is 'production' but ENVIRONMENT is not 'production'")
 
-    check_url = url or os.getenv("DATABASE_URL") or ""
-    if check_url.startswith("postgres://"):
-        check_url = check_url.replace("postgres://", "postgresql://", 1)
+    check_url = normalize_database_url(url or os.getenv("DATABASE_URL") or "") or ""
 
     if check_url and not check_url.startswith("sqlite"):
         try:
@@ -112,10 +134,9 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 engine = None
 SessionLocal = None
 
-if DATABASE_URL:
-    if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+DATABASE_URL = normalize_database_url(DATABASE_URL)
 
+if DATABASE_URL:
     validate_database_environment(DATABASE_URL)
     engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
