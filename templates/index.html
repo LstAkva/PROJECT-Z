@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZakoWhat — Mustaqil Intellektual Maydon</title>
-    <meta name="description" content="ZakoWhat — klassik Zakovat anʼanalaridan ilhomlangan mustaqil intellektual viktorina platformasi. Saralangan to‘plamlar, 2×12 formati va chuqur mantiqiy tafakkur maydoni.">
+    <meta name="description" content="ZakoWhat — Zakovat anʼanalaridan ilhomlangan mustaqil intellektual viktorina platformasi. Saralangan to‘plamlar, 2×12 formati va chuqur mantiqiy tafakkur maydoni.">
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-favicon.svg">
@@ -145,7 +145,7 @@
                         Rasmiy Viktorina To‘plamlari
                     </h1>
                     <p class="arena-catalog-desc">
-                        Klassik Zakovat anʼanalariga asoslangan 2×12 formatidagi saralangan intellektual to‘plamlar. O‘z bilimingizni sinab ko‘ring va yetakchilar safiga qo‘shiling.
+                        Zakovat anʼanalariga asoslangan 2×12 formatidagi saralangan intellektual to‘plamlar. O‘z bilimingizni sinab ko‘ring va yetakchilar safiga qo‘shiling.
                     </p>
                 </div>
             </div>
@@ -891,7 +891,7 @@
                     <div class="space-y-1">
                         <div class="text-sm font-bold text-white flex items-center gap-2">
                             <span>⏱️</span>
-                            <span>Vaqt bilan (Klassik)</span>
+                            <span>Vaqt bilan (Standart)</span>
                             <span class="pack-badge">Tavsiya</span>
                         </div>
                         <p class="text-xs text-zinc-300 leading-relaxed">
@@ -937,7 +937,7 @@
                 <span>ZakoWhat — Mustaqil Intellektual Maydon</span>
             </div>
             <div class="footer-copy">
-                &copy; 2026 ZakoWhat. Klassik Zakovat anʼanalariga asoslangan intellektual viktorina tizimi.
+                &copy; 2026 ZakoWhat. Zakovat anʼanalariga asoslangan intellektual viktorina tizimi.
             </div>
         </div>
     </footer>
@@ -1445,7 +1445,7 @@
 
                                 <div class="space-y-1">
                                     <h4 onclick="openQuizDetail(${q.quiz_id}, true)" class="text-base font-bold text-white hover:text-amber-300 transition-colors cursor-pointer leading-snug">
-                                        ${escapeHtml(q.title)}
+                                        ${escapeHtml(formatPlayerFacingTitle(q.title))}
                                     </h4>
                                     <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">
                                         ${escapeHtml(q.description || '24 ta saralangan original Zakovat savollari.')}
@@ -1597,7 +1597,7 @@
                                 </div>
 
                                 <h3 onclick="openQuizDetail(${f.quiz_id})" class="pack-title cursor-pointer hover:text-amber-300 transition-colors text-xl sm:text-2xl font-bold">
-                                    ${escapeHtml(f.title)}
+                                    ${escapeHtml(formatPlayerFacingTitle(f.title))}
                                 </h3>
 
                                 <p class="pack-desc text-zinc-300">
@@ -1673,7 +1673,7 @@
                                     </div>
 
                                     <h3 onclick="openQuizDetail(${q.quiz_id})" class="pack-title cursor-pointer hover:text-amber-300 transition-colors">
-                                        ${escapeHtml(q.title)}
+                                        ${escapeHtml(formatPlayerFacingTitle(q.title))}
                                     </h3>
 
                                     <p class="pack-desc">
@@ -1763,7 +1763,7 @@
                 }
 
                 // Populate Header & Meta
-                document.getElementById('detail-title').innerText = data.title;
+                document.getElementById('detail-title').innerText = formatPlayerFacingTitle(data.title);
                 document.getElementById('detail-category-badge').innerText = data.category || 'Umumiy';
                 document.getElementById('detail-mode-badge').innerText = (data.game_mode === 'classic_zakovat' || data.game_mode === 'zakovat_classic') ? 'Zakovat (2 tur • 24 savol)' : (data.game_mode || 'Standart');
                 document.getElementById('detail-version-badge').innerText = isStagingMode ? '🔒 Staging' : ('v' + data.version_number);
@@ -1900,7 +1900,7 @@
             const titleEl = document.getElementById('settings-modal-title');
             const subtitleEl = document.getElementById('settings-modal-subtitle');
             if (title && titleEl) {
-                titleEl.innerText = title;
+                titleEl.innerText = formatPlayerFacingTitle(title);
             } else if (titleEl) {
                 titleEl.innerText = "O'yin Rejimini Tanlang";
             }
@@ -2011,7 +2011,7 @@
                 window.history.replaceState({}, '', `/play/${quizId}`);
                 const qTitleEl = document.getElementById('gameplay-quiz-title');
                 if (qTitleEl && data.quiz_title) {
-                    qTitleEl.innerText = data.quiz_title;
+                    qTitleEl.innerText = formatPlayerFacingTitle(data.quiz_title);
                 }
                 renderQuestionState(data.current_state);
                 showScreen('screen-gameplay');
@@ -2651,7 +2651,7 @@
             empty.classList.add('hidden');
             tableContainer.classList.add('hidden');
 
-            document.getElementById('leaderboard-quiz-title').innerText = title || 'Liderlar Jadvali';
+            document.getElementById('leaderboard-quiz-title').innerText = title ? formatPlayerFacingTitle(title) : 'Liderlar Jadvali';
 
             try {
                 let url = `${API_BASE}/quizzes/${targetQuizId}/leaderboard`;
@@ -2663,7 +2663,7 @@
                 if (!res.ok) throw new Error('Liderlar jadvalini yuklab bo\'lmadi');
                 const data = await res.json();
 
-                document.getElementById('leaderboard-quiz-title').innerText = data.quiz_title || title || 'Liderlar Jadvali';
+                document.getElementById('leaderboard-quiz-title').innerText = (data.quiz_title || title) ? formatPlayerFacingTitle(data.quiz_title || title) : 'Liderlar Jadvali';
                 document.getElementById('leaderboard-version-badge').innerText = 'v' + data.version_number;
 
                 loading.classList.add('hidden');
@@ -2793,6 +2793,13 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        function formatPlayerFacingTitle(title) {
+            if (!title) return 'Zakovat';
+            return String(title)
+                .replace(/Classic Zakovat/gi, 'Zakovat')
+                .replace(/Klassik Zakovat/gi, 'Zakovat');
         }
 
         // Global Keyboard Listeners (for True/False shortcuts)
