@@ -1501,6 +1501,21 @@
                     emptyEl.classList.remove('hidden');
                 }
             }
+        function hasActiveSessionForQuiz(quizId) {
+            const token = sessionStorage.getItem('zakowhat_session_token');
+            const savedQid = sessionStorage.getItem('zakowhat_quiz_id');
+            return Boolean(token && savedQid && String(savedQid) === String(quizId));
+        }
+
+        async function handleCardPlayAction(quizId) {
+            if (hasActiveSessionForQuiz(quizId)) {
+                const restored = await restoreActiveSession();
+                if (restored) {
+                    window.history.pushState({}, '', `/play/${quizId}`);
+                    return;
+                }
+            }
+            openQuizDetail(quizId);
         }
 
         async function loadQuizzes() {
@@ -1628,11 +1643,11 @@
                                         Batafsil
                                     </button>
                                     <button
-                                        onclick="openQuizDetail(${f.quiz_id})"
+                                        onclick="handleCardPlayAction(${f.quiz_id})"
                                         class="btn btn-primary"
                                         style="padding: 0.45rem 1.25rem; font-size: 0.8rem;"
                                     >
-                                        <span>O‘ynash</span>
+                                        <span>${hasActiveSessionForQuiz(f.quiz_id) ? 'Davom etish' : 'O‘ynash'}</span>
                                         <span>&rarr;</span>
                                     </button>
                                 </div>
@@ -1715,11 +1730,11 @@
                                             🏆 Reyting
                                         </button>
                                         <button
-                                            onclick="openQuizDetail(${q.quiz_id})"
+                                            onclick="handleCardPlayAction(${q.quiz_id})"
                                             class="btn btn-primary"
                                             style="padding: 0.4rem 1.1rem; font-size: 0.8rem;"
                                         >
-                                            <span>O‘ynash</span>
+                                            <span>${hasActiveSessionForQuiz(q.quiz_id) ? 'Davom etish' : 'O‘ynash'}</span>
                                             <span>&rarr;</span>
                                         </button>
                                     </div>
@@ -1870,8 +1885,17 @@
 
                 const btnPlay = document.getElementById('detail-btn-play-now');
                 if (btnPlay) {
-                    btnPlay.onclick = () => {
+                    const isResumable = hasActiveSessionForQuiz(data.quiz_id);
+                    btnPlay.innerHTML = `<span>${isResumable ? 'Davom etish' : 'O‘yinni boshlash'}</span> <span>&rarr;</span>`;
+                    btnPlay.onclick = async () => {
                         closeQuizDetailModal();
+                        if (isResumable) {
+                            const restored = await restoreActiveSession();
+                            if (restored) {
+                                window.history.pushState({}, '', `/play/${data.quiz_id}`);
+                                return;
+                            }
+                        }
                         openZakovatSettingsModal(data.quiz_id, isStagingMode, data.title);
                     };
                 }
@@ -1960,7 +1984,14 @@
         // =====================================================================
         // STAGE 2: START QUIZ SESSION
         // =====================================================================
-        function startQuiz(quizId) {
+        async function startQuiz(quizId) {
+            if (hasActiveSessionForQuiz(quizId)) {
+                const restored = await restoreActiveSession();
+                if (restored) {
+                    window.history.pushState({}, '', `/play/${quizId}`);
+                    return;
+                }
+            }
             openZakovatSettingsModal(quizId, false);
         }
 
@@ -1997,6 +2028,13 @@
                     return;
                 }
                 if (res.status === 403) {
+                    if (hasActiveSessionForQuiz(quizId)) {
+                        const restored = await restoreActiveSession();
+                        if (restored) {
+                            window.history.pushState({}, '', `/play/${quizId}`);
+                            return;
+                        }
+                    }
                     const err = await res.json();
                     alert(err.detail || "Siz bir martalik bepul sinov urinishingizdan foydalandingiz. Barcha viktorinalarni cheksiz o'ynash va reytingda qatnashish uchun ro'yxatdan o'ting!");
                     openAuthModal('register');
@@ -2012,7 +2050,7 @@
                 sessionStorage.setItem('zakowhat_timer_mode', timerMode);
                 sessionStorage.setItem('zakowhat_quiz_id', String(quizId));
                 state.totalScore = 0;
-                window.history.replaceState({}, '', `/play/${quizId}`);
+                window.history.pushState({}, '', `/play/${quizId}`);
                 const qTitleEl = document.getElementById('gameplay-quiz-title');
                 if (qTitleEl && data.quiz_title) {
                     qTitleEl.innerText = formatPlayerFacingTitle(data.quiz_title);
@@ -2568,6 +2606,10 @@
                     anonBanner.classList.add('hidden');
                 }
 
+                sessionStorage.removeItem('zakowhat_session_token');
+                sessionStorage.removeItem('zakowhat_timer_mode');
+                sessionStorage.removeItem('zakowhat_quiz_id');
+
                 showScreen('screen-results');
             } catch (err) {
                 alert('Natijalar xatoligi: ' + err.message);
@@ -2733,10 +2775,7 @@
             clearInterval(state.timerInterval);
             clearInterval(state.breakInterval);
             state.sessionToken = null;
-            sessionStorage.removeItem('zakowhat_session_token');
-            sessionStorage.removeItem('zakowhat_timer_mode');
-            sessionStorage.removeItem('zakowhat_quiz_id');
-            window.history.replaceState({}, '', state.isStaging ? '/staging' : '/arena');
+            window.history.pushState({}, '', state.isStaging ? '/staging' : '/arena');
             showScreen('screen-selection');
             if (state.isStaging) {
                 loadStagingQuizzes();
@@ -2777,6 +2816,9 @@
                     await loadRoundReveal();
                     return true;
                 } else if (data.status === 'completed') {
+                    sessionStorage.removeItem('zakowhat_session_token');
+                    sessionStorage.removeItem('zakowhat_timer_mode');
+                    sessionStorage.removeItem('zakowhat_quiz_id');
                     await loadFinalResults();
                     return true;
                 }
@@ -2818,20 +2860,47 @@
             }
         });
 
+        // Popstate handler (Browser Back / Forward navigation)
+        window.addEventListener('popstate', async () => {
+            const path = window.location.pathname;
+            if (path === '/arena' || path === '/' || path === '/staging') {
+                clearInterval(state.timerInterval);
+                clearInterval(state.breakInterval);
+                closeQuizDetailModal();
+                closeZakovatSettingsModal();
+                showScreen('screen-selection');
+                if (path === '/staging') {
+                    state.isStaging = true;
+                    await loadStagingQuizzes();
+                } else {
+                    state.isStaging = false;
+                    await loadQuizzes();
+                }
+            } else if (path.startsWith('/play/')) {
+                const restored = await restoreActiveSession();
+                if (!restored) {
+                    window.history.replaceState({}, '', '/arena');
+                    showScreen('screen-selection');
+                    await loadQuizzes();
+                }
+            } else {
+                const quizMatch = path.match(/^\/quiz\/(\d+)$/);
+                if (quizMatch) {
+                    await openQuizDetail(parseInt(quizMatch[1], 10));
+                }
+            }
+        });
+
         // Initialize on Load
         window.addEventListener('DOMContentLoaded', async () => {
             initTheme();
             await checkAuth();
             initGoogleGis();
 
-            // Try restoring active session (Flow D: refresh during Q5, Q12, break, Q13, Q24, results)
-            const restored = await restoreActiveSession();
-            if (restored) {
-                return;
-            }
+            const path = window.location.pathname;
 
             // Check if on staging mode: /staging or /staging/{quiz_id}
-            const stagingMatch = window.location.pathname.match(/^\/staging(?:\/(\d+))?$/);
+            const stagingMatch = path.match(/^\/staging(?:\/(\d+))?$/);
             if (stagingMatch) {
                 state.isStaging = true;
                 const stagingQuizId = stagingMatch[1] ? parseInt(stagingMatch[1], 10) : null;
@@ -2843,6 +2912,18 @@
                 return;
             }
 
+            // ONLY restore active session if explicitly on a /play/{id} route (e.g. reload during play)
+            const playMatch = path.match(/^\/play\/(\d+)$/);
+            if (playMatch) {
+                const restored = await restoreActiveSession();
+                if (restored) {
+                    return;
+                }
+                // If restore fails or session is invalid, redirect to /arena catalog
+                window.history.replaceState({}, '', '/arena');
+            }
+
+            // For /arena, /quiz/{id}, and normal entry: ALWAYS load and render catalog
             await Promise.all([loadCategories(), loadQuizzes()]);
 
             // Check for direct links: /quiz/{id}, /play/{id}, or ?quiz={id}
@@ -2851,12 +2932,9 @@
             const shouldAutoPlay = urlParams.get('play') === '1';
 
             const quizMatch = window.location.pathname.match(/^\/quiz\/(\d+)$/);
-            const playMatch = window.location.pathname.match(/^\/play\/(\d+)$/);
 
             if (quizMatch) {
                 await openQuizDetail(parseInt(quizMatch[1], 10));
-            } else if (playMatch) {
-                await startQuiz(parseInt(playMatch[1], 10));
             } else if (directQuizId) {
                 const qid = parseInt(directQuizId, 10);
                 if (shouldAutoPlay) {

@@ -147,3 +147,67 @@ def test_staging_endpoints_inaccessible_to_unauthorized(client):
 
     res = client.post("/api/play/staging/start/1")
     assert res.status_code == 401
+
+
+def test_arena_renders_catalog_even_with_active_anonymous_attempt(client):
+    """
+    Regression test for Production UX Bug:
+    When an anonymous player has an unfinished/active attempt and navigates to /arena
+    (e.g., using browser Back or typing /arena), /arena must ALWAYS render the Arena
+    catalog (screen-selection), and NEVER automatically hijack or replace the view with
+    the active game. The attempt remains resumable via explicit action ("Davom etish").
+    """
+    # 1. Fetch available quizzes to get a playable published quiz
+    res_quizzes = client.get("/api/quizzes")
+    assert res_quizzes.status_code == 200
+    quizzes = res_quizzes.json()
+    assert len(quizzes) > 0, "At least one published quiz must exist"
+    quiz_id = quizzes[0]["quiz_id"]
+
+    # 2. Anonymous player starts the quiz
+    client.cookies.clear()
+    start_res = client.post(f"/api/play/start/{quiz_id}")
+    assert start_res.status_code == 201
+    start_data = start_res.json()
+    session_token = start_data["session_token"]
+    assert session_token is not None
+
+    # Verify attempt is in_progress
+    state_res = client.get(f"/api/play/{session_token}")
+    assert state_res.status_code == 200
+    assert state_res.json()["status"] == "in_progress"
+
+    # 3. Anonymous player navigates to /arena (presenting their anonymous cookie)
+    arena_res = client.get("/arena")
+    assert arena_res.status_code == 200
+    html = arena_res.text
+
+    # Contract A: HTML must render the Arena Catalog SPA container (screen-selection)
+    assert "ZAKOWHAT ARENA" in html
+    assert "Rasmiy Viktorina To‘plamlari" in html
+    assert 'id="screen-selection"' in html
+    assert 'id="screen-gameplay"' in html
+
+    # Contract B: DOM layout has screen-selection visible by default and screen-gameplay hidden
+    assert '<section id="screen-selection" class="space-y-8 animate-fade-in">' in html
+    assert '<section id="screen-gameplay" class="hidden animate-fade-in w-full">' in html
+
+    # Contract C: Frontend JavaScript routing guarantees /arena never automatically invokes restoreActiveSession
+    # restoreActiveSession on load must be guarded strictly by /play/{id} route
+    assert "const playMatch = path.match(/^\\/play\\/(\\d+)$/);" in html
+    assert "if (playMatch) {" in html
+
+    # Contract D: Single-page navigation includes popstate listener to return to catalog on browser Back
+    assert "window.addEventListener('popstate'" in html
+    assert "showScreen('screen-selection')" in html
+
+    # Contract E: Catalog supports explicit resume UX ("Davom etish")
+    assert "hasActiveSessionForQuiz" in html
+    assert "handleCardPlayAction" in html
+    assert "Davom etish" in html
+
+    # Contract F: The active attempt was NOT destroyed by navigating to /arena; it remains resumable
+    resume_check = client.get(f"/api/play/{session_token}")
+    assert resume_check.status_code == 200
+    assert resume_check.json()["status"] == "in_progress"
+
