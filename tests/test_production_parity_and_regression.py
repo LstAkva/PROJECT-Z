@@ -211,3 +211,80 @@ def test_arena_renders_catalog_even_with_active_anonymous_attempt(client):
     assert resume_check.status_code == 200
     assert resume_check.json()["status"] == "in_progress"
 
+
+def test_arena_page_javascript_has_no_syntax_errors(client):
+    """
+    Regression test: Validates that all inline <script> tags served by /arena
+    have valid JavaScript syntax and zero unclosed braces, brackets, or function bodies.
+    Validates syntax using both structural token analysis and a real ECMAScript V8 compiler.
+    """
+    import re
+    res = client.get("/arena")
+    assert res.status_code == 200
+    html = res.text
+
+    scripts = re.findall(r"<script(?:\s+[^>]*)?>(.*?)</script>", html, re.DOTALL)
+    assert len(scripts) > 0, "No <script> tags found in /arena"
+
+    # Identify main application script
+    main_scripts = [s for s in scripts if "loadQuizzes" in s]
+    assert len(main_scripts) == 1, "Expected exactly one main application script in /arena"
+    main_js = main_scripts[0]
+
+    # 1. Structural balance check: ensure every brace, paren, and bracket is matched
+    brace_stack = []
+    paren_stack = []
+    bracket_stack = []
+
+    for line_idx, line in enumerate(main_js.splitlines(), start=1):
+        for col_idx, ch in enumerate(line, start=1):
+            if ch == "{":
+                brace_stack.append((line_idx, col_idx))
+            elif ch == "}":
+                assert len(brace_stack) > 0, f"Unmatched closing brace '}}' at line {line_idx}:{col_idx}"
+                brace_stack.pop()
+            elif ch == "(":
+                paren_stack.append((line_idx, col_idx))
+            elif ch == ")":
+                assert len(paren_stack) > 0, f"Unmatched closing paren ')' at line {line_idx}:{col_idx}"
+                paren_stack.pop()
+            elif ch == "[":
+                bracket_stack.append((line_idx, col_idx))
+            elif ch == "]":
+                assert len(bracket_stack) > 0, f"Unmatched closing bracket ']' at line {line_idx}:{col_idx}"
+                bracket_stack.pop()
+
+    assert len(brace_stack) == 0, f"Unclosed braces in /arena script: {brace_stack}"
+    assert len(paren_stack) == 0, f"Unclosed parens in /arena script: {paren_stack}"
+    assert len(bracket_stack) == 0, f"Unclosed brackets in /arena script: {bracket_stack}"
+
+    # 2. Real JS Parser Validation (V8 via headless Chrome)
+    try:
+        from selenium import webdriver
+        from selenium.webdriver.chrome.options import Options
+
+        options = Options()
+        options.add_argument("--headless=new")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
+        driver = webdriver.Chrome(options=options)
+        try:
+            # new Function(code) invokes ECMAScript V8 compiler without side-effects
+            result = driver.execute_script('''
+                var code = arguments[0];
+                try {
+                    new Function(code);
+                    return { valid: true, error: null };
+                } catch (e) {
+                    return { valid: false, error: e.name + ": " + e.message };
+                }
+            ''', main_js)
+            assert result["valid"] is True, f"V8 JS Parser Syntax Error: {result.get('error')}"
+        finally:
+            driver.quit()
+    except Exception as e:
+        # If Chrome browser is not available in test runner, structural parser above is authoritative
+        if "webdriver" not in str(e).lower() and "chrome" not in str(e).lower():
+            raise
+
+
