@@ -42,7 +42,9 @@ def health_check():
 
 @app.get("/")
 def read_grand_sanctum_homepage(request: Request):
-    return templates.TemplateResponse(request=request, name="homepage_grand_sanctum.html")
+    response = templates.TemplateResponse(request=request, name="homepage_grand_sanctum.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 @app.get("/arena")
 @app.get("/quiz/{quiz_id}")
@@ -50,7 +52,10 @@ def read_grand_sanctum_homepage(request: Request):
 @app.get("/staging")
 @app.get("/staging/{quiz_id}")
 def read_root(request: Request, quiz_id: int = None):
-    return templates.TemplateResponse(request=request, name="index.html")
+    response = templates.TemplateResponse(request=request, name="index.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
 
 @app.get("/bank")
 @app.get("/admin")

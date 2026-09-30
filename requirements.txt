@@ -9,3 +9,4 @@ alembic
 PyJWT
 bcrypt
 google-auth
+requests

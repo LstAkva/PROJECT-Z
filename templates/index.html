@@ -59,16 +59,20 @@
     <!-- Architectural Masthead -->
     <header class="masthead">
         <div class="masthead-inner">
-            <div class="brand-link cursor-pointer" onclick="goToQuizSelection()" role="button" aria-label="ZakoWhat bosh sahifa">
+            <a href="/" class="brand-link" aria-label="ZakoWhat bosh sahifa">
                 <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat Girih Nishoni" class="brand-logo-img">
                 <span class="brand-title">ZakoWhat</span>
                 <span class="brand-tag">Intellektual Maydon</span>
-            </div>
+            </a>
 
             <nav class="nav-actions" aria-label="Asosiy navigatsiya">
-                <a href="/" onclick="goToQuizSelection(); return false;" class="nav-link font-bold active">
+                <a href="/" class="nav-link">
+                    Bosh sahifa
+                </a>
+                <a href="/arena" onclick="goToQuizSelection(); return false;" class="nav-link font-bold active">
                     To‘plamlar
                 </a>
+
                 
                 <!-- Live Theme Toggle Button -->
                 <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Mavzuni almashtirish" title="Mavzuni almashtirish" onclick="toggleZakoWhatTheme()">
