@@ -1230,21 +1230,32 @@ def validate_owner_quiz(
     current_owner: User = Depends(verify_owner_access),
 ):
     """
-    Reuses authoritative run_publish_validation to validate draft completeness.
+    Reuses authoritative run_publish_validation to validate quiz completeness.
     Enforces exact 2 rounds × 12 questions for classic Zakovat.
+    Prefers the latest draft version when one exists; otherwise validates the latest published version read-only.
     """
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
     if not quiz:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Viktorina topilmadi")
 
+    # 1. Prefer latest draft version when one exists
     version = (
         db.query(QuizVersion)
         .filter(QuizVersion.quiz_id == quiz.id, QuizVersion.status == "draft")
         .order_by(QuizVersion.version_number.desc())
         .first()
     )
+    # 2. Otherwise, for a published quiz, validate the latest published version read-only
     if not version:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Qoralama versiya topilmadi")
+        version = (
+            db.query(QuizVersion)
+            .filter(QuizVersion.quiz_id == quiz.id, QuizVersion.status == "published")
+            .order_by(QuizVersion.version_number.desc())
+            .first()
+        )
+
+    if not version:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tekshirish uchun versiya topilmadi")
 
     return run_publish_validation(version, db)
 

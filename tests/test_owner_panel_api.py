@@ -479,3 +479,242 @@ def test_published_snapshot_immutability_when_bank_question_mutated(client, owne
     quiz_arena_after = client.get(f"/api/quizzes/{quiz_id}").json()
     assert quiz_arena_after["rounds"][0]["questions"][0]["text"] == original_text
     assert quiz_arena_after["rounds"][0]["questions"][0]["text"] != "BU BUTUNLAY O'ZGARTIRILGAN MATN (BANK MUTATION)"
+
+
+# =============================================================================
+# 6. READ-ONLY VALIDATION FOR PUBLISHED AND DRAFT QUIZZES (REGRESSION TESTS)
+# =============================================================================
+
+def test_published_pack02_validation_returns_normal_validation_response_and_does_not_mutate(client, owner_email_env, db_session):
+    """
+    Regression test:
+    Validating published Pack 02 via POST /api/owner/quizzes/{quiz_id}/validate
+    must return a normal validation response schema (HTTP 200, valid: True, errors: []),
+    and must NEVER mutate the published version or manifest.
+    """
+    from scripts.seed_and_publish_pack02_prod import seed_and_publish_pack02
+
+    register_and_login_user(client, owner_email_env, "Owner")
+    seed_result = seed_and_publish_pack02(db_session, dry_run=False)
+    quiz_id = seed_result.get("quiz_id")
+    if not quiz_id:
+        quiz = db_session.query(Quiz).filter(Quiz.title == "Classic Zakovat — Pack 02").first()
+        quiz_id = quiz.id
+
+    # Record published version state before validation
+    pub_v_before = (
+        db_session.query(QuizVersion)
+        .filter(QuizVersion.quiz_id == quiz_id, QuizVersion.status == "published")
+        .first()
+    )
+    assert pub_v_before is not None
+    v_id_before = pub_v_before.id
+    v_num_before = pub_v_before.version_number
+    v_manifest_before = dict(pub_v_before.published_manifest)
+    v_pub_at_before = pub_v_before.published_at
+
+    # Execute validation
+    res = client.post(f"/api/owner/quizzes/{quiz_id}/validate")
+    assert res.status_code == status.HTTP_200_OK
+    data = res.json()
+
+    # Must match authoritative run_publish_validation schema
+    assert "valid" in data
+    assert data["valid"] is True
+    assert "is_ready_to_publish" in data
+    assert data["is_ready_to_publish"] is True
+    assert data["readiness_state"] == "Published"
+    assert "editorial_summary" in data
+    assert data["editorial_summary"].get("approved") == 24
+    assert data["editorial_summary"].get("total") == 24
+    assert "errors" in data
+    assert data["errors"] == []
+    assert data["total_rounds"] == 2
+    assert data["total_questions"] == 24
+
+    # Critical Invariant: Zero mutations to published version
+    db_session.expire_all()
+    pub_v_after = db_session.query(QuizVersion).filter(QuizVersion.id == v_id_before).first()
+    assert pub_v_after.status == "published"
+    assert pub_v_after.version_number == v_num_before
+    assert pub_v_after.published_manifest == v_manifest_before
+    assert pub_v_after.published_at == v_pub_at_before
+
+    # Ensure no spurious draft version was created
+    drafts_count = db_session.query(QuizVersion).filter(QuizVersion.quiz_id == quiz_id, QuizVersion.status == "draft").count()
+    assert drafts_count == 0
+
+
+def test_draft_validation_still_works_and_prefers_draft_over_published(client, owner_email_env, db_session):
+    """
+    Regression test:
+    Draft validation continues to work. When both a draft and published version exist,
+    the validate endpoint prefers the draft version.
+    """
+    register_and_login_user(client, owner_email_env, "Owner")
+    bank_qs = seed_24_bank_questions(db_session)
+
+    # 1. Create a draft quiz
+    create_res = client.post("/api/owner/quizzes", json={"title": "Draft Validation Test"})
+    quiz_id = create_res.json()["quiz_id"]
+    detail = client.get(f"/api/owner/quizzes/{quiz_id}").json()
+    r1_id = detail["rounds"][0]["round_id"]
+    r2_id = detail["rounds"][1]["round_id"]
+
+    # Incomplete draft validation fails
+    val_incomplete = client.post(f"/api/owner/quizzes/{quiz_id}/validate").json()
+    assert val_incomplete["valid"] is False
+    assert len(val_incomplete["errors"]) > 0
+
+    # Attach all 24 questions
+    for i in range(12):
+        client.post(f"/api/owner/quizzes/{quiz_id}/rounds/{r1_id}/attach-question", json={"question_id": bank_qs[i].id})
+    for i in range(12, 24):
+        client.post(f"/api/owner/quizzes/{quiz_id}/rounds/{r2_id}/attach-question", json={"question_id": bank_qs[i].id})
+
+    # Complete draft validation passes
+    val_complete = client.post(f"/api/owner/quizzes/{quiz_id}/validate").json()
+    assert val_complete["valid"] is True
+    assert val_complete["readiness_state"] == "Ready to Publish"
+
+    # Publish version 1
+    client.post(f"/api/owner/quizzes/{quiz_id}/publish")
+
+    # Add a new incomplete draft version 2 for the same quiz
+    v2 = QuizVersion(
+        quiz_id=quiz_id,
+        version_number=2,
+        status="draft",
+        game_mode="classic_zakovat",
+    )
+    db_session.add(v2)
+    db_session.commit()
+
+    # Validate MUST evaluate the draft version 2 (which is incomplete), not version 1
+    val_v2 = client.post(f"/api/owner/quizzes/{quiz_id}/validate").json()
+    assert val_v2["valid"] is False
+    assert any("kamida bitta raund" in e or "raundida hech qanday savol yo'q" in e or "2 ta tur" in e for e in val_v2["errors"])
+
+
+def test_frontend_render_validation_card_and_trigger_safely_handle_error_payloads(client):
+    """
+    Regression test:
+    Validates that templates/owner.html JavaScript functions renderValidationCard()
+    and triggerValidateDraft() safely handle error payloads, undefined .errors,
+    and HTTP 4xx responses without throwing unhandled TypeErrors.
+    """
+    import re
+    with open("templates/owner.html", "r", encoding="utf-8") as f:
+        html = f.read()
+
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+
+    options = Options()
+    options.add_argument("--headless=new")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    driver = webdriver.Chrome(options=options)
+
+    try:
+        driver.get("about:blank")
+        driver.execute_script("""
+            document.body.innerHTML = `
+                <div id="editor-readiness-badge"></div>
+                <div id="editor-validation-badge"></div>
+                <div id="editor-validation-errors-box"></div>
+                <div id="pill-approved"></div>
+                <div id="pill-needs-review"></div>
+                <div id="pill-rejected"></div>
+                <div id="pill-unresolved"></div>
+                <div id="chk-r1-count"></div>
+                <div id="chk-r2-count"></div>
+                <div id="chk-rounds"></div>
+                <div id="r1-count-badge"></div>
+                <div id="r2-count-badge"></div>
+            `;
+            window.tailwind = { config: {} };
+            window.state = { editorQuizDetail: null };
+            window.escapeHtml = function(s) { return s; };
+        """)
+
+        scripts = re.findall(r"<script(?:\s+[^>]*)?>(.*?)</script>", html, re.DOTALL)
+        for s in scripts:
+            if s.strip():
+                driver.execute_script("""
+                    var scriptEl = document.createElement('script');
+                    scriptEl.textContent = arguments[0];
+                    document.head.appendChild(scriptEl);
+                """, s)
+
+        # 1. Error payload from FastAPI (e.g. {"detail": "Qoralama versiya topilmadi"})
+        res1 = driver.execute_script("""
+            try {
+                renderValidationCard({ detail: "Qoralama versiya topilmadi" });
+                return { ok: true, badge: document.getElementById('editor-validation-badge').innerText };
+            } catch(e) {
+                return { ok: false, error: e.name + ': ' + e.message };
+            }
+        """)
+        assert res1["ok"] is True, f"renderValidationCard threw on error detail payload: {res1.get('error')}"
+        assert "0 ta xatolik" in res1["badge"]
+
+        # 2. Empty payload
+        res2 = driver.execute_script("""
+            try {
+                renderValidationCard({});
+                return { ok: true, badge: document.getElementById('editor-validation-badge').innerText };
+            } catch(e) {
+                return { ok: false, error: e.name + ': ' + e.message };
+            }
+        """)
+        assert res2["ok"] is True
+
+        # 3. Payload with valid: false but missing errors array
+        res3 = driver.execute_script("""
+            try {
+                renderValidationCard({ valid: false });
+                return { ok: true, badge: document.getElementById('editor-validation-badge').innerText };
+            } catch(e) {
+                return { ok: false, error: e.name + ': ' + e.message };
+            }
+        """)
+        assert res3["ok"] is True
+
+        # 4. Null / undefined payload
+        res4 = driver.execute_script("""
+            try {
+                renderValidationCard(null);
+                renderValidationCard(undefined);
+                return { ok: true };
+            } catch(e) {
+                return { ok: false, error: e.name + ': ' + e.message };
+            }
+        """)
+        assert res4["ok"] is True
+
+        # 5. triggerValidateDraft with mocked 400 response
+        res5 = driver.execute_async_script("""
+            var done = arguments[arguments.length - 1];
+            var lastAlert = null;
+            window.alert = function(msg) { lastAlert = msg; };
+            state.currentEditorQuizId = 999;
+            window.fetch = function() {
+                return Promise.resolve({
+                    ok: false,
+                    status: 400,
+                    json: function() { return Promise.resolve({ detail: "Qoralama versiya topilmadi" }); }
+                });
+            };
+            triggerValidateDraft().then(function() {
+                done({ ok: true, alert: lastAlert });
+            }).catch(function(e) {
+                done({ ok: false, error: e.name + ': ' + e.message });
+            });
+        """)
+        assert res5["ok"] is True, f"triggerValidateDraft threw exception: {res5.get('error')}"
+        assert "Qoralama versiya topilmadi" in (res5.get("alert") or "")
+
+    finally:
+        driver.quit()
+

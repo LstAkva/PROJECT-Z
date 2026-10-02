@@ -1242,6 +1242,7 @@
         }
 
         function renderValidationCard(val) {
+            val = val || {};
             const readinessBadge = document.getElementById('editor-readiness-badge');
             const valBadge = document.getElementById('editor-validation-badge');
             const errBox = document.getElementById('editor-validation-errors-box');
@@ -1264,10 +1265,12 @@
             }
 
             // Editorial Summary Pills
-            document.getElementById('pill-approved').innerText = `${edSummary.approved} Ma'qullangan`;
-            document.getElementById('pill-needs-review').innerText = `${edSummary.needs_review} Qayta ko'rish`;
-            document.getElementById('pill-rejected').innerText = `${edSummary.rejected} Rad etilgan`;
-            document.getElementById('pill-unresolved').innerText = `${edSummary.unresolved} Kutilmoqda`;
+            document.getElementById('pill-approved').innerText = `${edSummary.approved || 0} Ma'qullangan`;
+            document.getElementById('pill-needs-review').innerText = `${edSummary.needs_review || 0} Qayta ko'rish`;
+            document.getElementById('pill-rejected').innerText = `${edSummary.rejected || 0} Rad etilgan`;
+            document.getElementById('pill-unresolved').innerText = `${edSummary.unresolved || 0} Kutilmoqda`;
+
+            const errors = (val.errors && Array.isArray(val.errors)) ? val.errors : [];
 
             // Validation Structure Badge
             if (val.valid) {
@@ -1275,12 +1278,12 @@
                 valBadge.innerText = "✓ 2x12 Strukturasi to'liq";
             } else {
                 valBadge.className = "px-2.5 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
-                valBadge.innerText = `✕ ${val.errors.length} ta xatolik`;
+                valBadge.innerText = `✕ ${errors.length} ta xatolik`;
             }
 
             // Errors box
-            if (val.errors && val.errors.length > 0) {
-                errBox.innerHTML = val.errors.map(e => `<div>• ${escapeHtml(e)}</div>`).join('');
+            if (errors.length > 0) {
+                errBox.innerHTML = errors.map(e => `<div>• ${escapeHtml(e)}</div>`).join('');
                 errBox.classList.remove('hidden');
             } else {
                 errBox.classList.add('hidden');
@@ -1291,8 +1294,8 @@
             const r1 = rounds[0];
             const r2 = rounds[1];
 
-            const r1Count = r1 ? r1.questions.length : 0;
-            const r2Count = r2 ? r2.questions.length : 0;
+            const r1Count = r1 ? (r1.questions ? r1.questions.length : 0) : 0;
+            const r2Count = r2 ? (r2.questions ? r2.questions.length : 0) : 0;
 
             document.getElementById('chk-r1-count').innerHTML = `
                 <span>${r1Count === 12 ? '✅' : '⚠️'}</span>
@@ -1432,12 +1435,20 @@
             if (!state.currentEditorQuizId) return;
             try {
                 const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}/validate`, { method: 'POST' });
-                const val = await res.json();
+                const val = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    const errorMsg = (val && val.detail) ? val.detail : `Server xatosi (HTTP ${res.status})`;
+                    alert("Xatolik: " + errorMsg);
+                    return;
+                }
                 renderValidationCard(val);
                 if (val.valid) {
                     alert("✓ Validatsiya muvaffaqiyatli: 2x12 to'liq va barcha talablarga javob beradi!");
                 } else {
-                    alert(`✕ Validatsiya xatosi:\n${val.errors.join('\n')}`);
+                    const errMsgs = (val.errors && Array.isArray(val.errors) && val.errors.length > 0)
+                        ? val.errors.join('\n')
+                        : "Noma'lum validatsiya xatosi";
+                    alert(`✕ Validatsiya xatosi:\n${errMsgs}`);
                 }
             } catch(err) {
                 alert("Xatolik: " + err.message);
