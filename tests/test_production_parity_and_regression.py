@@ -44,6 +44,11 @@ def test_homepage_renders_grand_sanctum_and_never_old_mvp(client):
     assert "Zakovat Platform MVP" not in html
     assert "Фундамент заложен" not in html
 
+    # Must NOT render the temporarily removed "Girih-i Muammo: Mantiq Geometriyasi" section
+    assert "Girih-i Muammo" not in html
+    assert "Mantiq Geometriyasi" not in html
+    assert 'id="lore"' not in html
+
 
 def test_homepage_and_arena_have_no_cache_headers(client):
     """
