@@ -417,4 +417,220 @@ def test_full_24_question_zakovat_completion_flow_and_review_data(client):
             assert "submitted_answer" in q
 
 
+# =============================================================================
+# AUTHENTICATION REGRESSION TESTS (USERNAME & EMAIL LOGIN)
+# =============================================================================
 
+def test_login_by_exact_display_name_and_different_case_succeeds(client):
+    """
+    Regression test:
+    Validates that a user can authenticate using:
+    1. Exact display_name / username
+    2. Case-insensitive display_name
+    3. Exact email
+    4. Case-insensitive email
+    """
+    import uuid
+    uid = uuid.uuid4().hex[:8]
+    test_username = f"User_{uid}"
+    test_email = f"user_{uid}@example.com"
+    test_password = "CorrectPassword123!"
+
+    client.cookies.clear()
+    reg = client.post("/api/auth/register", json={
+        "display_name": test_username,
+        "email": test_email,
+        "password": test_password,
+    })
+    assert reg.status_code == 201
+
+    # 1. Login by exact display_name
+    client.cookies.clear()
+    res_exact = client.post("/api/auth/login", json={
+        "email": test_username,
+        "password": test_password,
+    })
+    assert res_exact.status_code == 200, res_exact.text
+    data_exact = res_exact.json()
+    assert data_exact["success"] is True
+    assert data_exact["user"]["display_name"] == test_username
+    assert data_exact["user"]["email"] == test_email
+    assert "access_token" in client.cookies
+
+    # Verify session via /api/auth/me
+    me_exact = client.get("/api/auth/me")
+    assert me_exact.status_code == 200
+    assert me_exact.json()["authenticated"] is True
+    assert me_exact.json()["user"]["display_name"] == test_username
+
+    # 2. Login by lowercase display_name
+    client.cookies.clear()
+    res_lower = client.post("/api/auth/login", json={
+        "email": test_username.lower(),
+        "password": test_password,
+    })
+    assert res_lower.status_code == 200
+    assert res_lower.json()["user"]["display_name"] == test_username
+
+    # 3. Login by uppercase display_name
+    client.cookies.clear()
+    res_upper = client.post("/api/auth/login", json={
+        "email": test_username.upper(),
+        "password": test_password,
+    })
+    assert res_upper.status_code == 200
+    assert res_upper.json()["user"]["display_name"] == test_username
+
+    # 4. Login by original email
+    client.cookies.clear()
+    res_email = client.post("/api/auth/login", json={
+        "email": test_email,
+        "password": test_password,
+    })
+    assert res_email.status_code == 200
+    assert res_email.json()["user"]["display_name"] == test_username
+
+    # 5. Login by uppercase email
+    client.cookies.clear()
+    res_email_upper = client.post("/api/auth/login", json={
+        "email": test_email.upper(),
+        "password": test_password,
+    })
+    assert res_email_upper.status_code == 200
+    assert res_email_upper.json()["user"]["display_name"] == test_username
+
+
+def test_login_invalid_password_and_nonexistent_identifier_fails_401(client):
+    """
+    Regression test:
+    Validates that:
+    1. Correct username + wrong password returns HTTP 401 with standard Uzbek error detail.
+    2. Nonexistent username / email returns HTTP 401 with standard Uzbek error detail.
+    3. Empty identifier returns HTTP 401 without server error.
+    """
+    import uuid
+    uid = uuid.uuid4().hex[:8]
+    test_username = f"Player_{uid}"
+    test_email = f"player_{uid}@example.com"
+    test_password = "ValidPassword123!"
+
+    client.cookies.clear()
+    reg = client.post("/api/auth/register", json={
+        "display_name": test_username,
+        "email": test_email,
+        "password": test_password,
+    })
+    assert reg.status_code == 201
+
+    # 1. Correct username + wrong password
+    client.cookies.clear()
+    res_wrong_pw = client.post("/api/auth/login", json={
+        "email": test_username,
+        "password": "WrongPassword999!",
+    })
+    assert res_wrong_pw.status_code == 401
+    assert res_wrong_pw.json()["detail"] == "Email yoki parol noto'g'ri"
+    assert "access_token" not in client.cookies
+
+    # 2. Nonexistent identifier
+    client.cookies.clear()
+    res_nonexistent = client.post("/api/auth/login", json={
+        "email": f"nobody_exists_{uid}",
+        "password": "SomePassword123!",
+    })
+    assert res_nonexistent.status_code == 401
+    assert res_nonexistent.json()["detail"] == "Email yoki parol noto'g'ri"
+
+    # 3. Empty identifier
+    client.cookies.clear()
+    res_empty = client.post("/api/auth/login", json={
+        "email": "   ",
+        "password": "SomePassword123!",
+    })
+    assert res_empty.status_code == 401
+    assert res_empty.json()["detail"] == "Email yoki parol noto'g'ri"
+
+
+def test_frontend_login_in_flight_submission_guard(client):
+    """
+    Regression test:
+    Validates that handleLoginSubmit() in templates/index.html enforces the
+    in-flight submission guard (state.isAuthSubmitting) preventing duplicate concurrent requests.
+    """
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+
+    with open("templates/index.html", "r", encoding="utf-8") as f:
+        html = f.read()
+
+    options = Options()
+    options.add_argument("--headless=new")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    driver = webdriver.Chrome(options=options)
+
+    try:
+        driver.get("about:blank")
+        driver.execute_script("""
+            document.body.innerHTML = `
+                <div id="auth-error-banner" class="hidden"></div>
+                <button id="login-submit-btn">Tizimga kirish</button>
+                <input id="login-username" value="TestUser" />
+                <input id="login-password" value="TestPass123" />
+            `;
+            window.tailwind = { config: {} };
+        """)
+
+        import re
+        scripts = re.findall(r"<script(?:\s+[^>]*)?>(.*?)</script>", html, re.DOTALL)
+        for s in scripts:
+            if s.strip():
+                driver.execute_script("""
+                    var scriptEl = document.createElement('script');
+                    scriptEl.textContent = arguments[0];
+                    document.head.appendChild(scriptEl);
+                """, s)
+
+        # Verify guard behavior:
+        # 1. Mock fetch with delayed resolution
+        # 2. Fire handleLoginSubmit twice rapidly
+        # 3. Verify exactly 1 network fetch was dispatched
+        res = driver.execute_async_script("""
+            var done = arguments[arguments.length - 1];
+            var fetchCount = 0;
+            window.fetch = function(url) {
+                if (url.includes('/auth/login')) {
+                    fetchCount++;
+                    return new Promise(function(resolve) {
+                        setTimeout(function() {
+                            resolve({
+                                ok: true,
+                                json: function() { return Promise.resolve({ success: true, user: { id: 1 } }); }
+                            });
+                        }, 50);
+                    });
+                }
+                return Promise.resolve({ ok: true, json: function() { return Promise.resolve({}); } });
+            };
+
+            var fakeEvent = { preventDefault: function() {} };
+            // First call dispatches fetch
+            var p1 = handleLoginSubmit(fakeEvent);
+            // Second call while p1 is in-flight must be guarded (no fetch)
+            var p2 = handleLoginSubmit(fakeEvent);
+
+            Promise.all([p1, p2]).then(function() {
+                done({
+                    fetchCount: fetchCount,
+                    isAuthSubmittingAfter: state.isAuthSubmitting
+                });
+            }).catch(function(e) {
+                done({ error: e.name + ': ' + e.message });
+            });
+        """)
+
+        assert "error" not in res, f"JS execution error: {res.get('error')}"
+        assert res["fetchCount"] == 1, f"Expected exactly 1 fetch call, got {res['fetchCount']}"
+        assert res["isAuthSubmittingAfter"] is False, "Expected isAuthSubmitting to reset to false after request completes"
+    finally:
+        driver.quit()

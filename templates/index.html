@@ -975,6 +975,7 @@
             breakInterval: null,
             breakTimeLeft: 180,
             gameMode: null,
+            isAuthSubmitting: false,
         };
 
         // =====================================================================
@@ -1080,6 +1081,8 @@
 
         async function handleLoginSubmit(e) {
             e.preventDefault();
+            if (state.isAuthSubmitting) return;
+
             const banner = document.getElementById('auth-error-banner');
             const submitBtn = document.getElementById('login-submit-btn');
             const usernameInput = document.getElementById('login-username');
@@ -1088,6 +1091,9 @@
             const emailOrUser = usernameInput.value.trim();
             const password = passwordInput.value;
 
+            if (!emailOrUser || !password) return;
+
+            state.isAuthSubmitting = true;
             banner.classList.add('hidden');
             submitBtn.disabled = true;
             submitBtn.innerText = 'Kirilmoqda...';
@@ -1100,7 +1106,7 @@
                 });
 
                 if (!res.ok) {
-                    const err = await res.json();
+                    const err = await res.json().catch(() => ({}));
                     throw new Error(err.detail || 'Kirishda xatolik yuz berdi');
                 }
 
@@ -1111,6 +1117,7 @@
                 banner.innerText = err.message;
                 banner.classList.remove('hidden');
             } finally {
+                state.isAuthSubmitting = false;
                 submitBtn.disabled = false;
                 submitBtn.innerText = 'Tizimga kirish';
             }
@@ -1118,6 +1125,8 @@
 
         async function handleRegisterSubmit(e) {
             e.preventDefault();
+            if (state.isAuthSubmitting) return;
+
             const banner = document.getElementById('auth-error-banner');
             const submitBtn = document.getElementById('register-submit-btn');
             const usernameInput = document.getElementById('register-username');
@@ -1131,6 +1140,7 @@
             }
             const password = passwordInput.value;
 
+            state.isAuthSubmitting = true;
             banner.classList.add('hidden');
             submitBtn.disabled = true;
             submitBtn.innerText = 'Yaratilmoqda...';
@@ -1150,7 +1160,7 @@
                 });
 
                 if (!res.ok) {
-                    const err = await res.json();
+                    const err = await res.json().catch(() => ({}));
                     throw new Error(err.detail || 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
                 }
 
@@ -1170,6 +1180,7 @@
                 banner.innerText = err.message;
                 banner.classList.remove('hidden');
             } finally {
+                state.isAuthSubmitting = false;
                 submitBtn.disabled = false;
                 submitBtn.innerText = 'Ro\'yxatdan o\'tish';
             }

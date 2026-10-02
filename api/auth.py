@@ -7,6 +7,7 @@ import jwt
 import bcrypt
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -290,9 +291,26 @@ def register(payload: RegisterRequest, request: Request, response: Response, db:
 
 @router.post("/login", status_code=status.HTTP_200_OK)
 def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
-    """Logs in with email and password, setting HttpOnly auth cookie."""
-    clean_email = payload.email.strip().lower()
-    user = db.query(User).filter(User.email == clean_email).first()
+    """Logs in with email or username (display_name) and password, setting HttpOnly auth cookie."""
+    clean_identifier = payload.email.strip().lower()
+    if not clean_identifier:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email yoki parol noto'g'ri",
+        )
+
+    # 1. Authoritative lookup by unique email first
+    user = db.query(User).filter(func.lower(User.email) == clean_identifier).first()
+
+    # 2. Fallback lookup by username / display_name
+    if not user:
+        user = (
+            db.query(User)
+            .filter(func.lower(User.display_name) == clean_identifier)
+            .order_by(User.id.asc())
+            .first()
+        )
+
     if not user or not verify_password(payload.password, user.hashed_password or ""):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
