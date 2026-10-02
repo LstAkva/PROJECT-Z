@@ -545,7 +545,7 @@
                             onclick="openReviewModal()"
                             class="btn btn-secondary py-3 text-sm font-bold"
                         >
-                            <span>📋 Javoblarni Ko‘rish (24 savol)</span>
+                            <span id="results-review-btn-label">📋 Javoblarni Ko‘rish (24 savol)</span>
                         </button>
                         <button
                             type="button"
@@ -649,7 +649,7 @@
     <!-- ================================================================= -->
     <!-- MODAL 2: ANSWER REVIEW (JAVOBLARNI KO‘RISH - 24 SAVOL) -->
     <!-- ================================================================= -->
-    <div id="modal-review" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+    <div id="modal-review" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden" onclick="if (event.target === this) closeReviewModal()">
         <div class="review-modal-container animate-fade-in">
             <div class="review-modal-header bg-black/60">
                 <div class="flex items-center gap-2">
@@ -2250,6 +2250,8 @@
                 setTimeout(async () => {
                     if (result.intermediate_break) {
                         showIntermediateBreak(result.break_data);
+                    } else if (result.quiz_completed) {
+                        await handleFinalizeAndShowResults();
                     } else if (result.round_completed) {
                         await loadRoundReveal();
                     } else if (result.next_state) {
@@ -2529,6 +2531,12 @@
             if (isFinalizingResults) return;
             isFinalizingResults = true;
 
+            const feedbackEl = document.getElementById('gameplay-feedback-banner');
+            if (feedbackEl && !feedbackEl.classList.contains('hidden')) {
+                feedbackEl.className = 'p-4 rounded-xl text-center font-bold text-base bg-amber-950/70 border border-amber-500/50 text-amber-300';
+                feedbackEl.innerHTML = `🏁 Viktorina yakunlandi! Natijalar hisoblanmoqda...`;
+            }
+
             const btn = document.getElementById('reveal-continue-btn');
             const btnLabel = document.getElementById('reveal-continue-label');
             if (btn) btn.disabled = true;
@@ -2583,6 +2591,12 @@
                 const scoreEl = document.getElementById('results-total-score');
                 if (scoreEl) scoreEl.innerText = data.total_score ?? 0;
 
+                const reviewBtnLabel = document.getElementById('results-review-btn-label');
+                if (reviewBtnLabel) {
+                    const totalQ = data.total_questions || 24;
+                    reviewBtnLabel.innerText = `📋 Javoblarni Ko‘rish (${totalQ} savol)`;
+                }
+
                 const breakdownEl = document.getElementById('results-rounds-breakdown');
                 breakdownEl.innerHTML = data.rounds.map(r => {
                     const roundName = r.round_title || (r.round_sequence === 2 ? "2-tur" : (r.round_sequence === 1 ? "1-tur" : `${r.round_sequence}-tur`));
@@ -2608,6 +2622,8 @@
                     anonBanner.classList.add('hidden');
                 }
 
+                state.lastCompletedSessionToken = state.sessionToken;
+
                 sessionStorage.removeItem('zakowhat_session_token');
                 sessionStorage.removeItem('zakowhat_timer_mode');
                 sessionStorage.removeItem('zakowhat_quiz_id');
@@ -2625,13 +2641,14 @@
         // MODAL 2: ANSWER REVIEW (JAVOBLARNI KO'RISH)
         // =====================================================================
         async function openReviewModal() {
-            if (!state.sessionToken) {
+            const token = state.sessionToken || state.lastCompletedSessionToken;
+            if (!token) {
                 alert('Sessiya topilmadi');
                 return;
             }
 
             try {
-                const res = await fetch(`${API_BASE}/play/${state.sessionToken}/review`);
+                const res = await fetch(`${API_BASE}/play/${token}/review`);
                 if (!res.ok) {
                     const err = await res.json();
                     throw new Error(err.detail || 'Javoblarni yuklab bo\'lmadi');
@@ -2815,7 +2832,11 @@
                     showIntermediateBreak(data.break_data);
                     return true;
                 } else if (data.status === 'round_reveal') {
-                    await loadRoundReveal();
+                    if (data.is_final_round || data.quiz_completed || !data.has_next_round) {
+                        await handleFinalizeAndShowResults();
+                    } else {
+                        await loadRoundReveal();
+                    }
                     return true;
                 } else if (data.status === 'completed') {
                     sessionStorage.removeItem('zakowhat_session_token');
@@ -2850,8 +2871,14 @@
                 .replace(/Klassik Zakovat/gi, 'Zakovat');
         }
 
-        // Global Keyboard Listeners (for True/False shortcuts)
+        // Global Keyboard Listeners (Escape to close review modal, True/False shortcuts)
         document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const reviewModal = document.getElementById('modal-review');
+                if (reviewModal && !reviewModal.classList.contains('hidden')) {
+                    closeReviewModal();
+                }
+            }
             const gameplayScreen = document.getElementById('screen-gameplay');
             if (gameplayScreen && !gameplayScreen.classList.contains('hidden') && state.currentRoundType === 'true_false') {
                 if (e.key === '1' || e.key.toLowerCase() === 'h') {

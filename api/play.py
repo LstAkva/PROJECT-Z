@@ -653,6 +653,7 @@ def get_current_state(session_token: str, db: Session = Depends(get_db)):
         }
 
     if attempt.status == "round_reveal":
+        is_last_round = attempt.current_round_index >= (len(rounds) - 1)
         return {
             "status": "round_reveal",
             "message": "Round completed. Call /reveal to view answers and /continue to proceed.",
@@ -660,6 +661,9 @@ def get_current_state(session_token: str, db: Session = Depends(get_db)):
             "total_score": attempt.total_score,
             "quiz_id": quiz_id,
             "is_staging": is_staging,
+            "is_final_round": is_last_round,
+            "has_next_round": not is_last_round,
+            "quiz_completed": is_last_round,
         }
 
     current_q = questions[attempt.current_question_index]
