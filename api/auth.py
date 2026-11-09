@@ -1081,7 +1081,10 @@ def google_auth(payload: GoogleAuthRequest, request: Request, response: Response
     else:
         if not user.google_id:
             user.google_id = google_id
-            user.auth_provider = "google"
+            # Linking Google to an existing password account must not turn it into a
+            # Google-only account (that would block "change password" for its owner).
+            if not user.hashed_password:
+                user.auth_provider = "google"
 
     if claimed_attempt:
         claimed_attempt.user_id = user.id

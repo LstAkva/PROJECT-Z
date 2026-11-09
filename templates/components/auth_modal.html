@@ -182,6 +182,29 @@
   .auth-legal-link:hover {
     color: var(--text-main, #FAF7F2);
   }
+  .auth-google-block {
+    margin-top: 1.1rem;
+  }
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-dim, #7C727A);
+    font-size: 0.75rem;
+    margin-bottom: 0.9rem;
+  }
+  .auth-divider::before,
+  .auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-subtle, rgba(197, 160, 89, 0.15));
+  }
+  .auth-google-container {
+    display: flex;
+    justify-content: center;
+    min-height: 44px;
+  }
 </style>
 
 <div id="modal-auth" class="auth-modal-overlay hidden" onclick="if (event.target === this) closeAuthModal();" role="dialog" aria-modal="true" aria-label="Foydalanuvchi hisobi">
@@ -244,6 +267,12 @@
           Ro‘yxatdan o‘tish orqali siz <a href="/terms" target="_blank" class="auth-legal-link">Foydalanish shartlari</a> va <a href="/privacy" target="_blank" class="auth-legal-link">Maxfiylik siyosati</a>ga rozilik bildirasiz.
         </p>
       </form>
+
+      <!-- Google Sign-In: shown only when GOOGLE_CLIENT_ID is configured on the server -->
+      <div id="auth-google-block" class="auth-google-block hidden">
+        <div class="auth-divider"><span>yoki</span></div>
+        <div id="auth-google-container" class="auth-google-container"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -274,6 +303,9 @@
       if (modal) {
         modal.classList.remove('hidden');
       }
+
+      // Google's script is loaded lazily on first open (not for every page visitor).
+      initGoogleSignIn();
 
       setTimeout(() => {
         const activeInput = tab === 'login' 
@@ -483,6 +515,93 @@
           submitBtn.disabled = false;
           submitBtn.textContent = 'Ro‘yxatdan o‘tish';
         }
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Google Sign-In (Google Identity Services ID token -> POST /api/auth/google,
+    // verified server-side: signature, audience = GOOGLE_CLIENT_ID, email_verified)
+    // ---------------------------------------------------------------
+    let googleInitPromise = null;
+
+    function loadGoogleScript() {
+      if (window.google && window.google.accounts && window.google.accounts.id) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Google script failed to load'));
+        document.head.appendChild(script);
+      });
+    }
+
+    function initGoogleSignIn() {
+      if (googleInitPromise) return googleInitPromise;
+      googleInitPromise = (async () => {
+        try {
+          const res = await fetch('/api/auth/config');
+          if (!res.ok) return;
+          const config = await res.json();
+          if (!config.google_client_id) return;  // not configured: keep the block hidden
+          await loadGoogleScript();
+          if (!(window.google && window.google.accounts && window.google.accounts.id)) return;
+          window.google.accounts.id.initialize({
+            client_id: config.google_client_id,
+            callback: handleGoogleCredential,
+            ux_mode: 'popup',
+          });
+          const block = document.getElementById('auth-google-block');
+          const container = document.getElementById('auth-google-container');
+          if (!block || !container) return;
+          block.classList.remove('hidden');
+          window.google.accounts.id.renderButton(container, {
+            theme: 'filled_black',
+            size: 'large',
+            shape: 'rectangular',
+            text: 'continue_with',
+            width: 300,
+          });
+        } catch (e) {
+          googleInitPromise = null;  // allow a retry on the next open
+        }
+      })();
+      return googleInitPromise;
+    }
+
+    async function handleGoogleCredential(response) {
+      if (isAuthSubmitting) return;
+      const banner = document.getElementById('auth-error-banner');
+      isAuthSubmitting = true;
+      if (banner) banner.classList.add('hidden');
+      try {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: response && response.credential }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || 'Google orqali kirishda xatolik yuz berdi');
+        }
+        closeAuthModal();
+        if (typeof window.checkNavbarAuth === 'function') await window.checkNavbarAuth();
+        if (typeof window.loadDailyQuestion === 'function') await window.loadDailyQuestion();
+        if (typeof window.checkAuth === 'function') await window.checkAuth();
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const returnTo = params.get('return_to');
+          if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
+            window.location.href = returnTo;
+          }
+        } catch (e) {}
+      } catch (err) {
+        if (banner) {
+          banner.textContent = err.message;
+          banner.classList.remove('hidden');
+        }
+      } finally {
+        isAuthSubmitting = false;
       }
     }
 
