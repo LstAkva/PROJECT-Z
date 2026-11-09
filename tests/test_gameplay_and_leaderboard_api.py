@@ -7,6 +7,12 @@ from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAn
 from api.quizzes import compile_published_manifest
 
 
+@pytest.fixture(autouse=True)
+def setup_gameplay_owner_auth(monkeypatch):
+    """Gameplay tests create published quizzes via authoring API, requiring owner authorization."""
+    monkeypatch.setenv("OWNER_EMAIL", "testplayer@zakowhat.uz")
+
+
 def helper_create_and_publish_quiz(client, title="Test Tournament", game_mode="modern_multiround", visibility="public", questions_data=None):
     """Helper to create a valid multi-round draft and publish it."""
     res = client.post("/api/drafts", json={"title": title, "game_mode": game_mode})
@@ -58,11 +64,9 @@ def test_public_vs_unlisted_visibility(client):
     assert quiz_unlisted_id not in quiz_ids, "Unlisted quiz must NOT appear in public discovery"
 
     # Both are playable by direct link
-    client.cookies.clear()
     res1 = client.post(f"/api/play/start/{quiz_pub_id}")
     assert res1.status_code == status.HTTP_201_CREATED
 
-    client.cookies.clear()
     res2 = client.post(f"/api/play/start/{quiz_unlisted_id}")
     assert res2.status_code == status.HTTP_201_CREATED
 
@@ -79,36 +83,27 @@ def test_draft_quiz_is_not_playable(client):
 
 def test_anonymous_single_attempt_gate_and_second_attempt_forbidden(client):
     """
-    Requirement 3:
-    - Anonymous users get exactly ONE attempt.
-    - Starting consumes the attempt immediately; abandoned attempt does not restore it.
-    - Second attempt returns HTTP 403.
+    Player accounts policy:
+    - Anonymous gameplay is disallowed.
+    - Unauthenticated start request returns HTTP 401 Unauthorized.
     """
     quiz_id, _ = helper_create_and_publish_quiz(client, title="One Shot Quiz")
 
     client.cookies.clear()
-    # 1. Start first attempt
     start_res = client.post(f"/api/play/start/{quiz_id}")
-    assert start_res.status_code == status.HTTP_201_CREATED
-    assert "zakowhat_anon_id" in client.cookies
-
-    # 2. Abandon attempt (do not finish) and attempt to start again with same cookie
-    second_start = client.post(f"/api/play/start/{quiz_id}")
-    assert second_start.status_code == status.HTTP_403_FORBIDDEN
-    assert "bepul urinishdan foydalanildi" in second_start.json()["detail"].lower()
+    assert start_res.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 def test_anonymous_completed_results_and_review_accessible(client):
     """
-    Requirement 4 & 5:
-    - Anonymous results are temporarily viewable after completion.
+    Player gameplay:
+    - Results are viewable after completion.
     - Answer review is accessible for completed attempts.
     """
     quiz_id, _ = helper_create_and_publish_quiz(client, title="Review Quiz", questions_data=[
         {"round_type": "standard", "text": "O'zbekiston poytaxti qaysi?", "answer": "Toshkent", "points": 1, "explanation": "Toshkent - Markaziy Osiyoning yirik shahri"},
     ])
 
-    client.cookies.clear()
     start_res = client.post(f"/api/play/start/{quiz_id}")
     token = start_res.json()["session_token"]
 
@@ -126,7 +121,6 @@ def test_anonymous_completed_results_and_review_accessible(client):
     res_summary = client.get(f"/api/play/{token}/results")
     assert res_summary.status_code == status.HTTP_200_OK
     res_data = res_summary.json()
-    assert res_data["is_anonymous"] is True
     assert res_data["total_correct"] == 1
     assert "formatted_time" in res_data
 
@@ -142,19 +136,24 @@ def test_anonymous_completed_results_and_review_accessible(client):
     assert "Markaziy Osiyo" in q_rev["explanation"]
 
 
-def test_anonymous_attempts_never_appear_on_leaderboard(client):
+def test_anonymous_attempts_never_appear_on_leaderboard(client, db_session):
     """Requirement: Anonymous attempts NEVER appear on leaderboards."""
-    quiz_id, _ = helper_create_and_publish_quiz(client, title="Leaderboard Quiz", questions_data=[
+    quiz_id, version_id = helper_create_and_publish_quiz(client, title="Leaderboard Quiz", questions_data=[
         {"round_type": "standard", "text": "Q1", "answer": "A1", "points": 1},
     ])
 
-    client.cookies.clear()
-    start_res = client.post(f"/api/play/start/{quiz_id}")
-    token = start_res.json()["session_token"]
-
-    # Complete successfully
-    client.post(f"/api/play/{token}/answer", json={"answer": "A1"})
-    client.post(f"/api/play/{token}/continue")
+    anon_attempt = SoloAttempt(
+        quiz_version_id=version_id,
+        user_id=None,
+        anon_id="anon_legacy_lb",
+        session_token="token_legacy_lb",
+        status="completed",
+        total_score=10,
+        total_correct=1,
+        active_time_seconds=30,
+    )
+    db_session.add(anon_attempt)
+    db_session.commit()
 
     # Check leaderboard
     lb_res = client.get(f"/api/quizzes/{quiz_id}/leaderboard")
@@ -166,9 +165,10 @@ def test_anonymous_attempts_never_appear_on_leaderboard(client):
 
 def test_registered_user_multiple_attempts_and_leaderboard_best_attempt(client):
     """
-    Requirement:
+    Requirement (ranked-attempt rule):
     - Registered users have unlimited attempts.
-    - Leaderboard stores exactly ONE entry per user: their BEST attempt.
+    - Only the FIRST started timed attempt on a pack is ranked; later attempts are practice
+      and can never replace or improve the leaderboard result (closes the replay exploit).
     """
     quiz_id, _ = helper_create_and_publish_quiz(client, title="Multi Attempt Quiz", questions_data=[
         {"round_type": "standard", "text": "Q1", "answer": "A1", "points": 1},
@@ -204,12 +204,12 @@ def test_registered_user_multiple_attempts_and_leaderboard_best_attempt(client):
     client.post(f"/api/play/{token2}/answer", json={"answer": "A2"}) # correct
     client.post(f"/api/play/{token2}/continue")
 
-    # Check leaderboard: Bobur updated to 2/2
+    # Practice run (after seeing answers) must NOT improve the ranked 1/2 result
     lb2 = client.get(f"/api/quizzes/{quiz_id}/leaderboard").json()
     assert len(lb2["leaderboard"]) == 1
-    assert lb2["leaderboard"][0]["correct_count"] == 2
+    assert lb2["leaderboard"][0]["correct_count"] == 1, "Practice attempt must not improve the ranked result"
 
-    # Attempt 3: 0/2 correct (worse) -> does not overwrite the 2/2 best attempt
+    # Attempt 3: 0/2 correct (worse practice) -> does not change the ranked result either
     start3 = client.post(f"/api/play/start/{quiz_id}")
     token3 = start3.json()["session_token"]
     client.post(f"/api/play/{token3}/answer", json={"answer": "Wrong1"})
@@ -218,7 +218,7 @@ def test_registered_user_multiple_attempts_and_leaderboard_best_attempt(client):
 
     lb3 = client.get(f"/api/quizzes/{quiz_id}/leaderboard").json()
     assert len(lb3["leaderboard"]) == 1
-    assert lb3["leaderboard"][0]["correct_count"] == 2, "Best score must be preserved"
+    assert lb3["leaderboard"][0]["correct_count"] == 1, "Ranked (first) result must be preserved"
 
 
 def test_leaderboard_ranking_order_and_active_time(client, db_session):
@@ -350,7 +350,6 @@ def test_active_gameplay_time_excludes_reveal(client, db_session):
         {"round_type": "standard", "text": "Q1", "answer": "A1", "points": 1},
     ])
 
-    client.cookies.clear()
     start_res = client.post(f"/api/play/start/{quiz_id}")
     token = start_res.json()["session_token"]
 
@@ -404,7 +403,6 @@ def test_mantiqqasqon_hidden_rule_gating(client):
     quiz_id = draft_info["quiz_id"]
 
     # 1. Start play
-    client.cookies.clear()
     start_res = client.post(f"/api/play/start/{quiz_id}")
     assert start_res.status_code == status.HTTP_201_CREATED
     token = start_res.json()["session_token"]
@@ -432,22 +430,29 @@ def test_anonymous_attempt_claimed_on_registration(client, db_session):
     Registering after an anonymous attempt claims and migrates that completed attempt
     to the new user account without losing score or active time.
     """
-    quiz_id, _ = helper_create_and_publish_quiz(client, title="Claiming Quiz", questions_data=[
+    quiz_id, version_id = helper_create_and_publish_quiz(client, title="Claiming Quiz", questions_data=[
         {"round_type": "standard", "text": "Q1", "answer": "A1", "points": 1},
     ])
 
-    client.cookies.clear()
-    start_res = client.post(f"/api/play/start/{quiz_id}")
-    token = start_res.json()["session_token"]
-
-    # Play and complete
-    client.post(f"/api/play/{token}/answer", json={"answer": "A1"})
-    client.post(f"/api/play/{token}/continue")
+    token = "claim_test_token_sardor"
+    anon_attempt = SoloAttempt(
+        quiz_version_id=version_id,
+        user_id=None,
+        anon_id="anon_sardor_claim",
+        session_token=token,
+        status="completed",
+        total_score=1,
+        total_correct=1,
+        active_time_seconds=15,
+    )
+    db_session.add(anon_attempt)
+    db_session.commit()
 
     # Confirm attempt is anonymous and leaderboard is empty
     lb_before = client.get(f"/api/quizzes/{quiz_id}/leaderboard").json()
     assert len(lb_before["leaderboard"]) == 0
 
+    client.cookies.set("zakowhat_anon_id", "anon_sardor_claim")
     # Register passing session_token
     reg_res = client.post("/api/auth/register", json={
         "display_name": "Sardor",
@@ -491,7 +496,6 @@ def test_published_manifest_immutability_and_db_deletion(client, db_session):
     db_session.commit()
 
     # Start and play quiz: it must work identically using published_manifest!
-    client.cookies.clear()
     start_res = client.post(f"/api/play/start/{quiz_id}")
     assert start_res.status_code == status.HTTP_201_CREATED
     token = start_res.json()["session_token"]
@@ -577,13 +581,21 @@ def test_anonymous_claim_ownership_enforcement(client, db_session):
         {"round_type": "standard", "text": "Q1", "answer": "A1", "points": 1},
     ])
 
-    # 1. Visitor 1 starts and completes quiz with cookie zakowhat_anon_id=anon_legit
-    client.cookies.set("zakowhat_anon_id", "anon_legit_111")
-    start_res = client.post(f"/api/play/start/{quiz_id}")
-    assert start_res.status_code == status.HTTP_201_CREATED
-    token = start_res.json()["session_token"]
-    client.post(f"/api/play/{token}/answer", json={"answer": "A1"})
-    client.post(f"/api/play/{token}/continue")
+    # 1. Visitor 1 has completed an attempt with cookie zakowhat_anon_id=anon_legit
+    version = db_session.query(QuizVersion).filter(QuizVersion.quiz_id == quiz_id).first()
+    token = "anon_session_legit_token_111"
+    attempt = SoloAttempt(
+        quiz_version_id=version.id,
+        user_id=None,
+        anon_id="anon_legit_111",
+        session_token=token,
+        status="completed",
+        total_score=1,
+        total_correct=1,
+        active_time_seconds=10,
+    )
+    db_session.add(attempt)
+    db_session.commit()
 
     # 2. Attacker with a different anon cookie tries to claim Visitor 1's session
     client.cookies.set("zakowhat_anon_id", "anon_attacker_999")

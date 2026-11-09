@@ -1,0 +1,515 @@
+<!-- ZakoWhat Global Authentication Modal (Login & Registration) -->
+<style>
+  .auth-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(7, 5, 9, 0.85);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 1rem;
+    overflow-y: auto;
+  }
+  .auth-modal-overlay.hidden {
+    display: none !important;
+  }
+  .auth-modal-box {
+    width: 100%;
+    max-width: 440px;
+    background: var(--bg-surface, #100D14);
+    border: 1px solid var(--border-medium, rgba(197, 160, 89, 0.2));
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    animation: authModalFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    color: var(--text-main, #FAF7F2);
+  }
+  [data-theme="light"] .auth-modal-box {
+    background: #FFFFFF;
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.15), 0 2px 10px rgba(0, 0, 0, 0.06);
+    color: #0f172a;
+  }
+  @keyframes authModalFadeIn {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .auth-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+    padding: 1.25rem 1.5rem 0.75rem;
+  }
+  [data-theme="light"] .auth-modal-header {
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+  }
+  .auth-modal-tabs {
+    display: flex;
+    gap: 1.25rem;
+  }
+  .auth-tab-btn {
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding-bottom: 0.5rem;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--text-muted, #94a3b8);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans, inherit);
+  }
+  .auth-tab-btn:hover {
+    color: var(--text-main, #FAF7F2);
+  }
+  .auth-tab-btn.active {
+    color: var(--text-main, #FAF7F2);
+    border-bottom-color: var(--oxblood-600, #7A1627);
+  }
+  [data-theme="light"] .auth-tab-btn:hover {
+    color: #0f172a;
+  }
+  [data-theme="light"] .auth-tab-btn.active {
+    color: #0f172a;
+    border-bottom-color: var(--oxblood-600, #7A1627);
+  }
+  .auth-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.35rem;
+    color: var(--text-muted, #94a3b8);
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: color 0.15s;
+    line-height: 1;
+    font-family: var(--font-mono, monospace);
+  }
+  .auth-modal-close:hover {
+    color: var(--text-main, #FAF7F2);
+  }
+  [data-theme="light"] .auth-modal-close:hover {
+    color: #0f172a;
+  }
+  .auth-modal-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .auth-error-banner {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    background: rgba(122, 22, 39, 0.25);
+    border: 1px solid rgba(158, 31, 52, 0.5);
+    color: #fca5a5;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .auth-claim-notice {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    background: var(--oxblood-950, #1B0408);
+    border: 1px solid var(--oxblood-800, #3B0A12);
+    color: var(--text-dim, #cbd5e1);
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .auth-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-dim, #cbd5e1);
+  }
+  [data-theme="light"] .auth-label {
+    color: #475569;
+  }
+  .auth-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.75rem 0.95rem;
+    border-radius: 6px;
+    background: var(--bg-void, #070509);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+    color: var(--text-main, #FAF7F2);
+    font-size: 0.92rem;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  [data-theme="light"] .auth-input {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+  }
+  .auth-input:focus {
+    border-color: var(--accent-brass, #C5A059);
+  }
+  .auth-submit-btn {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+    cursor: pointer;
+  }
+  .auth-legal-note {
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+    text-align: center;
+    line-height: 1.45;
+    margin: 0.25rem 0 0;
+  }
+  .auth-legal-link {
+    color: var(--accent-brass, #C5A059);
+    text-decoration: underline;
+    transition: color 0.15s;
+  }
+  .auth-legal-link:hover {
+    color: var(--text-main, #FAF7F2);
+  }
+</style>
+
+<div id="modal-auth" class="auth-modal-overlay hidden" onclick="if (event.target === this) closeAuthModal();" role="dialog" aria-modal="true" aria-label="Foydalanuvchi hisobi">
+  <div class="auth-modal-box">
+    <!-- Modal Header with Tabs -->
+    <div class="auth-modal-header">
+      <div class="auth-modal-tabs" role="tablist">
+        <button id="auth-tab-login" type="button" role="tab" aria-selected="true" onclick="switchAuthTab('login')" class="auth-tab-btn active">
+          Kirish
+        </button>
+        <button id="auth-tab-register" type="button" role="tab" aria-selected="false" onclick="switchAuthTab('register')" class="auth-tab-btn">
+          Ro‘yxatdan o‘tish
+        </button>
+      </div>
+      <button type="button" onclick="closeAuthModal()" class="auth-modal-close" aria-label="Yopish">✕</button>
+    </div>
+
+    <div class="auth-modal-body">
+      <!-- Error Banner -->
+      <div id="auth-error-banner" class="auth-error-banner hidden" role="alert"></div>
+
+      <!-- Claim Notice (if session active) -->
+      <div id="auth-claim-notice" class="auth-claim-notice hidden">
+        Ro‘yxatdan o‘tganingizdan so‘ng, hozirgi viktorina natijangiz avtomatik tarzda yangi akkauntingizga biriktiriladi.
+      </div>
+
+      <!-- Login Form -->
+      <form id="auth-login-form" class="auth-form" onsubmit="handleLoginSubmit(event)">
+        <div class="auth-field">
+          <label class="auth-label" for="login-username">Foydalanuvchi nomi yoki Email</label>
+          <input type="text" id="login-username" name="username" required autocomplete="username" placeholder="Foydalanuvchi nomi" class="auth-input" />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="login-password">Parol</label>
+          <input type="password" id="login-password" name="password" required autocomplete="current-password" placeholder="••••••••" class="auth-input" />
+        </div>
+        <button type="submit" id="login-submit-btn" class="btn btn-primary auth-submit-btn">
+          <span>Tizimga kirish</span>
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="auth-register-form" class="auth-form hidden" onsubmit="handleRegisterSubmit(event)">
+        <div class="auth-field">
+          <label class="auth-label" for="register-username">Foydalanuvchi nomi (kamida 3 belgi)</label>
+          <input type="text" id="register-username" name="username" required autocomplete="username" minlength="3" maxlength="50" placeholder="taxallus" class="auth-input" />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="register-email">Email (ixtiyoriy)</label>
+          <input type="email" id="register-email" name="email" autocomplete="email" placeholder="nomingiz@misol.uz" class="auth-input" />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="register-password">Parol (kamida 6 belgi)</label>
+          <input type="password" id="register-password" name="password" required autocomplete="new-password" minlength="6" placeholder="••••••••" class="auth-input" />
+        </div>
+        <button type="submit" id="register-submit-btn" class="btn btn-primary auth-submit-btn">
+          <span>Ro‘yxatdan o‘tish</span>
+        </button>
+        <p class="auth-legal-note">
+          Ro‘yxatdan o‘tish orqali siz <a href="/terms" target="_blank" class="auth-legal-link">Foydalanish shartlari</a> va <a href="/privacy" target="_blank" class="auth-legal-link">Maxfiylik siyosati</a>ga rozilik bildirasiz.
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    let isAuthSubmitting = false;
+
+    function openAuthModal(tab) {
+      if (!tab) tab = 'login';
+      switchAuthTab(tab);
+
+      // Close mobile drawer if open
+      const drawer = document.getElementById('mobileNavDrawer');
+      if (drawer && !drawer.classList.contains('hidden')) {
+        if (typeof window.toggleMobileNav === 'function') {
+          window.toggleMobileNav();
+        }
+      }
+
+      const banner = document.getElementById('auth-error-banner');
+      if (banner) {
+        banner.classList.add('hidden');
+        banner.textContent = '';
+      }
+
+      const modal = document.getElementById('modal-auth');
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+
+      setTimeout(() => {
+        const activeInput = tab === 'login' 
+          ? document.getElementById('login-username') 
+          : document.getElementById('register-username');
+        if (activeInput) activeInput.focus();
+      }, 50);
+    }
+
+    function closeAuthModal() {
+      const modal = document.getElementById('modal-auth');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('auth')) {
+          url.searchParams.delete('auth');
+          const cleanPath = url.pathname + (url.search ? url.search : '');
+          window.history.replaceState({}, '', cleanPath);
+        }
+      } catch (e) {}
+    }
+
+    function switchAuthTab(tab) {
+      const btnLogin = document.getElementById('auth-tab-login');
+      const btnRegister = document.getElementById('auth-tab-register');
+      const formLogin = document.getElementById('auth-login-form');
+      const formRegister = document.getElementById('auth-register-form');
+      const banner = document.getElementById('auth-error-banner');
+      if (banner) {
+        banner.classList.add('hidden');
+        banner.textContent = '';
+      }
+
+      if (tab === 'login') {
+        if (btnLogin) {
+          btnLogin.classList.add('active');
+          btnLogin.setAttribute('aria-selected', 'true');
+        }
+        if (btnRegister) {
+          btnRegister.classList.remove('active');
+          btnRegister.setAttribute('aria-selected', 'false');
+        }
+        if (formLogin) formLogin.classList.remove('hidden');
+        if (formRegister) formRegister.classList.add('hidden');
+      } else {
+        if (btnRegister) {
+          btnRegister.classList.add('active');
+          btnRegister.setAttribute('aria-selected', 'true');
+        }
+        if (btnLogin) {
+          btnLogin.classList.remove('active');
+          btnLogin.setAttribute('aria-selected', 'false');
+        }
+        if (formRegister) formRegister.classList.remove('hidden');
+        if (formLogin) formLogin.classList.add('hidden');
+      }
+    }
+
+    async function handleLoginSubmit(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (isAuthSubmitting) return;
+
+      const banner = document.getElementById('auth-error-banner');
+      const submitBtn = document.getElementById('login-submit-btn');
+      const usernameInput = document.getElementById('login-username');
+      const passwordInput = document.getElementById('login-password');
+
+      const emailOrUser = usernameInput ? usernameInput.value.trim() : '';
+      const password = passwordInput ? passwordInput.value : '';
+
+      if (!emailOrUser || !password) return;
+
+      isAuthSubmitting = true;
+      if (banner) banner.classList.add('hidden');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Kirilmoqda...';
+      }
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailOrUser, password: password })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || 'Kirishda xatolik yuz berdi');
+        }
+
+        closeAuthModal();
+        if (passwordInput) passwordInput.value = '';
+
+        if (typeof window.checkNavbarAuth === 'function') {
+          await window.checkNavbarAuth();
+        }
+
+        if (typeof window.loadDailyQuestion === 'function') {
+          await window.loadDailyQuestion();
+        }
+
+        if (typeof window.checkAuth === 'function') {
+          await window.checkAuth();
+        }
+
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const returnTo = params.get('return_to');
+          if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
+            window.location.href = returnTo;
+          }
+        } catch (e) {}
+
+      } catch (err) {
+        if (banner) {
+          banner.textContent = err.message;
+          banner.classList.remove('hidden');
+        }
+      } finally {
+        isAuthSubmitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Tizimga kirish';
+        }
+      }
+    }
+
+    async function handleRegisterSubmit(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (isAuthSubmitting) return;
+
+      const banner = document.getElementById('auth-error-banner');
+      const submitBtn = document.getElementById('register-submit-btn');
+      const usernameInput = document.getElementById('register-username');
+      const emailInput = document.getElementById('register-email');
+      const passwordInput = document.getElementById('register-password');
+
+      const username = usernameInput ? usernameInput.value.trim() : '';
+      let email = emailInput ? emailInput.value.trim() : '';
+      if (!email && username) {
+        email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@zakowhat.uz`;
+      }
+      const password = passwordInput ? passwordInput.value : '';
+
+      if (!username || !password) return;
+
+      isAuthSubmitting = true;
+      if (banner) banner.classList.add('hidden');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Yaratilmoqda...';
+      }
+
+      try {
+        const payload = {
+          display_name: username,
+          email: email,
+          password: password
+        };
+
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "Ro'yxatdan o'tishda xatolik yuz berdi");
+        }
+
+        closeAuthModal();
+        if (passwordInput) passwordInput.value = '';
+
+        if (typeof window.checkNavbarAuth === 'function') {
+          await window.checkNavbarAuth();
+        }
+
+        if (typeof window.loadDailyQuestion === 'function') {
+          await window.loadDailyQuestion();
+        }
+
+        if (typeof window.checkAuth === 'function') {
+          await window.checkAuth();
+        }
+
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const returnTo = params.get('return_to');
+          if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
+            window.location.href = returnTo;
+          }
+        } catch (e) {}
+
+      } catch (err) {
+        if (banner) {
+          banner.textContent = err.message;
+          banner.classList.remove('hidden');
+        }
+      } finally {
+        isAuthSubmitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Ro‘yxatdan o‘tish';
+        }
+      }
+    }
+
+    // Register globally
+    window.openAuthModal = openAuthModal;
+    window.closeAuthModal = closeAuthModal;
+    window.switchAuthTab = switchAuthTab;
+    window.handleLoginSubmit = handleLoginSubmit;
+    window.handleRegisterSubmit = handleRegisterSubmit;
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('modal-auth');
+        if (modal && !modal.classList.contains('hidden')) {
+          closeAuthModal();
+        }
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const auth = params.get('auth');
+        if (auth === 'login' || auth === 'register') {
+          openAuthModal(auth);
+        }
+      } catch (e) {}
+    });
+  })();
+</script>

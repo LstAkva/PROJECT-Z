@@ -4,6 +4,12 @@ from datetime import datetime, timezone
 from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAnswer, SoloAttempt, User
 
 
+@pytest.fixture(autouse=True)
+def setup_arena_owner_auth(monkeypatch):
+    """Arena tests create published quizzes via authoring API, requiring owner authorization."""
+    monkeypatch.setenv("OWNER_EMAIL", "testplayer@zakowhat.uz")
+
+
 def create_and_publish_quiz(
     client,
     title="Test Tournament",
@@ -326,18 +332,14 @@ def test_play_now_enters_existing_play_start_flow(client):
     data = start_res.json()
     assert "session_token" in data
     assert data["quiz_title"] == "Play Flow Quiz"
-    assert "zakowhat_anon_id" in client.cookies
 
 
 def test_anonymous_attempt_restrictions_remain_unchanged(client):
-    """13. Anonymous attempt restrictions remain unchanged."""
+    """13. Unauthenticated start request is rejected with HTTP 401."""
     quiz_id, _ = create_and_publish_quiz(client, title="Anon Restriction Quiz")
-
+    client.cookies.clear()
     res1 = client.post(f"/api/play/start/{quiz_id}")
-    assert res1.status_code == status.HTTP_201_CREATED
-
-    res2 = client.post(f"/api/play/start/{quiz_id}")
-    assert res2.status_code == status.HTTP_403_FORBIDDEN
+    assert res1.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 def test_unlisted_direct_link_gameplay_remains_functional(client):
@@ -348,7 +350,6 @@ def test_unlisted_direct_link_gameplay_remains_functional(client):
     assert detail_res.status_code == status.HTTP_200_OK
     assert detail_res.json()["visibility"] == "unlisted"
 
-    client.cookies.clear()
     start_res = client.post(f"/api/play/start/{quiz_id}")
     assert start_res.status_code == status.HTTP_201_CREATED
     token = start_res.json()["session_token"]

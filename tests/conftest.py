@@ -1,6 +1,8 @@
 import os
-os.environ.setdefault("ENVIRONMENT", "test")
-os.environ.setdefault("DB_TARGET", "test")
+os.environ["ENVIRONMENT"] = "test"
+os.environ["DB_TARGET"] = "test"
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["TESTING"] = "true" 
 
 import pytest
 from fastapi.testclient import TestClient
@@ -24,6 +26,42 @@ test_engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 
+from sqlalchemy import event
+
+
+
+@pytest.fixture(scope="session", autouse=True)
+def guard_test_database_isolation():
+    """
+    Fail-closed test configuration guard:
+    Verifies that the test environment is explicitly configured as 'test'
+    and that no test runner can inherit or connect to a production or non-test database.
+    Aborts immediately before any test or database mutation.
+    """
+    env = os.getenv("ENVIRONMENT", "").strip().lower()
+    target = os.getenv("DB_TARGET", "").strip().lower()
+    db_url = os.getenv("DATABASE_URL", "").strip().lower()
+
+    if env != "test" or target != "test":
+        pytest.exit(
+            f"CRITICAL SAFETY ABORT: Tests must run with ENVIRONMENT='test' and DB_TARGET='test'. "
+            f"Current: ENVIRONMENT={env!r}, DB_TARGET={target!r}",
+            returncode=1,
+        )
+
+    if not (db_url.startswith("sqlite") or ":memory:" in db_url or "test" in db_url):
+        pytest.exit(
+            f"CRITICAL SAFETY ABORT: Test database target is not explicitly identified as a test database. "
+            f"Target URL must be sqlite or contain 'test'. Current: {db_url[:20]}...",
+            returncode=1,
+        )
+
+
+@event.listens_for(test_engine, "before_cursor_execute")
+def guard_before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    if os.getenv("DB_TARGET", "").strip().lower() != "test":
+        raise RuntimeError("FAIL CLOSED: Attempted database execution when DB_TARGET is not 'test'!")
+
 @pytest.fixture(autouse=True)
 def setup_test_database():
     """Recreates schema before every test function for pristine isolation."""
@@ -36,6 +74,10 @@ def setup_test_database():
 def isolate_environment():
     """Ensures environment variables (like OWNER_EMAIL, ADMIN_EMAILS) do not leak across tests."""
     orig_env = os.environ.copy()
+    os.environ.pop("OWNER_EMAIL", None)
+    os.environ.pop("OWNER_EMAILS", None)
+    os.environ.pop("ADMIN_EMAILS", None)
+    os.environ.pop("STAGING_AUTHORIZED_EMAILS", None)
     yield
     os.environ.clear()
     os.environ.update(orig_env)
@@ -63,6 +105,11 @@ def client(db_session):
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
+        test_client.post("/api/auth/register", json={
+            "display_name": "Test Player",
+            "email": "testplayer@zakowhat.uz",
+            "password": "TestPassword123!",
+        })
         yield test_client
     app.dependency_overrides.clear()
 
@@ -148,3 +195,33 @@ def seed_sample_quiz(db_session):
     version.published_manifest = compile_published_manifest(version, db_session)
     db_session.commit()
     return quiz
+
+
+@pytest.fixture
+def owner_client(db_session, monkeypatch):
+    """FastAPI TestClient authenticated as an authorized system owner."""
+    import uuid
+    owner_email = f"test_owner_{uuid.uuid4().hex[:8]}@zakowhat.uz"
+    monkeypatch.setenv("OWNER_EMAIL", owner_email)
+    monkeypatch.setenv("OWNER_EMAILS", owner_email)
+
+    def override_get_db():
+        session = TestingSessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as test_client:
+        test_client.post("/api/auth/register", json={
+            "display_name": "Test Owner",
+            "email": owner_email,
+            "password": "OwnerSecurePassword123!",
+        })
+        test_client.post("/api/auth/login", json={
+            "email": owner_email,
+            "password": "OwnerSecurePassword123!",
+        })
+        yield test_client
+    app.dependency_overrides.clear()

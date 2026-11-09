@@ -1,0 +1,145 @@
+<!-- ZakoWhat Unified Global Footer -->
+<footer class="site-footer">
+  <div class="footer-container">
+    <!-- Brand Info -->
+    <div class="footer-brand">
+      <a href="/" class="footer-brand-link" aria-label="ZakoWhat Bosh Sahifa">
+        <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat Girih Nishoni" class="footer-logo-img" width="22" height="22">
+        <span class="footer-brand-title">ZAKOWHAT</span>
+      </a>
+      <span class="footer-bullet" aria-hidden="true">•</span>
+      <span class="footer-brand-tag">Intellektual Maydon</span>
+    </div>
+
+    <!-- Navigation & Legal Links -->
+    <nav class="footer-nav" aria-label="Quyi navigatsiya">
+      <a href="/" class="footer-link">Bosh sahifa</a>
+      <a href="/daily" class="footer-link">Kun savoli</a>
+      <a href="/arena" class="footer-link">To‘plamlar</a>
+      <a href="/privacy" class="footer-link">Maxfiylik siyosati</a>
+      <a href="/terms" class="footer-link">Foydalanish shartlari</a>
+      <button type="button" onclick="openConsentModal()" class="footer-cookie-btn" title="Maxfiylik va Cookie sozlamalarini ochish">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span>Cookie sozlamalari</span>
+      </button>
+    </nav>
+
+    <!-- Copyright -->
+    <div class="footer-copyright">
+      &copy; 2026 ZakoWhat. Barcha huquqlar himoyalangan.
+    </div>
+  </div>
+</footer>
+
+<!-- Cookie / Privacy Consent Modal -->
+<div id="modal-consent-settings" class="consent-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="consent-modal-title">
+  <div class="consent-modal-box">
+    <div class="consent-modal-header">
+      <div class="consent-modal-heading-wrap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--accent-brass)]" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <h3 id="consent-modal-title" class="consent-modal-title">Maxfiylik va Cookie Sozlamalari</h3>
+      </div>
+      <button type="button" onclick="closeConsentModal()" class="consent-modal-close" aria-label="Yopish">&times;</button>
+    </div>
+
+    <div class="consent-modal-body">
+      <p class="consent-desc">
+        ZakoWhat platformasi faqat zaruriy texnik funksiyalar (sessiya, xavfsizlik, mavzu sozlamasi) uchun cookie va local storage vositalaridan foydalanadi. Biz uchinchi tomon reklama yoki kuzatuvchi tarmoqlaridan foydalanmaymiz.
+      </p>
+
+      <div class="consent-option-card">
+        <div class="consent-option-row">
+          <span class="consent-option-label">Zaruriy Cookie'lar</span>
+          <span class="consent-badge-active">Har doim faol</span>
+        </div>
+        <p class="consent-option-desc">Tizimga kirish (HttpOnly JWT cookie), o'yin sessiyasini saqlash va CSRF xavfsizligi.</p>
+      </div>
+
+      <div class="consent-option-card">
+        <div class="consent-option-row">
+          <span class="consent-option-label">Foydalanish statistikasi</span>
+          <label class="consent-switch">
+            <input type="checkbox" id="consent-analytics-toggle" class="consent-switch-input">
+            <span class="consent-switch-slider"></span>
+          </label>
+        </div>
+        <p class="consent-option-desc">Viktorinalarni optimallashtirish va xatoliklarni aniqlash uchun anonim o'yin ko'rsatkichlari.</p>
+      </div>
+    </div>
+
+    <div class="consent-modal-footer">
+      <button type="button" onclick="saveConsentChoice('necessary')" class="btn btn-secondary consent-btn">
+        Faqat zaruriylar
+      </button>
+      <button type="button" onclick="saveConsentChoice()" class="btn btn-secondary consent-btn">
+        Tanlovni saqlash
+      </button>
+      <button type="button" onclick="saveConsentChoice('all')" class="btn btn-primary consent-btn font-bold">
+        Barchasini qabul qilish
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- First-visit Cookie Consent Banner -->
+<div id="cookie-consent-banner" class="cookie-banner-bar hidden" role="region" aria-label="Cookie xabarnomasi">
+  <div class="cookie-banner-content">
+    <p class="cookie-banner-text">
+      ZakoWhat faqat tizim xavfsizligi va qulayligi (avtorizatsiya, rang mavzusi) uchun zarur cookie fayllaridan foydalanadi.
+    </p>
+    <div class="cookie-banner-actions">
+      <button type="button" onclick="saveConsentChoice('necessary')" class="btn btn-secondary text-xs py-1.5 px-3">
+        Faqat zaruriylar
+      </button>
+      <button type="button" onclick="saveConsentChoice('all')" class="btn btn-primary text-xs py-1.5 px-3 font-bold">
+        Qabul qilish
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openConsentModal() {
+    const m = document.getElementById('modal-consent-settings');
+    if (m) {
+      const saved = localStorage.getItem('zakowhat_consent');
+      const toggle = document.getElementById('consent-analytics-toggle');
+      if (toggle) {
+        toggle.checked = (saved === 'all');
+      }
+      m.classList.remove('hidden');
+    }
+  }
+  function closeConsentModal() {
+    const m = document.getElementById('modal-consent-settings');
+    if (m) m.classList.add('hidden');
+  }
+  (function initCookieBanner() {
+    try {
+      if (!localStorage.getItem('zakowhat_consent')) {
+        const b = document.getElementById('cookie-consent-banner');
+        if (b) b.classList.remove('hidden');
+      }
+    } catch(e) {}
+  })();
+  async function saveConsentChoice(choice) {
+    let finalChoice = choice;
+    if (!finalChoice) {
+      const toggle = document.getElementById('consent-analytics-toggle');
+      finalChoice = (toggle && toggle.checked) ? 'all' : 'necessary';
+    }
+    localStorage.setItem('zakowhat_consent', finalChoice);
+    const b = document.getElementById('cookie-consent-banner');
+    if (b) b.classList.add('hidden');
+    try {
+      await fetch('/api/auth/profile/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ consent_analytics: (finalChoice === 'all') })
+      });
+    } catch(e) {}
+    closeConsentModal();
+  }
+</script>

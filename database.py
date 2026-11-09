@@ -80,14 +80,30 @@ def validate_database_environment(
 
     check_url = normalize_database_url(url or os.getenv("DATABASE_URL") or "") or ""
 
+    if (env == "test" or target == "test") and check_url:
+        if not (check_url.startswith("sqlite") or ":memory:" in check_url or "test" in check_url):
+            raise RuntimeError(
+                "Configuration safety violation: test environment must point to an isolated test database (sqlite or containing 'test'). Non-test target URL rejected."
+            )
+
     if check_url and not check_url.startswith("sqlite"):
         try:
             parsed = urllib.parse.urlparse(check_url)
             hostname = (parsed.hostname or "").lower()
             dbname = (parsed.path or "").lstrip("/").lower()
+            query_params = urllib.parse.parse_qs(parsed.query)
         except Exception:
             hostname = ""
             dbname = ""
+            query_params = {}
+
+        # Remote production PostgreSQL SSL enforcement
+        if env == "production" and hostname and hostname not in ("localhost", "127.0.0.1", "::1"):
+            ssl_mode = (query_params.get("sslmode") or [""])[0].lower()
+            if ssl_mode not in ("require", "verify-ca", "verify-full"):
+                raise RuntimeError(
+                    "Configuration safety violation: Remote production database connection must require SSL (e.g. ?sslmode=require)."
+                )
 
         # 1. Explicit configured host checks (exact equality, not relying on substring heuristics alone)
         known_prod_host = os.getenv("PROD_DATABASE_HOST", "").strip().lower()

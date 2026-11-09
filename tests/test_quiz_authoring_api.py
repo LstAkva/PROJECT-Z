@@ -4,6 +4,13 @@ from models import Question, AcceptedAnswer, Quiz, QuizVersion, Round, RoundQues
 from api.quizzes import compile_published_manifest
 
 
+@pytest.fixture(autouse=True)
+def setup_authoring_owner_auth(monkeypatch):
+    """Authoring API is strictly owner-only; authenticate test client as owner."""
+    monkeypatch.setenv("OWNER_EMAIL", "testplayer@zakowhat.uz")
+
+
+
 def test_create_draft_and_load_empty(client, db_session):
     """Verify creating an empty draft initializes Quiz + QuizVersion (status='draft', published_manifest=NULL)."""
     res = client.post("/api/drafts", json={
@@ -116,7 +123,7 @@ def test_author_question_gulmisiz_invalid_options(client):
         "options": [{"key": "A", "text": "1"}, {"key": "B", "text": "2"}, {"key": "C", "text": "3"}],
         "correct_option": "A"
     })
-    assert res1.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res1.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     # Invalid correct option
     res2 = client.post(f"/api/drafts/{draft['version_id']}/rounds/{r['round_id']}/questions", json={
@@ -124,7 +131,7 @@ def test_author_question_gulmisiz_invalid_options(client):
         "options": [{"key": "A", "text": "1"}, {"key": "B", "text": "2"}, {"key": "C", "text": "3"}, {"key": "D", "text": "4"}],
         "correct_option": "E"
     })
-    assert res2.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res2.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_author_question_zanjir(client, db_session):
@@ -434,6 +441,13 @@ def test_authored_questions_never_appear_in_question_bank(client, db_session, mo
     owner_email = f"owner_authoring_test_{uuid.uuid4().hex[:8]}@example.test"
     monkeypatch.setenv("OWNER_EMAIL", owner_email)
 
+    # Authenticate as owner
+    client.post("/api/auth/register", json={
+        "email": owner_email,
+        "password": "ValidPassword123!",
+        "display_name": "Owner Authoring Tester",
+    })
+
     # 1. Create a draft and author a question
     draft = client.post("/api/drafts", json={"title": "Isolated Draft"}).json()
     r = client.post(f"/api/drafts/{draft['version_id']}/rounds", json={"round_type": "zanjir"}).json()
@@ -450,13 +464,6 @@ def test_authored_questions_never_appear_in_question_bank(client, db_session, mo
     q_db = db_session.query(Question).filter(Question.id == q_id).first()
     assert q_db.status == "draft"
     assert q_db.round_id is None
-
-    # Authenticate as owner to query internal Question Bank
-    client.post("/api/auth/register", json={
-        "email": owner_email,
-        "password": "ValidPassword123!",
-        "display_name": "Owner Authoring Tester",
-    })
 
     # 3. Query Question Bank list endpoint (/api/questions)
     qb_res = client.get("/api/questions")

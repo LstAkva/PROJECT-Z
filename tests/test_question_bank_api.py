@@ -4,6 +4,12 @@ from models import Question, AcceptedAnswer, Quiz, QuizVersion, Round, RoundQues
 from api.quizzes import CANONICAL_ROUND_TYPES
 
 
+@pytest.fixture(autouse=True)
+def setup_qb_owner_auth(monkeypatch):
+    """Provides owner authorization for draft authoring endpoints."""
+    monkeypatch.setenv("OWNER_EMAIL", "testplayer@zakowhat.uz")
+
+
 @pytest.fixture
 def sample_question_bank(db_session):
     """Creates a diverse sample set of questions in the Question Bank."""
@@ -346,7 +352,7 @@ def test_create_quiz_draft_invalid_round_type(client, sample_question_bank):
         "question_ids": [q1.id]
     }
     res = client.post("/api/quizzes/draft", json=payload)
-    assert res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert "Noma'lum raund turi" in res.json()["detail"]
 
 
@@ -365,11 +371,11 @@ def test_create_quiz_draft_empty_title_or_questions(client):
     """Verify 422 validation error when title or question_ids is empty."""
     # Empty title
     res1 = client.post("/api/quizzes/draft", json={"title": "   ", "question_ids": [1]})
-    assert res1.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res1.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     # Empty question IDs
     res2 = client.post("/api/quizzes/draft", json={"title": "Valid Title", "question_ids": []})
-    assert res2.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res2.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_list_draft_quizzes(client, sample_question_bank):

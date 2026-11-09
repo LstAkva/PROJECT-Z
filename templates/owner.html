@@ -144,6 +144,10 @@
                         <span>🎲</span>
                         <span>Pack Generator</span>
                     </button>
+                    <button id="nav-tab-users" onclick="switchOwnerTab('users')" class="px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
+                        <span>👥</span>
+                        <span>Foydalanuvchilar</span>
+                    </button>
                 </div>
             </div>
         </header>
@@ -661,12 +665,214 @@
                     </div>
                 </div>
             </section>
+            <!-- ========================================================= -->
+            <!-- TAB 5: USERS DIRECTORY & MANAGEMENT -->
+            <!-- ========================================================= -->
+            <section id="owner-view-users" class="hidden space-y-6 animate-fade-in">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-xl font-bold text-white">Foydalanuvchilar Boshqaruvi</h2>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">
+                                Directory & Accounts
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400">
+                            Ro'yxatdan o'tgan barcha o'yinchilar, ularning o'yin faolligi va profil boshqaruvi.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="relative w-full sm:w-72">
+                            <input
+                                type="text"
+                                id="owner-users-search"
+                                oninput="debounceUserSearch()"
+                                placeholder="Ism yoki email bo'yicha qidiruv..."
+                                class="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-indigo-500 text-xs text-white placeholder-slate-500 outline-none"
+                            />
+                            <span class="absolute left-3 top-3 text-xs text-slate-500">🔍</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Table Card -->
+                <div class="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-950/80 border-b border-slate-800 text-[11px] uppercase tracking-wider font-bold text-slate-400">
+                                <tr>
+                                    <th class="px-5 py-3.5">ID</th>
+                                    <th class="px-5 py-3.5">Foydalanuvchi</th>
+                                    <th class="px-5 py-3.5">Auth Provayder</th>
+                                    <th class="px-5 py-3.5">Ro'yxatdan O'tgan</th>
+                                    <th class="px-5 py-3.5">O'yinlar Faolligi</th>
+                                    <th class="px-5 py-3.5 text-right">Amallar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="owner-users-table-body" class="divide-y divide-slate-800/80 font-normal">
+                                <tr>
+                                    <td colspan="6" class="px-5 py-10 text-center text-slate-500">
+                                        Foydalanuvchilar yuklanmoqda...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Footer -->
+                    <div class="px-5 py-4 border-t border-slate-800 flex items-center justify-between gap-4 text-xs text-slate-400">
+                        <div id="owner-users-pagination-info">0 ta foydalanuvchi</div>
+                        <div class="flex items-center gap-2">
+                            <button
+                                id="btn-users-prev"
+                                onclick="changeUsersPage(-1)"
+                                class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed font-semibold cursor-pointer"
+                            >
+                                ← Oldingi
+                            </button>
+                            <span id="owner-users-current-page" class="font-bold text-white px-2">1</span>
+                            <button
+                                id="btn-users-next"
+                                onclick="changeUsersPage(1)"
+                                class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed font-semibold cursor-pointer"
+                            >
+                                Keyingi →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
     <!-- ================================================================= -->
     <!-- MODAL 1: CREATE QUIZ PACK -->
     <!-- ================================================================= -->
+    <!-- ================================================================= -->
+    <!-- MODAL: USER DETAILS & ACTIVITY -->
+    <!-- ================================================================= -->
+    <div id="modal-owner-user-detail" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
+        <div class="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-950/60">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-lg">
+                        👤
+                    </div>
+                    <div>
+                        <h3 id="modal-user-title" class="text-base font-bold text-white">Foydalanuvchi Profili</h3>
+                        <p id="modal-user-subtitle" class="text-xs text-slate-400">ID va faollik ma'lumotlari</p>
+                    </div>
+                </div>
+                <button onclick="closeUserDetailModal()" class="text-slate-400 hover:text-white text-lg cursor-pointer">✕</button>
+            </div>
+
+            <div class="p-6 space-y-6 overflow-y-auto">
+                <!-- User Profile & Edit Name -->
+                <div class="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Hisob Ma'lumotlari</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                        <div>
+                            <span class="text-slate-500 block">Email:</span>
+                            <span id="modal-user-email" class="text-white font-mono font-medium"></span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Auth Provayder:</span>
+                            <span id="modal-user-provider" class="text-white font-medium"></span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Ro'yxatdan O'tgan:</span>
+                            <span id="modal-user-created" class="text-slate-300 font-medium"></span>
+                        </div>
+                    </div>
+
+                    <!-- Safe Edit Display Name -->
+                    <div class="pt-3 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div class="flex-1">
+                            <label class="block text-[11px] font-bold text-slate-400 mb-1">Ko'rinadigan Ism (Display Name)</label>
+                            <input
+                                type="text"
+                                id="modal-user-name-input"
+                                class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 focus:border-indigo-500 text-xs text-white outline-none"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onclick="saveUserDisplayName()"
+                            id="btn-save-user-name"
+                            class="sm:self-end px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors cursor-pointer"
+                        >
+                            Saqlash
+                        </button>
+                    </div>
+                    <div id="modal-user-name-status" class="hidden text-xs"></div>
+                </div>
+
+                <!-- Attempts Stats Cards -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="p-4 rounded-xl bg-slate-950/40 border border-slate-800 text-center">
+                        <div class="text-xl font-bold text-indigo-400" id="modal-stat-total-attempts">0</div>
+                        <div class="text-[11px] text-slate-400">Jami O'yinlar</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-950/40 border border-slate-800 text-center">
+                        <div class="text-xl font-bold text-emerald-400" id="modal-stat-completed-attempts">0</div>
+                        <div class="text-[11px] text-slate-400">Yakunlangan</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-950/40 border border-slate-800 text-center">
+                        <div class="text-xl font-bold text-amber-400" id="modal-stat-daily-submissions">0</div>
+                        <div class="text-[11px] text-slate-400">Kun Savollari</div>
+                    </div>
+                </div>
+
+                <!-- Solo Attempts History Table -->
+                <div class="space-y-2">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">So'nggi O'yin Seanslari</h4>
+                    <div class="rounded-xl border border-slate-800 overflow-hidden">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-950/90 text-[10px] uppercase font-bold text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-2.5">Viktorina</th>
+                                    <th class="px-4 py-2.5">Rejim</th>
+                                    <th class="px-4 py-2.5">Natija</th>
+                                    <th class="px-4 py-2.5">Holat</th>
+                                    <th class="px-4 py-2.5">Vaqt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modal-user-attempts-tbody" class="divide-y divide-slate-800/60 bg-slate-950/30">
+                                <tr><td colspan="5" class="px-4 py-4 text-center text-slate-500">Urinishlar yo'q</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Daily Submissions History -->
+                <div class="space-y-2">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Kun Savoli Javoblari</h4>
+                    <div class="rounded-xl border border-slate-800 overflow-hidden">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-950/90 text-[10px] uppercase font-bold text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-2.5">Sana</th>
+                                    <th class="px-4 py-2.5">Yuborilgan Javob</th>
+                                    <th class="px-4 py-2.5">Natija</th>
+                                    <th class="px-4 py-2.5">Vaqt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modal-user-daily-tbody" class="divide-y divide-slate-800/60 bg-slate-950/30">
+                                <tr><td colspan="4" class="px-4 py-4 text-center text-slate-500">Kun savoli javoblari yo'q</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-800 bg-slate-950/40 text-right">
+                <button onclick="closeUserDetailModal()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors cursor-pointer">
+                    Yopish
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-create-quiz" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
         <div class="w-full max-w-lg p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-6 shadow-2xl">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -879,6 +1085,12 @@
             pickerTargetRoundSeq: null,
             pickerTargetRqId: null, // if set, mode is replace
             pickerCurrentQuestionId: null,
+            usersList: [],
+            usersPage: 1,
+            usersTotalPages: 1,
+            usersSearch: '',
+            userSearchTimer: null,
+            currentDetailUserId: null,
             inspectingQuestionId: null,
             inspectingRoundId: null,
             inspectingRqId: null,
@@ -990,7 +1202,7 @@
         // Tab Navigation
         function switchOwnerTab(tab) {
             state.activeTab = tab;
-            ['dashboard', 'quizzes', 'questions', 'generator'].forEach(t => {
+            ['dashboard', 'quizzes', 'questions', 'generator', 'users'].forEach(t => {
                 const view = document.getElementById(`owner-view-${t}`);
                 const btn = document.getElementById(`nav-tab-${t}`);
                 if (!view || !btn) return;
@@ -1007,6 +1219,8 @@
                 loadQuizzesList();
             } else if (tab === 'questions') {
                 loadBankQuestions(1);
+            } else if (tab === 'users') {
+                loadOwnerUsers(1);
             }
         }
 
@@ -1095,7 +1309,7 @@
                         : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Qoralama</span>`);
 
                 const valIndicator = q.is_valid
-                    ? `<span class="text-emerald-400 text-xs font-semibold flex items-center gap-1">✓ Valid (2x12)</span>`
+                    ? `<span class="text-emerald-400 text-xs font-semibold flex items-center gap-1">✓ Valid (${q.game_mode === 'svoyak' ? '5x5' : '2x12'})</span>`
                     : `<span class="text-amber-400 text-xs font-semibold flex items-center gap-1">⚠️ ${q.validation_errors_count} ta xatolik</span>`;
 
                 return `
@@ -1121,11 +1335,15 @@
                             <button onclick="openPackEditor(${q.quiz_id})" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 font-bold text-xs transition-colors cursor-pointer text-center">
                                 Tahrirlash
                             </button>
-                            ${!isPub ? `
+                            ${isPub ? `
+                                <button onclick="triggerUnpublishQuiz(${q.quiz_id})" class="px-3 py-2 rounded-xl bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 font-bold text-xs border border-amber-500/30 transition-colors cursor-pointer" title="Nashrdan olish">
+                                    📥 Olish
+                                </button>
+                            ` : `
                                 <button onclick="handleDeleteQuiz(${q.quiz_id})" class="px-3 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 text-rose-400 font-bold text-xs border border-rose-500/20 transition-colors cursor-pointer" title="O'chirish">
                                     🗑️
                                 </button>
-                            ` : ''}
+                            `}
                         </div>
                     </div>
                 `;
@@ -2223,6 +2441,235 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = oldText;
+            }
+        }
+
+
+        // =================================================================
+        // UNPUBLISH QUIZ ACTION
+        // =================================================================
+        async function triggerUnpublishQuiz(quizId) {
+            if (!confirm("Haqiqatan ham ushbu paketni nashrdan olib, qoralama holatiga qaytarmoqchimisiz?")) return;
+            try {
+                const res = await fetch(`/api/owner/quizzes/${quizId}/unpublish`, { method: 'POST' });
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert(err.detail || "Nashrdan olishda xatolik");
+                    return;
+                }
+                await loadQuizzesList();
+                await loadDashboardData();
+            } catch(e) {
+                console.error(e);
+                alert("Xatolik yuz berdi");
+            }
+        }
+
+        // =================================================================
+        // USER MANAGEMENT FUNCTIONS
+        // =================================================================
+        async function loadOwnerUsers(page = 1) {
+            state.usersPage = page;
+            const tbody = document.getElementById('owner-users-table-body');
+            tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-slate-500">Foydalanuvchilar yuklanmoqda...</td></tr>`;
+
+            try {
+                const query = state.usersSearch ? `&search=${encodeURIComponent(state.usersSearch)}` : '';
+                const res = await fetch(`/api/owner/users?page=${page}&per_page=15${query}`);
+                if (!res.ok) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-rose-400">Yuklashda xatolik yuz berdi</td></tr>`;
+                    return;
+                }
+
+                const data = await res.json();
+                state.usersList = data.users || [];
+                state.usersTotalPages = data.pagination.total_pages || 1;
+
+                document.getElementById('owner-users-pagination-info').innerText = `${data.pagination.total_count} ta foydalanuvchi (${data.pagination.page} / ${data.pagination.total_pages}-sahifa)`;
+                document.getElementById('owner-users-current-page').innerText = data.pagination.page;
+                document.getElementById('btn-users-prev').disabled = data.pagination.page <= 1;
+                document.getElementById('btn-users-next').disabled = data.pagination.page >= data.pagination.total_pages;
+
+                if (state.usersList.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-slate-500">Hech qanday foydalanuvchi topilmadi</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = state.usersList.map(u => {
+                    const regDate = u.created_at ? new Date(u.created_at).toLocaleDateString('uz-UZ', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+                    const provBadge = u.auth_provider === 'google'
+                        ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">Google</span>`
+                        : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">Local</span>`;
+
+                    return `
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="px-5 py-3.5 font-mono text-slate-500">#${u.id}</td>
+                            <td class="px-5 py-3.5">
+                                <div class="font-bold text-white">${escapeHtml(u.display_name)}</div>
+                                <div class="font-mono text-[11px] text-slate-400">${escapeHtml(u.email)}</div>
+                            </td>
+                            <td class="px-5 py-3.5">${provBadge}</td>
+                            <td class="px-5 py-3.5 text-slate-400 font-mono text-[11px]">${regDate}</td>
+                            <td class="px-5 py-3.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded bg-indigo-950/60 border border-indigo-500/30 text-indigo-300 font-bold text-[10px]" title="Jami o'yinlar">🎮 ${u.total_attempts}</span>
+                                    <span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 font-bold text-[10px]" title="Yakunlangan">✓ ${u.completed_attempts}</span>
+                                    <span class="px-2 py-0.5 rounded bg-amber-950/60 border border-amber-500/30 text-amber-300 font-bold text-[10px]" title="Kun savollari">📅 ${u.daily_submissions_count}</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-3.5 text-right">
+                                <button onclick="openUserDetailModal(${u.id})" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 font-bold text-xs transition-colors cursor-pointer">
+                                    Batafsil
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch(e) {
+                console.error(e);
+                tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-rose-400">Xatolik: ${e.message}</td></tr>`;
+            }
+        }
+
+        function debounceUserSearch() {
+            clearTimeout(state.userSearchTimer);
+            state.userSearchTimer = setTimeout(() => {
+                state.usersSearch = document.getElementById('owner-users-search').value.trim();
+                loadOwnerUsers(1);
+            }, 300);
+        }
+
+        function changeUsersPage(delta) {
+            const newPage = state.usersPage + delta;
+            if (newPage >= 1 && newPage <= state.usersTotalPages) {
+                loadOwnerUsers(newPage);
+            }
+        }
+
+        async function openUserDetailModal(userId) {
+            state.currentDetailUserId = userId;
+            const modal = document.getElementById('modal-owner-user-detail');
+            document.getElementById('modal-user-name-status').classList.add('hidden');
+
+            try {
+                const res = await fetch(`/api/owner/users/${userId}`);
+                if (!res.ok) {
+                    alert("Foydalanuvchi ma'lumotlarini yuklab bo'lmadi");
+                    return;
+                }
+                const data = await res.json();
+                const u = data.user;
+
+                document.getElementById('modal-user-title').innerText = `${u.display_name} (#${u.id})`;
+                document.getElementById('modal-user-subtitle').innerText = u.email;
+                document.getElementById('modal-user-email').innerText = u.email;
+                document.getElementById('modal-user-provider').innerText = u.auth_provider === 'google' ? 'Google OAuth' : 'Parol (Local)';
+                document.getElementById('modal-user-created').innerText = u.created_at ? new Date(u.created_at).toLocaleString('uz-UZ') : '—';
+                document.getElementById('modal-user-name-input').value = u.display_name;
+
+                document.getElementById('modal-stat-total-attempts').innerText = data.stats.total_attempts;
+                document.getElementById('modal-stat-completed-attempts').innerText = data.stats.completed_attempts;
+                document.getElementById('modal-stat-daily-submissions').innerText = data.stats.daily_submissions;
+
+                // Attempts list
+                const attTbody = document.getElementById('modal-user-attempts-tbody');
+                if (!data.attempts || data.attempts.length === 0) {
+                    attTbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-slate-500">O'yin seanslari mavjud emas</td></tr>`;
+                } else {
+                    attTbody.innerHTML = data.attempts.map(a => {
+                        const dateStr = a.started_at ? new Date(a.started_at).toLocaleDateString('uz-UZ') : '—';
+                        const statusBadge = a.status === 'completed'
+                            ? `<span class="text-emerald-400 font-bold">Yakunlangan</span>`
+                            : `<span class="text-amber-400 font-medium">${a.status}</span>`;
+                        const modeStr = a.game_mode === 'svoyak' ? 'Svoya Igra' : 'Zakovat';
+                        return `
+                            <tr>
+                                <td class="px-4 py-2 font-medium text-white">${escapeHtml(a.quiz_title)}</td>
+                                <td class="px-4 py-2 text-slate-400">${modeStr}</td>
+                                <td class="px-4 py-2 font-bold text-white font-mono">${a.total_score} ball (${a.total_correct} ta)</td>
+                                <td class="px-4 py-2">${statusBadge}</td>
+                                <td class="px-4 py-2 text-slate-400 font-mono text-[11px]">${dateStr}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                // Daily submissions list
+                const dailyTbody = document.getElementById('modal-user-daily-tbody');
+                if (!data.daily_submissions || data.daily_submissions.length === 0) {
+                    dailyTbody.innerHTML = `<tr><td colspan="4" class="px-4 py-4 text-center text-slate-500">Kun savoli javoblari mavjud emas</td></tr>`;
+                } else {
+                    dailyTbody.innerHTML = data.daily_submissions.map(ds => {
+                        const dateStr = ds.answered_at ? new Date(ds.answered_at).toLocaleDateString('uz-UZ') : '—';
+                        const resBadge = ds.is_correct
+                            ? `<span class="text-emerald-400 font-bold">✓ To'g'ri</span>`
+                            : `<span class="text-rose-400 font-medium">✕ Noto'g'ri</span>`;
+                        return `
+                            <tr>
+                                <td class="px-4 py-2 font-mono text-slate-300">${ds.schedule_date || '—'}</td>
+                                <td class="px-4 py-2 font-medium text-white">${escapeHtml(ds.submitted_text)}</td>
+                                <td class="px-4 py-2">${resBadge}</td>
+                                <td class="px-4 py-2 text-slate-400 font-mono text-[11px]">${dateStr}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                modal.classList.remove('hidden');
+            } catch(e) {
+                console.error(e);
+                alert("Xatolik: " + e.message);
+            }
+        }
+
+        function closeUserDetailModal() {
+            document.getElementById('modal-owner-user-detail').classList.add('hidden');
+        }
+
+        async function saveUserDisplayName() {
+            if (!state.currentDetailUserId) return;
+            const newName = document.getElementById('modal-user-name-input').value.trim();
+            const statusDiv = document.getElementById('modal-user-name-status');
+            const saveBtn = document.getElementById('btn-save-user-name');
+
+            if (newName.length < 2) {
+                statusDiv.className = "text-xs text-rose-400";
+                statusDiv.innerText = "Ism kamida 2 ta belgidan iborat bo'lishi kerak";
+                statusDiv.classList.remove('hidden');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerText = "Saqlanmoqda...";
+
+            try {
+                const res = await fetch(`/api/owner/users/${state.currentDetailUserId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ display_name: newName })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Saqlashda xatolik");
+                }
+
+                const result = await res.json();
+                statusDiv.className = "text-xs text-emerald-400";
+                statusDiv.innerText = "Ism muvaffaqiyatli saqlandi!";
+                statusDiv.classList.remove('hidden');
+                document.getElementById('modal-user-title').innerText = `${result.user.display_name} (#${result.user.id})`;
+
+                // Update table row if present
+                loadOwnerUsers(state.usersPage);
+            } catch(e) {
+                statusDiv.className = "text-xs text-rose-400";
+                statusDiv.innerText = "Xatolik: " + e.message;
+                statusDiv.classList.remove('hidden');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = "Saqlash";
             }
         }
 

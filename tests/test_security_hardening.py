@@ -6,43 +6,59 @@ from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAn
 from database import validate_database_environment
 
 
+@pytest.fixture(autouse=True)
+def setup_security_hardening_owner_auth(monkeypatch):
+    """Provides owner authorization for draft authoring and publishing tests."""
+    monkeypatch.setenv("OWNER_EMAIL", "testplayer@zakowhat.uz")
+
+
 def create_mock_complete_draft(client, title="Security Hardening Pack"):
     """Creates a draft quiz with 2 rounds of 12 questions meeting all Zakovat rules."""
-    res = client.post("/api/drafts", json={
-        "title": title,
-        "description": "Valid 2x12 pack for publishing tests.",
-        "game_mode": "classic_zakovat",
-    })
-    assert res.status_code == status.HTTP_201_CREATED
-    draft_id = res.json()["version_id"]
-
-    for r_seq, r_title in [(1, "1-tur"), (2, "2-tur")]:
-        r_res = client.post(f"/api/drafts/{draft_id}/rounds", json={
-            "round_type": "zakovat_classic",
-            "name": r_title,
+    orig_owner = os.environ.get("OWNER_EMAIL")
+    os.environ["OWNER_EMAIL"] = "testplayer@zakowhat.uz"
+    try:
+        res = client.post("/api/drafts", json={
+            "title": title,
+            "description": "Valid 2x12 pack for publishing tests.",
+            "game_mode": "classic_zakovat",
         })
-        round_id = r_res.json()["round_id"]
-        start_q = (r_seq - 1) * 12 + 1
-        for i in range(start_q, start_q + 12):
-            client.post(f"/api/drafts/{draft_id}/rounds/{round_id}/questions", json={
-                "text": f"Savol #{i}: Matn bu yerda.",
-                "primary_answer": f"Javob {i}",
-                "points": 1,
-            })
+        assert res.status_code == status.HTTP_201_CREATED, res.text
+        draft_id = res.json()["version_id"]
 
-    draft_data = client.get(f"/api/drafts/{draft_id}").json()
-    return draft_data["quiz_id"], draft_id
+        for r_seq, r_title in [(1, "1-tur"), (2, "2-tur")]:
+            r_res = client.post(f"/api/drafts/{draft_id}/rounds", json={
+                "round_type": "zakovat_classic",
+                "name": r_title,
+            })
+            round_id = r_res.json()["round_id"]
+            start_q = (r_seq - 1) * 12 + 1
+            for i in range(start_q, start_q + 12):
+                client.post(f"/api/drafts/{draft_id}/rounds/{round_id}/questions", json={
+                    "text": f"Savol #{i}: Matn bu yerda.",
+                    "primary_answer": f"Javob {i}",
+                    "points": 1,
+                })
+
+        draft_data = client.get(f"/api/drafts/{draft_id}").json()
+        return draft_data["quiz_id"], draft_id
+    finally:
+        if orig_owner is not None:
+            os.environ["OWNER_EMAIL"] = orig_owner
+        else:
+            os.environ.pop("OWNER_EMAIL", None)
 
 
 # ==============================================================================
 # 1. STAGING ACCESS GATE TESTS
 # ==============================================================================
 
-def test_staging_access_gate_requires_authentication(client):
+def test_staging_access_gate_requires_authentication(client, monkeypatch):
     """
     Anonymous/public visitors must NOT be able to list or start unreleased staging packs.
     Returns HTTP 401 Unauthorized unless an authenticated user session is active.
     """
+    monkeypatch.delenv("OWNER_EMAIL", raising=False)
+    monkeypatch.delenv("OWNER_EMAILS", raising=False)
     client.cookies.clear()
 
     # 1. Anonymous GET /api/play/staging/quizzes -> 401
@@ -53,14 +69,18 @@ def test_staging_access_gate_requires_authentication(client):
     start_res = client.post("/api/play/staging/start/99999")
     assert start_res.status_code == status.HTTP_401_UNAUTHORIZED
 
-    # 3. Authenticated user can access staging
+    # 3. Authenticated user WITHOUT an explicit allowlist is denied (staging fails closed everywhere)
     client.post("/api/auth/register", json={
         "display_name": "Staging Tester",
         "email": "tester_staging@zakowhat.uz",
         "password": "Password123!",
     })
     auth_list_res = client.get("/api/play/staging/quizzes")
-    assert auth_list_res.status_code == status.HTTP_200_OK
+    assert auth_list_res.status_code == status.HTTP_403_FORBIDDEN
+
+    # 4. The same user listed in the allowlist can access staging
+    monkeypatch.setenv("STAGING_AUTHORIZED_EMAILS", "tester_staging@zakowhat.uz")
+    assert client.get("/api/play/staging/quizzes").status_code == status.HTTP_200_OK
 
 
 # ==============================================================================
@@ -81,7 +101,7 @@ def test_old_publish_endpoint_enforces_validation_and_idempotency(client):
 
     # 1. Incomplete draft cannot be published via old route (422 Unprocessable Entity)
     old_pub_res = client.post(f"/api/quizzes/{quiz_id}/publish/{v_num}")
-    assert old_pub_res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert old_pub_res.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     # Create complete valid draft
     complete_quiz_id, complete_draft_id = create_mock_complete_draft(client, "Old Route Valid Pack")
@@ -104,9 +124,10 @@ def test_old_publish_endpoint_enforces_validation_and_idempotency(client):
 
 def test_anonymous_identity_cookie_precedence_and_spoof_prevention(client):
     """
-    The server-issued HttpOnly zakowhat_anon_id cookie must be strictly authoritative.
-    Client-supplied X-Anon-Id headers must NOT override or reset the cookie quota.
-    In production mode, client headers are completely ignored.
+    Player accounts policy:
+    - Anonymous gameplay is strictly disallowed.
+    - Unauthenticated start requests fail with 401.
+    - Client-supplied X-Anon-Id headers or spoofed cookies cannot bypass auth.
     """
     complete_quiz_id, complete_draft_id = create_mock_complete_draft(client, "Anon Identity Pack")
     # Publish so it can be played publicly
@@ -114,38 +135,21 @@ def test_anonymous_identity_cookie_precedence_and_spoof_prevention(client):
 
     client.cookies.clear()
 
-    # 1. First anonymous attempt: server generates cookie
+    # 1. Unauthenticated attempt fails with 401
     start1 = client.post(f"/api/play/start/{complete_quiz_id}")
-    assert start1.status_code == status.HTTP_201_CREATED
-    server_cookie = client.cookies.get("zakowhat_anon_id")
-    assert server_cookie is not None
-    assert server_cookie.startswith("anon_")
+    assert start1.status_code == status.HTTP_401_UNAUTHORIZED
 
-    # 2. Subsequent attempt while presenting the cookie must be blocked (403),
-    # even if client sends a different X-Anon-Id header!
+    # 2. Spoofed header cannot bypass authentication
     start2 = client.post(
         f"/api/play/start/{complete_quiz_id}",
         headers={"X-Anon-Id": "spoofed_new_id_attempt_bypass"}
     )
-    assert start2.status_code == status.HTTP_403_FORBIDDEN
+    assert start2.status_code == status.HTTP_401_UNAUTHORIZED
 
-    # 3. In production environment, X-Anon-Id header is never accepted
-    os.environ["ENVIRONMENT"] = "production"
-    try:
-        client.cookies.clear()
-        start3 = client.post(
-            f"/api/play/start/{complete_quiz_id}",
-            headers={"X-Anon-Id": "custom_header_in_prod"}
-        )
-        assert start3.status_code == status.HTTP_201_CREATED
-        # Validate Set-Cookie attributes directly: plain HTTP test clients do not persist Secure cookies
-        set_cookie = start3.headers.get("set-cookie", "")
-        assert "zakowhat_anon_id=" in set_cookie
-        assert "custom_header_in_prod" not in set_cookie
-        assert "Secure" in set_cookie
-        assert "HttpOnly" in set_cookie
-    finally:
-        os.environ["ENVIRONMENT"] = "test"
+    # 3. Spoofed anon cookie cannot bypass authentication
+    client.cookies.set("zakowhat_anon_id", "anon_spoofed")
+    start3 = client.post(f"/api/play/start/{complete_quiz_id}")
+    assert start3.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 # ==============================================================================
@@ -162,8 +166,7 @@ def test_submit_answer_idempotency_and_mismatch_rejection(client):
     complete_quiz_id, complete_draft_id = create_mock_complete_draft(client, "Idempotency Test Pack")
     client.post(f"/api/drafts/{complete_draft_id}/publish")
 
-    client.cookies.clear()
-    start_res = client.post(f"/api/play/start/{complete_quiz_id}", json={"timer_mode": "no_timer"})
+    start_res = client.post(f"/api/play/start/{complete_quiz_id}", json={"timer_mode": "with_timer"})
     assert start_res.status_code == status.HTTP_201_CREATED
     data = start_res.json()
     token = data["session_token"]
@@ -194,8 +197,9 @@ def test_submit_answer_idempotency_and_mismatch_rejection(client):
     res_retry = retry1.json()
     assert res_retry.get("is_duplicate") is True
     assert res_retry["total_score"] == 1  # Score did not double!
-    # Next state still points to Question 2
-    assert res_retry["next_state"]["round_question_index"] == 1
+    # During the per-question reveal the next question is never exposed by a retry
+    assert res_retry["awaiting_continue"] is True
+    assert res_retry["next_state"] is None
 
     # 3. Submitting an out-of-order / unreached question ID (e.g. question 10) -> 409 Conflict
     mismatch_res = client.post(f"/api/play/{token}/answer", json={
@@ -203,6 +207,11 @@ def test_submit_answer_idempotency_and_mismatch_rejection(client):
         "question_id": 99999,
     })
     assert mismatch_res.status_code == status.HTTP_409_CONFLICT
+
+    # "Davom etish" opens Question 2 (no advancement from the retry or the mismatch)
+    cont = client.post(f"/api/play/{token}/continue")
+    assert cont.status_code == status.HTTP_200_OK
+    assert cont.json()["current_state"]["round_question_index"] == 1
 
     # Verify attempt is still waiting for Question 2
     curr_state = client.get(f"/api/play/{token}").json()
@@ -539,7 +548,6 @@ def test_answer_idempotency_omitted_ids_and_boundaries(client):
     assert pub_res.status_code == status.HTTP_200_OK
 
     # Start attempt
-    client.cookies.clear()
     start_res = client.post(f"/api/play/start/{quiz_id}")
     assert start_res.status_code == status.HTTP_201_CREATED
     token = start_res.json()["session_token"]
@@ -554,7 +562,7 @@ def test_answer_idempotency_omitted_ids_and_boundaries(client):
     assert ans1.status_code == status.HTTP_200_OK
     assert ans1.json()["is_correct"] is True
     assert ans1.json()["total_score"] == 1
-    q2_id = ans1.json()["next_state"]["question"]["id"]
+    assert ans1.json()["next_state"] is None  # Q2 withheld until "Davom etish"
 
     # 2. Duplicate submission of Q1 (with question_id) -> must return is_duplicate=True and NOT advance
     dup1 = client.post(f"/api/play/{token}/answer", json={
@@ -564,7 +572,7 @@ def test_answer_idempotency_omitted_ids_and_boundaries(client):
     assert dup1.status_code == status.HTTP_200_OK
     assert dup1.json().get("is_duplicate") is True
     assert dup1.json()["total_score"] == 1
-    assert dup1.json()["next_state"]["question"]["id"] == q2_id
+    assert dup1.json()["next_state"] is None  # never leaks Q2 during the reveal
 
     # 3. Question mismatch rejection: submitting future/unknown question_id returns 409 Conflict
     mismatch = client.post(f"/api/play/{token}/answer", json={
@@ -573,6 +581,11 @@ def test_answer_idempotency_omitted_ids_and_boundaries(client):
     })
     assert mismatch.status_code == status.HTTP_409_CONFLICT
 
+    cont1 = client.post(f"/api/play/{token}/continue")
+    assert cont1.status_code == status.HTTP_200_OK
+    q2_id = cont1.json()["current_state"]["question"]["id"]
+    assert q2_id != q1_id
+
     # 4. Normal submission with omitted IDs for Q2 -> advances properly to Q3
     ans2 = client.post(f"/api/play/{token}/answer", json={
         "answer": "Javob 2"
@@ -580,12 +593,14 @@ def test_answer_idempotency_omitted_ids_and_boundaries(client):
     assert ans2.status_code == status.HTTP_200_OK
     assert ans2.json()["is_correct"] is True
     assert ans2.json()["total_score"] == 2
-    assert ans2.json()["next_state"]["question"]["sequence"] == 3
+    cont2 = client.post(f"/api/play/{token}/continue")
+    assert cont2.json()["current_state"]["question"]["sequence"] == 3
 
-    # Fast forward through Q3..Q11 with omitted IDs
+    # Fast forward through Q3..Q11 with omitted IDs (each reveal requires "Davom etish")
     for i in range(3, 12):
         res_i = client.post(f"/api/play/{token}/answer", json={"answer": f"Javob {i}"})
         assert res_i.status_code == status.HTTP_200_OK
+        assert client.post(f"/api/play/{token}/continue").status_code == status.HTTP_200_OK
 
     # 5. Q12 Boundary -> transitions to intermediate_break
     ans12 = client.post(f"/api/play/{token}/answer", json={"answer": "Javob 12"})
@@ -603,10 +618,11 @@ def test_answer_idempotency_omitted_ids_and_boundaries(client):
     assert cont_res.status_code == status.HTTP_200_OK
     assert cont_res.json()["current_state"]["round"]["sequence"] == 2
 
-    # Fast forward Q13..Q23 with omitted IDs
+    # Fast forward Q13..Q23 with omitted IDs (each reveal requires "Davom etish")
     for i in range(13, 24):
         res_i = client.post(f"/api/play/{token}/answer", json={"answer": f"Javob {i}"})
         assert res_i.status_code == status.HTTP_200_OK
+        assert client.post(f"/api/play/{token}/continue").status_code == status.HTTP_200_OK
 
     # 6. Q24 Boundary -> transitions to completed
     ans24 = client.post(f"/api/play/{token}/answer", json={"answer": "Javob 24"})
@@ -621,3 +637,211 @@ def test_answer_idempotency_omitted_ids_and_boundaries(client):
     assert dup24.status_code == status.HTTP_200_OK
     assert dup24.json().get("is_duplicate") is True
     assert dup24.json()["quiz_completed"] is True
+
+
+# ==============================================================================
+# 9. PRODUCTION SECURITY HARDENING & REGRESSION TESTS
+# ==============================================================================
+
+def test_competitive_timer_timeout_enforcement(client, db_session):
+    """
+    Regression test: In competitive timed play (timer_mode='standard'),
+    submitting an answer after the question time limit + grace period must be
+    authoritatively marked as timed_out=True, points_awarded=0, is_correct=False,
+    even if the answer text was correct.
+    """
+    import uuid
+    from datetime import datetime, timezone, timedelta
+    from tests.test_gameplay_and_leaderboard_api import helper_create_and_publish_quiz
+    
+    quiz_id, v_id = helper_create_and_publish_quiz(client, title=f"Timed Comp {uuid.uuid4().hex[:6]}")
+
+    # Start competitive timed game
+    start_res = client.post(f"/api/play/start/{quiz_id}", json={"timer_mode": "with_timer"})
+    assert start_res.status_code == status.HTTP_201_CREATED
+    token = start_res.json()["session_token"]
+
+    attempt = db_session.query(SoloAttempt).filter(SoloAttempt.session_token == token).first()
+    assert attempt.timer_mode == "standard"
+
+    # Simulate player held question for 150 seconds (exceeds limit + 3s grace)
+    attempt.question_opened_at = datetime.now(timezone.utc) - timedelta(seconds=150)
+    meta = dict(attempt.attempt_metadata or {})
+    meta["last_active_at"] = (datetime.now(timezone.utc) - timedelta(seconds=150)).isoformat()
+    attempt.attempt_metadata = meta
+    db_session.commit()
+
+    # Submit correct answer late
+    ans_res = client.post(f"/api/play/{token}/answer", json={"answer": "Ans1"})
+    assert ans_res.status_code == status.HTTP_200_OK
+    data = ans_res.json()
+    assert data["timed_out"] is True
+    assert data["is_correct"] is False
+    assert data["points_awarded"] == 0
+    assert data["total_score"] == 0
+
+
+def test_competitive_timer_on_time_submission_awarded(client, db_session):
+    """
+    Regression test: In competitive timed play, answering within the time limit
+    awards points normally.
+    """
+    import uuid
+    from datetime import datetime, timezone, timedelta
+    from tests.test_gameplay_and_leaderboard_api import helper_create_and_publish_quiz
+
+    quiz_id, v_id = helper_create_and_publish_quiz(client, title=f"On Time {uuid.uuid4().hex[:6]}")
+
+    start_res = client.post(f"/api/play/start/{quiz_id}", json={"timer_mode": "with_timer"})
+    token = start_res.json()["session_token"]
+
+    attempt = db_session.query(SoloAttempt).filter(SoloAttempt.session_token == token).first()
+    # Opened 10 seconds ago
+    attempt.question_opened_at = datetime.now(timezone.utc) - timedelta(seconds=10)
+    db_session.commit()
+
+    ans_res = client.post(f"/api/play/{token}/answer", json={"answer": "Ans1"})
+    assert ans_res.status_code == status.HTTP_200_OK
+    data = ans_res.json()
+    assert data["timed_out"] is False
+    assert data["is_correct"] is True
+    assert data["points_awarded"] == 1
+    assert data["total_score"] == 1
+
+
+def test_casual_preview_timer_forgiving_policy(client, db_session):
+    """
+    Regression test: Preview and casual sessions retain forgiving time-capping
+    without scoring penalty.
+    """
+    import uuid
+    from datetime import datetime, timezone, timedelta
+    from tests.test_gameplay_and_leaderboard_api import helper_create_and_publish_quiz
+
+    quiz_id, v_id = helper_create_and_publish_quiz(client, title=f"Casual {uuid.uuid4().hex[:6]}")
+
+    token = f"preview_test_{uuid.uuid4().hex[:8]}"
+    attempt = SoloAttempt(
+        quiz_version_id=v_id,
+        session_token=token,
+        timer_mode="preview",
+        status="in_progress",
+        question_opened_at=datetime.now(timezone.utc) - timedelta(seconds=200),
+        current_round_index=0,
+        current_question_index=0,
+    )
+    db_session.add(attempt)
+    db_session.commit()
+
+    ans_res = client.post(f"/api/play/{token}/answer", json={"answer": "Ans1"})
+    assert ans_res.status_code == status.HTTP_200_OK
+    data = ans_res.json()
+    assert data["timed_out"] is False
+    assert data["is_correct"] is True
+    assert data["points_awarded"] == 1
+
+
+def test_csrf_origin_protection(client):
+    """
+    Regression test: Cross-origin state-changing requests with untrusted Origin
+    headers are strictly rejected with HTTP 403 Forbidden.
+    """
+    # Untrusted cross-origin POST
+    res_cross = client.post(
+        "/api/auth/login",
+        headers={"Origin": "https://malicious-attacker.com"},
+        json={"email": "attacker@fake.com", "password": "Password123!"}
+    )
+    assert res_cross.status_code == status.HTTP_403_FORBIDDEN
+    assert "csrf" in res_cross.json()["detail"].lower()
+
+    # Trusted same-origin POST
+    res_same = client.post(
+        "/api/auth/login",
+        headers={"Origin": "http://testserver"},
+        json={"email": "nonexistent@fake.com", "password": "Password123!"}
+    )
+    # Passes CSRF check to return auth failure (401), not 403
+    assert res_same.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_hardened_security_headers_present(client):
+    """
+    Regression test: Standard security headers must be present on HTTP responses,
+    including successful (200) and error responses (401, 404).
+    """
+    res = client.get("/health")
+    assert res.status_code == status.HTTP_200_OK
+    assert res.headers.get("X-Frame-Options") == "SAMEORIGIN"
+    assert res.headers.get("X-Content-Type-Options") == "nosniff"
+    assert res.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
+    assert "Content-Security-Policy" in res.headers
+
+    # 404 Not Found error response
+    res_404 = client.get("/nonexistent_endpoint_for_headers")
+    assert res_404.status_code == status.HTTP_404_NOT_FOUND
+    assert res_404.headers.get("X-Frame-Options") == "SAMEORIGIN"
+    assert res_404.headers.get("X-Content-Type-Options") == "nosniff"
+    assert "Content-Security-Policy" in res_404.headers
+
+    # 401 Unauthorized error response
+    res_401 = client.post("/api/auth/login", json={"email": "nonexistent@zakowhat.uz", "password": "bad"})
+    assert res_401.status_code == status.HTTP_401_UNAUTHORIZED
+    assert res_401.headers.get("X-Frame-Options") == "SAMEORIGIN"
+    assert res_401.headers.get("X-Content-Type-Options") == "nosniff"
+    assert "Content-Security-Policy" in res_401.headers
+
+
+def test_user_enumeration_timing_mitigation_and_consistent_error(client):
+    """
+    Regression test: Login returns identical HTTP 401 error message for
+    non-existent user and wrong password, mitigating account enumeration.
+    """
+    import uuid
+    res = client.post("/api/auth/login", json={
+        "email": f"definitely_not_exist_{uuid.uuid4().hex[:6]}@zakowhat.uz",
+        "password": "Password123!"
+    })
+    assert res.status_code == status.HTTP_401_UNAUTHORIZED
+    assert res.json()["detail"] == "Email yoki parol noto'g'ri"
+
+
+def test_xss_sanitization_on_profile_inputs(client, db_session):
+    """
+    Regression test: Script tags in display names and bios must be HTML-escaped.
+    """
+    import uuid
+    user_email = f"xss_test_{uuid.uuid4().hex[:6]}@zakowhat.uz"
+    reg = client.post("/api/auth/register", json={
+        "email": user_email,
+        "display_name": "<script>alert('xss')</script>Tester",
+        "password": "ValidPassword123!",
+    })
+    assert reg.status_code == status.HTTP_201_CREATED
+    user_data = reg.json()["user"]
+    assert "<script>" not in user_data["display_name"]
+    assert "&lt;script&gt;" in user_data["display_name"]
+
+
+def test_remote_production_database_ssl_enforcement():
+    """
+    Regression test: validate_database_environment requires sslmode for remote
+    production database connections.
+    """
+    from database import validate_database_environment
+
+    # Remote host without sslmode in production -> RuntimeError
+    with pytest.raises(RuntimeError) as exc_info:
+        validate_database_environment(
+            url="postgresql://user:pass@ep-remote-db.eu-central-1.aws.neon.tech/neondb",
+            environment="production",
+            db_target="production",
+        )
+    assert "SSL" in str(exc_info.value)
+
+    # Remote host with sslmode=require in production -> passes
+    validate_database_environment(
+        url="postgresql://user:pass@ep-remote-db.eu-central-1.aws.neon.tech/neondb?sslmode=require",
+        environment="production",
+        db_target="production",
+    )

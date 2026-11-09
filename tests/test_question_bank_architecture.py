@@ -334,6 +334,8 @@ def test_classic_zakovat_12_plus_12_progression(client, db_session):
     for seq in range(1, 13):
         ans_resp = client.post(f"/api/play/{token}/answer", json={"answer": f"ans_1_{seq}"})
         assert ans_resp.status_code == status.HTTP_200_OK
+        if ans_resp.json().get("awaiting_continue"):  # per-question reveal: next question opens via /continue
+            assert client.post(f"/api/play/{token}/continue").status_code == status.HTTP_200_OK
 
     # Verify Tour 1 finished and entered intermediate_break
     state_resp = client.get(f"/api/play/{token}")
@@ -352,7 +354,10 @@ def test_classic_zakovat_12_plus_12_progression(client, db_session):
     # Play Tour 2 (12 questions: 10 correct, 2 wrong)
     for seq in range(1, 13):
         ans = f"ans_2_{seq}" if seq <= 10 else "xato"
-        client.post(f"/api/play/{token}/answer", json={"answer": ans})
+        ans_resp = client.post(f"/api/play/{token}/answer", json={"answer": ans})
+        assert ans_resp.status_code == status.HTTP_200_OK
+        if ans_resp.json().get("awaiting_continue"):
+            assert client.post(f"/api/play/{token}/continue").status_code == status.HTTP_200_OK
 
     # Tour 2 complete
     rev2_resp = client.get(f"/api/play/{token}/reveal")
@@ -421,6 +426,11 @@ def test_published_manifest_immutability(client, db_session):
 
     # Start new attempt on same published quiz (as a new visitor)
     client.cookies.clear()
+    client.post("/api/auth/register", json={
+        "display_name": "New Visitor",
+        "email": "new_visitor@zakowhat.uz",
+        "password": "Password123!",
+    })
     new_start = client.post(f"/api/play/start/{quiz.id}")
     new_token = new_start.json()["session_token"]
     orig_ans = client.post(f"/api/play/{new_token}/answer", json={"answer": "OriginalJavob"})

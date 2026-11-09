@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZakoWhat — Mustaqil Intellektual Maydon</title>
-  <meta name="description" content="ZakoWhat — Zakovat anʼanalaridan ilhomlangan mustaqil intellektual viktorina platformasi. Saralangan to‘plamlar, 2×12 formati va chuqur mantiqiy tafakkur maydoni.">
+  <title>ZakoWhat — Zakovat va Svoya Igra onlayn</title>
+  <meta name="description" content="Zakovat (2×12) va Svoya Igra to‘plamlarini onlayn o‘ynang. Har bir savoldan so‘ng to‘g‘ri javob. Har kuni yangi «Kun savoli».">
   
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-favicon.svg">
@@ -16,50 +16,21 @@
 
   <!-- Core Design System -->
   <link rel="stylesheet" href="/static/css/zakowhat-design-system.css">
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('zakowhat_theme') || localStorage.getItem('zakowhat-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    })();
+  </script>
 </head>
 <body>
   <!-- Accessible Skip Link -->
   <a href="#main-content" class="skip-link">Asosiy mazmunga o‘tish</a>
 
-  <!-- 1. Architectural Masthead -->
-  <header class="masthead">
-    <div class="masthead-inner">
-      <a href="/" class="brand-link" aria-label="ZakoWhat bosh sahifa">
-        <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat Girih Nishoni" class="brand-logo-img">
-        <span class="brand-title">ZakoWhat</span>
-        <span class="brand-tag">Intellektual Klub</span>
-      </a>
-
-      <nav class="nav-actions" aria-label="Asosiy navigatsiya">
-        <a href="#showcase" class="nav-link">Stol</a>
-        <a href="#codex" class="nav-link">Format</a>
-        {# <a href="#lore" class="nav-link">Falsafa</a> #}
-        <a href="/arena" class="nav-link">To‘plamlar</a>
-        
-        <!-- Live Theme Toggle Button -->
-        <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Mavzuni almashtirish" title="Mavzuni almashtirish">
-          <svg id="moonIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-          </svg>
-          <svg id="sunIcon" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="2" x2="12" y2="6"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-          </svg>
-        </button>
-
-        <a href="/arena" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.82rem;">
-          <span>Arena</span>
-        </a>
-      </nav>
-    </div>
-  </header>
+  <!-- 1. Architectural Masthead (Unified Header Component) -->
+  {% include "components/header.html" %}
 
   <main id="main-content">
     <!-- 2. Grand Sanctum Hero with Large Engraved Girih Geometry -->
@@ -97,11 +68,7 @@
 
       <!-- Foreground Content Wrapper -->
       <div class="hero-content-wrapper">
-        <div class="hero-insignia-badge">
-          <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat Girih Muammo Nishoni">
-        </div>
-
-        <div class="eyebrow-label">Mustaqil Intellektual Maydon</div>
+        <div class="eyebrow-label">Onlayn Intellektual Maydon</div>
 
         <!-- Solid Monumental Headline (Zero AI clip-text gradient tells) -->
         <h1 class="hero-headline">
@@ -110,16 +77,16 @@
 
         <!-- Short, Concise Supporting Text -->
         <p class="hero-subhead">
-          ZakoWhat — Zakovat anʼanalaridan ilhomlangan mustaqil intellektual viktorina platformasi.
-          Saralangan to‘plamlar, 2×12 meʼmoriy formati va chuqur mantiqiy tafakkur maydoni.
+          Zakovat va Svoya Igra to‘plamlarini istalgan vaqtda, o‘zingiz o‘ynang.
+          Har bir savoldan so‘ng to‘g‘ri javobni ko‘rasiz.
         </p>
 
         <div class="hero-cta-group">
           <a href="/arena" class="btn btn-primary">
-            Arenaga Kirish
+            To‘plamlarni Ko‘rish
           </a>
-          <a href="#showcase" class="btn btn-secondary">
-            O‘yin Stoliga Nazar
+          <a href="/daily" class="btn btn-secondary">
+            Kun Savoli
           </a>
         </div>
       </div>
@@ -148,164 +115,148 @@
           <div class="table-hud">
             <div class="table-hud-meta">
               <span class="meta-status-dot" aria-hidden="true"></span>
-              <span>1-to‘plam · 1-tur · 1-savol</span>
+              <span>Namuna savol</span>
             </div>
 
-            <!-- Authentic Integer Countdown (Illustrative dynamic demo timer: 01:38) -->
-            <div class="clock-display" aria-label="Namoyish taymeri: 1 daqiqa 38 soniya">
+            <!-- Real one-shot countdown: starts on first input, runs once, reveals the answer at 00:00 -->
+            <div class="clock-display" aria-label="Savol taymeri: 90 soniya">
               <svg class="clock-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
-              <span id="countdownDisplay">01:38</span>
+              <span id="countdownDisplay">01:30</span>
               <span class="clock-preview-badge">Namoyish</span>
             </div>
           </div>
 
-          <!-- Question Stage Card (Flat and legible) -->
+          <!-- Question Stage Card: self-contained homepage demo (no session, stats or leaderboard effects) -->
           <div class="question-stage-card">
             <div class="question-stage-tag">
               <span>SAVOL MATNI</span>
-              <span>DINAMIK REJIM (90–150S)</span>
+              <span>90 SONIYA</span>
             </div>
 
+            <!-- Question bank #957; source: «Svoya igra baza» Telegram channel, post #42 (2022-12-12) -->
             <p class="question-text">
-              Bu insonga tegishli mashhur gaplar yozilgan sahifada yurtimizdagi bir viloyat, ikki xil uy-ro‘zg‘or buyumi va ob-havo so‘zlari ham uchraydi. «Bek va Lola» animatsion serialining epizodlaridan birida stadiondagi tomoshabinlar qatorida ushbu inson ham tasvirlangan.
+              Bu sana Albert Eynshteynning tug'ilgan kuni. Biroq, bu San-Frantsisko shahridagi Fan va san'at muzeyida har yili o'tkaziladigan bayramning sababi emas. Har yili bu bayram soat 14:00 dan roppa-rosa bir daqiqa oldin boshlanadi.
               <br><br>
-              <strong>Diqqat, savol:</strong> Ushbu inson kim?
+              <strong>Diqqat, savol:</strong> Ushbu bayram nimaga bag'ishlangan?
             </p>
 
-            <form class="submission-bar" onsubmit="event.preventDefault();" aria-label="Javob topshirish shakli">
+            <form class="submission-bar" id="sampleAnswerForm" aria-label="Javob topshirish shakli">
               <!-- No spoiler placeholder! -->
-              <input 
+              <input
                 id="sampleAnswerInput"
-                class="input-answer" 
-                type="text" 
-                placeholder="Javobingizni kiriting..." 
+                class="input-answer"
+                type="text"
+                placeholder="Javobingizni kiriting..."
                 aria-label="Javobingiz"
                 autocomplete="off"
               >
               <!-- Dedicated submission action with authentic terminology -->
-              <button class="btn-submit" type="button" id="submitActionBtn">
+              <button class="btn-submit" type="submit" id="submitActionBtn">
                 Javobni yuborish
               </button>
             </form>
+
+            <!-- Answer reveal (shown after submitting or when time runs out) -->
+            <div id="sampleReveal" hidden style="margin-top: var(--space-4); text-align: left;" aria-live="polite">
+              <div id="sampleVerdict" class="feedback-banner"></div>
+              <div style="margin-top: var(--space-3); display: grid; gap: var(--space-3);">
+                <div>
+                  <div class="pillar-category" style="font-size: 0.7rem;">Sizning javobingiz</div>
+                  <div id="sampleSubmitted" style="color: var(--text-main); overflow-wrap: anywhere;"></div>
+                </div>
+                <div>
+                  <div class="pillar-category" style="font-size: 0.7rem;">To‘g‘ri javob</div>
+                  <div id="sampleCorrect" style="color: var(--accent-brass); font-weight: 700; font-size: 1.05rem;"></div>
+                </div>
+                <div id="sampleExplanationWrap" hidden>
+                  <div class="pillar-category" style="font-size: 0.7rem;">Izoh</div>
+                  <p id="sampleExplanation" style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.55; overflow-wrap: anywhere;"></p>
+                </div>
+                <div style="color: var(--text-dim); font-size: 0.75rem;">Manba: «Svoya igra baza» Telegram kanali</div>
+              </div>
+              <div class="hero-cta-group" style="margin-top: var(--space-4); justify-content: flex-start;">
+                <a href="/arena?mode=classic_zakovat" class="btn btn-primary" id="sampleCtaZakovat">Zakovat to‘plamlari &rarr;</a>
+                <a href="/arena?mode=svoyak" class="btn btn-secondary" id="sampleCtaSvoyak">Svoya Igra o‘yinlari &rarr;</a>
+              </div>
+            </div>
           </div>
 
           <!-- Format HUD Bottom -->
           <div class="table-format-info">
-            <span>Format: 2 tur × 12 savol · 12-savoldan so‘ng oraliq tanaffus</span>
-            <span>Jami: 24 savol</span>
+            <span>Namuna savol — javobingizni yozing va natijani darhol ko‘ring</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 4. Geometric Codex: Architectural Triptych -->
-    <section id="codex" class="codex-section" aria-label="ZakoWhat asosiy mezonlari">
-      <div class="eyebrow-label" style="display:flex; justify-content:center;">Tizim Meʼmorchiligi</div>
-      <h2 class="section-title">Uch Asosiy Poydevor</h2>
+    <!-- 4. Game Types: same codex layout, one column per game -->
+    <section id="codex" class="codex-section" aria-label="O‘yin turlari">
+      <div class="eyebrow-label" style="display:flex; justify-content:center;">O‘yin turlari</div>
+      <h2 class="section-title">Ikki o‘yin — bitta maydon</h2>
       <p class="section-subtitle">
-        Platforma tasodifiy viktorina emas, balki qatʼiy Zakovat mezonlari asosida loyihalangan.
+        O‘zingizga mos formatni tanlang.
       </p>
 
       <div class="codex-triptych">
-        <!-- Pillar 1 -->
-        <div class="codex-column">
+        <!-- Game 1: Zakovat -->
+        <div class="codex-column featured" id="game-card-zakovat">
           <div class="pillar-marker">
             <span class="marker-glyph">✦</span>
-            <span class="pillar-category">Kuratorlik</span>
+            <span class="pillar-category">2 tur × 12 savol</span>
           </div>
-          <h3 class="pillar-title">Saralangan To‘plamlar</h3>
+          <h3 class="pillar-title">Zakovat</h3>
           <p class="pillar-desc">
-            Har bir paket tahririyat tomonidan tekshirilgan, faktik asosi mustahkam va dublikatlardan tozalangan yaxlit to‘plamdir. Tasodifiy savollar oqimi emas, mantiqiy uyg‘unlik taʼminlanadi.
+            2 tur, har birida 12 tadan savol. Har bir savolga 90–180 soniya vaqt beriladi yoki vaqtsiz mashq qilishingiz mumkin. 12-savoldan so‘ng qisqa tanaffus. Har bir javobdan so‘ng to‘g‘ri javob, mavjud bo‘lsa izoh ham ko‘rsatiladi.
           </p>
+          <div class="hero-cta-group" style="margin-top: auto; padding-top: var(--space-5); justify-content: flex-start;">
+            <a href="/arena?mode=classic_zakovat" class="btn btn-primary" id="gameCtaZakovat">Zakovat to‘plamlari &rarr;</a>
+          </div>
         </div>
 
-        <!-- Architectural Vertical Divider 1 -->
+        <!-- Architectural Vertical Divider -->
         <div class="codex-vertical-divider" aria-hidden="true"></div>
 
-        <!-- Pillar 2 (Featured format) -->
-        <div class="codex-column featured">
+        <!-- Game 2: Svoya Igra -->
+        <div class="codex-column" id="game-card-svoyak">
           <div class="pillar-marker">
             <span class="marker-glyph">✦</span>
-            <span class="pillar-category">Zakovat Tuzilmasi</span>
+            <span class="pillar-category">5 mavzu × 5 savol</span>
           </div>
-          <h3 class="pillar-title">2 Tur × 12 Savol</h3>
+          <h3 class="pillar-title">Svoya Igra</h3>
           <p class="pillar-desc">
-            Anʼanaviy Zakovat formati: 2 tur, har birida 12 tadan savol — jami 24 savol. 12-savoldan so‘ng jamoaviy tahlil va nafas rostlash uchun oraliq tanaffus ko‘zda tutilgan.
+            5 mavzu, har birida 10 dan 50 ballgacha 5 ta savol. To‘g‘ri javob ball qo‘shadi, noto‘g‘ri javob ball ayiradi, «O‘tkazish» esa 0 ball. Savollarni erkin tanlang yoki klassik tartibda o‘ynang.
           </p>
-        </div>
-
-        <!-- Architectural Vertical Divider 2 -->
-        <div class="codex-vertical-divider" aria-hidden="true"></div>
-
-        <!-- Pillar 3 -->
-        <div class="codex-column">
-          <div class="pillar-marker">
-            <span class="marker-glyph">✦</span>
-            <span class="pillar-category">Moslashuvchanlik</span>
-          </div>
-          <h3 class="pillar-title">Dinamik Vaqt va Mashq</h3>
-          <p class="pillar-desc">
-            Savol matni hajmiga qarab 90–150 soniyalik dinamik o‘ylash vaqti yoki erkin mashq qilish uchun vaqtsiz rejim. Muqobil to‘g‘ri variantlar hisobga olingan xolis baholash.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    {# 5. Lore & Geometry of Deduction (Temporarily removed per requirement)
-    <section id="lore" class="lore-section" aria-label="Brend falsafasi">
-      <div class="lore-card">
-        <div class="lore-seal">
-          <img src="/static/svg/zakowhat-insignia.svg" alt="Girih-i Muammo muhri">
-        </div>
-        <div class="lore-content">
-          <div class="eyebrow-label">Brend Falsafasi</div>
-          <h3>Girih-i Muammo: Mantiq Geometriyasi</h3>
-          <p>
-            Samarqand va Buxoro meʼmoriy yodgorliklaridagi girih naqshlari mantiqiy tartib va mutanosiblik ifodasidir. Har bir intellektual savol — yechimini kutayotgan meʼmoriy jumboq. Haqiqat yodlash orqali emas, balki chuqur tahlil va mantiqiy bog‘liqliklar zanjiri bilan topiladi.
-          </p>
-          <div class="lore-quote">
-            «Bir daqiqa ichra chigal tugun yechilar, idrok esa yangi marralar sari yo‘l ochar.»
+          <div class="hero-cta-group" style="margin-top: auto; padding-top: var(--space-5); justify-content: flex-start;">
+            <a href="/arena?mode=svoyak" class="btn btn-secondary" id="gameCtaSvoyak">Svoya Igra o‘yinlari &rarr;</a>
           </div>
         </div>
       </div>
-    </section>
-    #}
 
-    <!-- 6. Arena Section (Clear Preview with Real Links) -->
+      <p class="section-subtitle" style="margin-top: var(--space-6);">
+        <a href="/daily" id="dailyQuestionLink" style="color: var(--accent-brass); display: inline-block;">Har kuni yangi savol: «Kun savoli» — hamma uchun bitta savol, 3 ta urinish.</a>
+      </p>
+    </section>
+
+    <!-- 6. Call to action -->
     <section id="arena" class="hero-section" style="padding-top: var(--space-8); padding-bottom: var(--space-16); overflow: visible;">
-      <div class="eyebrow-label">Kutilayotgan Bosqich</div>
-      <h2 class="section-title">ZakoWhat Arena</h2>
+      <h2 class="section-title">Boshlashga tayyormisiz?</h2>
       <p class="hero-subhead">
-        Jonli jamoaviy bellashuvlar va umumiy reyting tizimi ayni paytda faol ishlab chiqilmoqda.
-        Hozirda mavjud saralangan to‘plamlarni yakka tartibda sinab ko‘rishingiz mumkin.
+        To‘plamlarni o‘ynash uchun bepul ro‘yxatdan o‘ting. Natijalaringiz profilingizda saqlanadi.
       </p>
       <div class="hero-cta-group">
-        <a href="/arena" class="btn btn-primary">
-          Saralangan To‘plamlar Katalogi
-        </a>
-        <a href="#showcase" class="btn btn-secondary">
-          Namoyish Stoliga Qaytish
+        <a href="/arena" class="btn btn-primary" id="finalCtaArena">
+          To‘plamlarni ko‘rish &rarr;
         </a>
       </div>
     </section>
   </main>
 
   <!-- 7. Footer -->
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat" width="24" height="24">
-        <span style="font-family: var(--font-display); font-weight: 700; color: var(--text-main);">ZAKOWHAT</span>
-        <span class="footer-note">— Mustaqil Intellektual Platforma. Barcha huquqlar himoyalangan.</span>
-      </div>
-      <div class="footer-note">
-        Toshkent · Samarqand · Buxoro · 2026
-      </div>
-    </div>
-  </footer>
+  {% include "components/footer.html" %}
+  {% include "components/auth_modal.html" %}
 
   <!-- Theme Toggle & Showcase Script -->
   <script>
@@ -324,58 +275,111 @@
           sunIcon.style.display = 'block';
         }
       }
+// =====================================================================
+      // HOMEPAGE SAMPLE QUESTION (self-contained: checked in the browser only —
+      // no gameplay session, statistics, leaderboard or pack question is touched)
+      // Question bank #957, source: «Svoya igra baza» Telegram channel, post #42.
+      // Accepted answers come from the source only; the explanation is the source's own.
+      // =====================================================================
+      const SAMPLE = {
+        acceptedAnswers: ['Pi kuni'],
+        correctAnswer: 'Pi kuni',
+        explanation: "Albert Eynshteynning tug'ilgan kuni 14-mart . 14 mart , 13:59 -> 3 14 159 -> 3.14159 -> pi.",
+        timeLimitSeconds: 90
+      };
 
-      // Read preference or default to dark
-      const savedTheme = localStorage.getItem('zakowhat-theme') || 'dark';
-      htmlEl.setAttribute('data-theme', savedTheme);
-      updateThemeIcons(savedTheme);
-
-      if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', function() {
-          const currentTheme = htmlEl.getAttribute('data-theme');
-          const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
-          htmlEl.setAttribute('data-theme', nextTheme);
-          localStorage.setItem('zakowhat-theme', nextTheme);
-          updateThemeIcons(nextTheme);
-        });
+      function normalizeSampleAnswer(text) {
+        return (text || '')
+          .toLowerCase()
+          .replace(/[‘’ʻʼ`]/g, "'")
+          .replace(/[.,!?"()\[\]{}:;*«»“”]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
       }
 
-      // Smooth integer seconds countdown simulation for showcase (01:38 -> 98 seconds)
-      let totalSeconds = 98;
       const countdownEl = document.getElementById('countdownDisplay');
-      if (countdownEl) {
-        setInterval(function() {
-          if (totalSeconds > 0) {
-            totalSeconds--;
-            const mins = Math.floor(totalSeconds / 60);
-            const secs = totalSeconds % 60;
-            const formatted = (mins < 10 ? '0' + mins : mins) + ':' + (secs < 10 ? '0' + secs : secs);
-            countdownEl.textContent = formatted;
-          } else {
-            totalSeconds = 98;
-          }
+      const formEl = document.getElementById('sampleAnswerForm');
+      const submitBtn = document.getElementById('submitActionBtn');
+      const inputEl = document.getElementById('sampleAnswerInput');
+      let timeLeft = SAMPLE.timeLimitSeconds;
+      let timerId = null;
+      let sampleFinished = false;
+
+      function renderCountdown() {
+        if (!countdownEl) return;
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        countdownEl.textContent = (mins < 10 ? '0' + mins : mins) + ':' + (secs < 10 ? '0' + secs : secs);
+      }
+
+      // One-shot countdown: starts on first interaction, stops at 00:00 and never restarts
+      function startSampleTimer() {
+        if (timerId !== null || sampleFinished) return;
+        timerId = setInterval(function() {
+          timeLeft = Math.max(0, timeLeft - 1);
+          renderCountdown();
+          if (timeLeft === 0) finishSample(true);
         }, 1000);
       }
 
-      // Submission button interactive feedback
-      const submitBtn = document.getElementById('submitActionBtn');
-      const inputEl = document.getElementById('sampleAnswerInput');
-      if (submitBtn && inputEl) {
-        submitBtn.addEventListener('click', function() {
-          const val = inputEl.value.trim();
-          if (!val) {
-            inputEl.focus();
+      function finishSample(timedOut) {
+        if (sampleFinished) return;
+        sampleFinished = true;
+        if (timerId !== null) { clearInterval(timerId); timerId = null; }
+
+        const submitted = inputEl ? inputEl.value.trim() : '';
+        const normalized = normalizeSampleAnswer(submitted);
+        const isCorrect = !!submitted && SAMPLE.acceptedAnswers.some(function(a) {
+          return normalizeSampleAnswer(a) === normalized;
+        });
+
+        if (inputEl) inputEl.disabled = true;
+        if (submitBtn) submitBtn.disabled = true;
+
+        const verdictEl = document.getElementById('sampleVerdict');
+        if (verdictEl) {
+          if (isCorrect) {
+            verdictEl.className = 'feedback-banner correct';
+            verdictEl.textContent = '✓ To‘g‘ri javob';
+          } else if (!submitted) {
+            verdictEl.className = 'feedback-banner neutral';
+            verdictEl.textContent = timedOut ? 'Vaqt tugadi — javob berilmadi' : 'Javob berilmadi';
+          } else {
+            verdictEl.className = 'feedback-banner incorrect';
+            verdictEl.textContent = '✕ Noto‘g‘ri javob';
+          }
+        }
+        const submittedEl = document.getElementById('sampleSubmitted');
+        if (submittedEl) submittedEl.textContent = submitted || 'Javob berilmadi';
+        const correctEl = document.getElementById('sampleCorrect');
+        if (correctEl) correctEl.textContent = SAMPLE.correctAnswer;
+        const explWrap = document.getElementById('sampleExplanationWrap');
+        const explEl = document.getElementById('sampleExplanation');
+        if (explEl) explEl.textContent = SAMPLE.explanation || '';
+        if (explWrap) explWrap.hidden = !(SAMPLE.explanation && SAMPLE.explanation.trim());
+
+        const revealEl = document.getElementById('sampleReveal');
+        if (revealEl) revealEl.hidden = false;
+      }
+
+      renderCountdown();
+      if (inputEl) {
+        inputEl.addEventListener('focus', startSampleTimer);
+        inputEl.addEventListener('input', startSampleTimer);
+      }
+      if (formEl) {
+        formEl.addEventListener('submit', function(e) {
+          e.preventDefault();
+          if (sampleFinished) return;
+          if (!inputEl || !inputEl.value.trim()) {
+            if (inputEl) inputEl.focus();
             return;
           }
-          submitBtn.textContent = 'Qabul qilindi';
-          submitBtn.style.background = '#2E7D32';
-          setTimeout(function() {
-            submitBtn.textContent = 'Javobni yuborish';
-            submitBtn.style.background = '';
-          }, 2000);
+          finishSample(false);
         });
       }
     })();
   </script>
+  <script src="/static/js/zakowhat-navbar.js"></script>
 </body>
 </html>

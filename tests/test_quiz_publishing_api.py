@@ -5,6 +5,12 @@ from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAn
 from api.quizzes import compile_published_manifest
 
 
+@pytest.fixture(autouse=True)
+def setup_publishing_owner_auth(monkeypatch):
+    """Publishing tests operate on draft authoring & publishing APIs requiring owner authorization."""
+    monkeypatch.setenv("OWNER_EMAIL", "testplayer@zakowhat.uz")
+
+
 def test_incomplete_draft_can_save_but_cannot_publish(client, db_session):
     """
     Verify that incomplete drafts (missing questions or answers) can be saved freely,
@@ -17,7 +23,7 @@ def test_incomplete_draft_can_save_but_cannot_publish(client, db_session):
 
     # 2. Attempt publish with 0 rounds -> 422
     pub_res = client.post(f"/api/drafts/{draft_id}/publish")
-    assert pub_res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert pub_res.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     data = pub_res.json()["detail"]
     assert "errors" in data
     assert any("kamida bitta raund" in e for e in data["errors"])
@@ -27,7 +33,7 @@ def test_incomplete_draft_can_save_but_cannot_publish(client, db_session):
     assert r_res.status_code == status.HTTP_201_CREATED
 
     pub_res2 = client.post(f"/api/drafts/{draft_id}/publish")
-    assert pub_res2.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert pub_res2.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     data2 = pub_res2.json()["detail"]
     assert any("hech qanday savol yo'q" in e for e in data2["errors"])
 
@@ -64,7 +70,7 @@ def test_classic_zakovat_validation_enforces_exact_2_rounds_12_questions(client,
 
     # Publish attempt must fail with 422
     pub1 = client.post(f"/api/drafts/{draft_id}/publish")
-    assert pub1.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert pub1.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     # Add second round with only 11 questions -> should fail INVALID_QUESTION_COUNT
     r2 = client.post(f"/api/drafts/{draft_id}/rounds", json={"round_type": "rasmiyatchilik"}).json()
@@ -124,7 +130,7 @@ def test_classic_zakovat_validation_rejects_single_round_24_questions(client, db
 
     # Attempting to publish must fail
     pub_fail = client.post(f"/api/drafts/{draft_id}/publish")
-    assert pub_fail.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert pub_fail.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_classic_zakovat_validation_rejects_invalid_round_counts(client, db_session):

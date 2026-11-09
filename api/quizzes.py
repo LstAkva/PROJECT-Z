@@ -1,10 +1,11 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
 from database import get_db
 from models import Quiz, QuizVersion, Round, Question, RoundQuestion, SoloAttempt, User
+from api.auth import verify_owner_access
 
 router = APIRouter(prefix="/api/quizzes", tags=["quizzes"])
 
@@ -212,9 +213,10 @@ def fetch_version_leaderboard(version: QuizVersion, db: Session) -> dict:
     - Only registered players (user_id is not None).
     - Only completed attempts (status == 'completed').
     - Excludes preview attempts.
-    - Exactly ONE entry per player: their BEST completed attempt for this version.
+    - Exactly ONE entry per player (new rule: their single ranked attempt; legacy: best attempt).
     - Ranking criteria:
-        1. Higher number of correct answers first (total_correct DESC).
+        1. Zakovat/other modes: more correct answers first (total_correct DESC).
+           Svoya Igra: higher final points first (total_score DESC).
         2. Lower active gameplay time first (active_time_seconds ASC).
         3. Earlier completion timestamp tie-breaker (completed_at ASC).
     """
@@ -225,40 +227,66 @@ def fetch_version_leaderboard(version: QuizVersion, db: Session) -> dict:
             SoloAttempt.quiz_version_id == version.id,
             SoloAttempt.status == "completed",
             SoloAttempt.user_id.isnot(None),
-            SoloAttempt.timer_mode != "preview",
+            SoloAttempt.timer_mode.notin_(["preview", "preview_no_timer"]),
         )
         .all()
     )
 
-    # Group by user_id to pick each user's best attempt
+    # Ranked-attempt rule (one ranked opportunity per user per pack):
+    # - Attempts created under the rule carry attempt_metadata["competitive"]. Only the user's single
+    #   ranked attempt (earliest competitive=True across ALL versions of this pack) is eligible, and only
+    #   if it was timed. Practice and no-timer attempts never enter or improve the leaderboard.
+    # - Legacy attempts (created before the rule, no "competitive" key) keep their existing treatment.
+    new_rule_users = {a.user_id for a in attempts if "competitive" in (a.attempt_metadata or {})}
+    first_ranked_attempt_id: Dict[int, int] = {}
+    if new_rule_users:
+        pack_version_ids = [vid for (vid,) in db.query(QuizVersion.id).filter(QuizVersion.quiz_id == version.quiz_id)]
+        rows = (
+            db.query(SoloAttempt.id, SoloAttempt.user_id, SoloAttempt.attempt_metadata)
+            .filter(SoloAttempt.user_id.in_(new_rule_users), SoloAttempt.quiz_version_id.in_(pack_version_ids))
+            .all()
+        )
+        for att_id, uid, meta in rows:
+            if (meta or {}).get("competitive") is True:
+                if uid not in first_ranked_attempt_id or att_id < first_ranked_attempt_id[uid]:
+                    first_ranked_attempt_id[uid] = att_id
+
+    def is_leaderboard_eligible(att: SoloAttempt) -> bool:
+        meta = att.attempt_metadata or {}
+        if "competitive" not in meta:
+            return True  # legacy result: unchanged treatment
+        return (
+            meta.get("competitive") is True
+            and att.timer_mode in ("standard", "competitive")
+            and first_ranked_attempt_id.get(att.user_id) == att.id
+        )
+
+    attempts = [a for a in attempts if is_leaderboard_eligible(a)]
+
+    # Ranking metric: Svoya Igra ranks by final game points (values 10–50, penalties, passes);
+    # every other mode keeps the existing Zakovat logic (number of correct answers).
+    ranking_metric = "score" if version.game_mode == "svoyak" else "correct"
+
+    def primary_value(a: SoloAttempt) -> int:
+        return a.total_score if ranking_metric == "score" else a.total_correct
+
+    def rank_key(a: SoloAttempt):
+        # 1. higher primary metric, 2. lower active time, 3. earlier completion
+        return (
+            -primary_value(a),
+            a.active_time_seconds,
+            a.completed_at.timestamp() if a.completed_at else 0,
+        )
+
+    # Group by user_id to pick each user's best eligible attempt (legacy results may have several)
     user_best: Dict[int, SoloAttempt] = {}
     for att in attempts:
         uid = att.user_id
-        if uid not in user_best:
+        if uid not in user_best or rank_key(att) < rank_key(user_best[uid]):
             user_best[uid] = att
-        else:
-            cur = user_best[uid]
-            # Compare: higher total_correct first, lower active_time_seconds second
-            if att.total_correct > cur.total_correct:
-                user_best[uid] = att
-            elif att.total_correct == cur.total_correct:
-                if att.active_time_seconds < cur.active_time_seconds:
-                    user_best[uid] = att
-                elif att.active_time_seconds == cur.active_time_seconds:
-                    t_att = att.completed_at.timestamp() if att.completed_at else 0
-                    t_cur = cur.completed_at.timestamp() if cur.completed_at else 0
-                    if t_att < t_cur:
-                        user_best[uid] = att
 
     # Sort best attempts across all users
-    sorted_attempts = sorted(
-        user_best.values(),
-        key=lambda a: (
-            -a.total_correct,
-            a.active_time_seconds,
-            a.completed_at.timestamp() if a.completed_at else 0,
-        ),
-    )
+    sorted_attempts = sorted(user_best.values(), key=rank_key)
 
     # Compute total questions for this version
     manifest = version.published_manifest or {}
@@ -271,13 +299,18 @@ def fetch_version_leaderboard(version: QuizVersion, db: Session) -> dict:
     leaderboard_rows = []
     for rank, att in enumerate(sorted_attempts, start=1):
         name = att.user.display_name if att.user else f"Foydalanuvchi #{att.user_id}"
+        username = att.user.username if att.user else None
+        avatar_url = att.user.avatar_url if att.user else None
         mins = att.active_time_seconds // 60
         secs = att.active_time_seconds % 60
         leaderboard_rows.append({
             "rank": rank,
             "user_id": att.user_id,
             "display_name": name,
+            "username": username,
+            "avatar_url": avatar_url,
             "correct_count": att.total_correct,
+            "total_score": att.total_score,
             "total_questions": total_questions,
             "active_time_seconds": att.active_time_seconds,
             "formatted_time": f"{mins:02d}:{secs:02d}",
@@ -291,6 +324,7 @@ def fetch_version_leaderboard(version: QuizVersion, db: Session) -> dict:
         "version_id": version.id,
         "total_questions": total_questions,
         "total_participants": len(leaderboard_rows),
+        "ranking_metric": ranking_metric,
         "leaderboard": leaderboard_rows,
     }
 
@@ -331,14 +365,16 @@ def list_quizzes(
         if manifest.get("visibility") == "unlisted":
             continue
 
+        item_title = manifest.get("title") or quiz.title
+        item_desc = manifest.get("description") if "description" in manifest else quiz.description
         item_category = manifest.get("category") or "Umumiy"
-        item_game_mode = latest_published.game_mode or "modern_multiround"
+        item_game_mode = manifest.get("game_mode") or latest_published.game_mode or "modern_multiround"
 
         # Search filter
         if q and q.strip():
             term = normalize_uzbek_text(q.strip())
-            title_norm = normalize_uzbek_text(quiz.title)
-            desc_norm = normalize_uzbek_text(quiz.description)
+            title_norm = normalize_uzbek_text(item_title)
+            desc_norm = normalize_uzbek_text(item_desc)
             if not (term in title_norm or term in desc_norm):
                 continue
 
@@ -386,8 +422,8 @@ def list_quizzes(
         results.append({
             "quiz_id": quiz.id,
             "version_id": latest_published.id,
-            "title": quiz.title,
-            "description": quiz.description,
+            "title": item_title,
+            "description": item_desc,
             "game_mode": item_game_mode,
             "category": item_category,
             "version_number": latest_published.version_number,
@@ -409,19 +445,11 @@ def list_quizzes(
 
 
 @router.get("/categories", status_code=status.HTTP_200_OK)
-def get_categories(db: Session = Depends(get_db)):
+def get_categories(
+    game_mode: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
     """Returns unique categories from published public quizzes with standard fallback categories."""
-    base_categories = [
-        "Umumiy",
-        "Zakovat",
-        "Tarix",
-        "Fan va Texnologiya",
-        "Adabiyot va San'at",
-        "Mantiq va Qiziqarli",
-    ]
-    seen = set(base_categories)
-    custom_categories = []
-
     published_versions = (
         db.query(QuizVersion)
         .filter(QuizVersion.status == "published")
@@ -433,16 +461,33 @@ def get_categories(db: Session = Depends(get_db)):
         if v.quiz_id not in latest_by_quiz:
             latest_by_quiz[v.quiz_id] = v
 
+    mode_filter = game_mode.strip().lower() if game_mode and game_mode.strip().lower() not in ("all", "barchasi") else None
+    
+    categories = set()
     for v in latest_by_quiz.values():
         manifest = v.published_manifest or {}
         if manifest.get("visibility") == "unlisted":
             continue
+        v_mode = (v.game_mode or "").lower()
+        if mode_filter and v_mode != mode_filter:
+            continue
         cat = manifest.get("category")
-        if cat and cat not in seen:
-            seen.add(cat)
-            custom_categories.append(cat)
+        if cat and cat.strip() and cat.strip().lower() not in ("klassik zakovat", "classic_zakovat", "all", "barchasi"):
+            categories.add(cat.strip())
 
-    return {"categories": base_categories + sorted(custom_categories)}
+    if not mode_filter:
+        for b in ["Umumiy", "Zakovat", "Tarix", "Fan va Texnologiya", "Adabiyot va San'at"]:
+            categories.add(b)
+
+    if not categories:
+        if mode_filter == "svoyak":
+            categories = {"Milliy meros", "Tarix", "Geografiya", "Madaniyat", "Mantiq"}
+        elif mode_filter == "classic_zakovat":
+            categories = {"Mantiq", "Tarix", "Adabiyot", "Fan va Texnika", "San'at"}
+        else:
+            categories = {"Adabiyot", "Fan va Texnika", "Geografiya", "Madaniyat", "Mantiq", "Milliy meros", "San'at", "Tarix"}
+
+    return {"categories": sorted(list(categories))}
 
 
 @router.get("/canonical-rounds", status_code=status.HTTP_200_OK)
@@ -452,7 +497,7 @@ def get_canonical_rounds():
 
 
 @router.get("/drafts", status_code=status.HTTP_200_OK)
-def list_draft_quizzes(db: Session = Depends(get_db)):
+def list_draft_quizzes(db: Session = Depends(get_db), current_owner: User = Depends(verify_owner_access)):
     """Returns list of draft quiz versions created by editors."""
     draft_versions = (
         db.query(QuizVersion)
@@ -489,13 +534,13 @@ def list_draft_quizzes(db: Session = Depends(get_db)):
 
 
 @router.post("/draft", status_code=status.HTTP_201_CREATED)
-def create_quiz_draft(payload: CreateQuizDraftRequest, db: Session = Depends(get_db)):
+def create_quiz_draft(payload: CreateQuizDraftRequest, db: Session = Depends(get_db), current_owner: User = Depends(verify_owner_access)):
     """Creates a new Quiz Draft with Quiz and QuizVersion (status='draft', published_manifest=None),
     attaching questions via RoundQuestion links. Questions in the Question Bank remain untouched (round_id=None).
     """
     if not payload.title or not payload.title.strip():
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Quiz nomi bo'sh bo'lishi mumkin emas",
         )
 
@@ -505,7 +550,7 @@ def create_quiz_draft(payload: CreateQuizDraftRequest, db: Session = Depends(get
         for r in payload.rounds:
             if r.round_type not in CANONICAL_ROUND_TYPES:
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail=f"Noma'lum raund turi: {r.round_type}",
                 )
             q_ids = []
@@ -515,7 +560,7 @@ def create_quiz_draft(payload: CreateQuizDraftRequest, db: Session = Depends(get
                 q_ids = r.question_ids
             if not q_ids:
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail=f"Raund {r.sequence} da kamida bitta savol bo'lishi shart",
                 )
             rounds_to_create.append({
@@ -528,17 +573,17 @@ def create_quiz_draft(payload: CreateQuizDraftRequest, db: Session = Depends(get
         # Single round payload
         if not payload.round_type:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Raund turi ko'rsatilishi shart",
             )
         if payload.round_type not in CANONICAL_ROUND_TYPES:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Noma'lum raund turi: {payload.round_type}",
             )
         if not payload.question_ids or len(payload.question_ids) == 0:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Kamida bitta savol tanlanishi shart",
             )
         rounds_to_create.append({
@@ -623,7 +668,7 @@ def create_quiz_draft(payload: CreateQuizDraftRequest, db: Session = Depends(get
 
 
 @router.post("/{quiz_id}/publish/{version_number}", status_code=status.HTTP_200_OK)
-def publish_quiz_version(quiz_id: int, version_number: int, db: Session = Depends(get_db)):
+def publish_quiz_version(quiz_id: int, version_number: int, db: Session = Depends(get_db), current_owner: User = Depends(verify_owner_access)):
     """
     Publish quiz version endpoint.
     Delegates directly to authoritative execute_publish_version service,
@@ -640,6 +685,11 @@ def publish_quiz_version(quiz_id: int, version_number: int, db: Session = Depend
         raise HTTPException(status_code=404, detail="Version not found")
 
     return execute_publish_version(version, db)
+
+
+def public_question_stub(sequence: Any, points: Any) -> dict:
+    """The only per-question data the public quiz detail may expose before gameplay."""
+    return {"sequence": sequence, "points": points if points is not None else 1}
 
 
 @router.get("/{quiz_id}", status_code=status.HTTP_200_OK)
@@ -665,19 +715,10 @@ def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):
         manifest_rounds = manifest["rounds"]
         rounds_data = []
         for mr in manifest_rounds:
-            clean_questions = []
-            for mq in mr.get("questions", []):
-                clean_questions.append({
-                    "id": mq.get("question_id"),
-                    "round_question_id": mq.get("round_question_id"),
-                    "sequence": mq.get("sequence"),
-                    "text": mq.get("text"),
-                    "media_provider": mq.get("media_provider"),
-                    "media_url": mq.get("media_url"),
-                    "question_type": mq.get("question_type", "text"),
-                    "options": mq.get("options"),
-                    "points": mq.get("points", 1),
-                })
+            # PUBLIC catalog response: structure only. Never expose question stems, options, media,
+            # answers or explanations before gameplay (counts/points are enough for the detail view).
+            clean_questions = [public_question_stub(mq.get("sequence"), mq.get("points", 1))
+                               for mq in mr.get("questions", [])]
             rounds_data.append({
                 "id": mr.get("round_id"),
                 "sequence": mr.get("sequence"),
@@ -711,33 +752,11 @@ def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):
                         if rq.points_override is not None
                         else (q.default_points if q.default_points is not None else q.points)
                     )
-                    q_list.append({
-                        "id": q.id,
-                        "round_question_id": rq.id,
-                        "sequence": rq.sequence,
-                        "text": q.text,
-                        "media_provider": q.media_provider,
-                        "media_url": q.media_url,
-                        "question_type": q.question_type or "text",
-                        "options": q.options,
-                        "points": pts if pts is not None else 1,
-                    })
+                    # PUBLIC catalog response: structure only (no stems/options/media/answers)
+                    q_list.append(public_question_stub(rq.sequence, pts if pts is not None else 1))
             else:
                 sorted_questions = sorted(r.questions, key=lambda q: q.sequence or 0)
-                q_list = [
-                    {
-                        "id": q.id,
-                        "round_question_id": None,
-                        "sequence": q.sequence,
-                        "text": q.text,
-                        "media_provider": q.media_provider,
-                        "media_url": q.media_url,
-                        "question_type": q.question_type or "text",
-                        "options": q.options,
-                        "points": q.points,
-                    }
-                    for q in sorted_questions
-                ]
+                q_list = [public_question_stub(q.sequence, q.points) for q in sorted_questions]
 
             rounds_data.append({
                 "id": r.id,
@@ -769,9 +788,9 @@ def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):
     return {
         "quiz_id": quiz.id,
         "version_id": latest_version.id,
-        "title": quiz.title,
-        "description": quiz.description,
-        "game_mode": latest_version.game_mode,
+        "title": manifest.get("title") or quiz.title,
+        "description": manifest.get("description") if "description" in manifest else quiz.description,
+        "game_mode": manifest.get("game_mode") or latest_version.game_mode,
         "category": manifest.get("category") or "Umumiy",
         "visibility": manifest.get("visibility", "public"),
         "version_number": latest_version.version_number,

@@ -395,7 +395,7 @@ def test_validation_and_publishing_complete_zakovat_2x12(client, owner_email_env
 
     # Attempt to publish incomplete pack fails with HTTP 422
     pub_fail = client.post(f"/api/owner/quizzes/{quiz_id}/publish")
-    assert pub_fail.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert pub_fail.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     # 2. Attach 12 questions to 1-tur (questions 0..11)
     for i in range(12):
@@ -467,18 +467,30 @@ def test_published_snapshot_immutability_when_bank_question_mutated(client, owne
     q1 = bank_qs[0]
     original_text = q1.text
 
-    # Verify Arena / public detail shows original_text
-    quiz_arena_data = client.get(f"/api/quizzes/{quiz_id}").json()
-    assert quiz_arena_data["rounds"][0]["questions"][0]["text"] == original_text
+    from models import QuizVersion
+
+    def published_first_question_text():
+        version = (
+            db_session.query(QuizVersion)
+            .filter(QuizVersion.quiz_id == quiz_id, QuizVersion.status == "published")
+            .order_by(QuizVersion.version_number.desc())
+            .first()
+        )
+        db_session.refresh(version)
+        return version.published_manifest["rounds"][0]["questions"][0]["text"]
+
+    # The frozen published snapshot holds original_text (the public detail never exposes question text)
+    assert published_first_question_text() == original_text
+    assert "text" not in client.get(f"/api/quizzes/{quiz_id}").json()["rounds"][0]["questions"][0]
 
     # NOW MUTATE QUESTION BANK QUESTION DIRECTLY IN DATABASE
     q1.text = "BU BUTUNLAY O'ZGARTIRILGAN MATN (BANK MUTATION)"
     db_session.commit()
 
-    # Public Arena quiz detail MUST STILL return original_text from frozen published_manifest!
-    quiz_arena_after = client.get(f"/api/quizzes/{quiz_id}").json()
-    assert quiz_arena_after["rounds"][0]["questions"][0]["text"] == original_text
-    assert quiz_arena_after["rounds"][0]["questions"][0]["text"] != "BU BUTUNLAY O'ZGARTIRILGAN MATN (BANK MUTATION)"
+    # Published snapshot MUST STILL hold original_text (frozen published_manifest)
+    assert published_first_question_text() == original_text
+    assert published_first_question_text() != "BU BUTUNLAY O'ZGARTIRILGAN MATN (BANK MUTATION)"
+    assert "BU BUTUNLAY" not in client.get(f"/api/quizzes/{quiz_id}").text
 
 
 # =============================================================================
@@ -717,4 +729,160 @@ def test_frontend_render_validation_card_and_trigger_safely_handle_error_payload
 
     finally:
         driver.quit()
+
+
+# =============================================================================
+# 11. UNPUBLISH & USER MANAGEMENT TESTS
+# =============================================================================
+
+def test_owner_unpublish_quiz(client, owner_email_env, db_session):
+    """Owner can unpublish a published pack, returning it to draft state."""
+    owner = register_and_login_user(client, owner_email_env, "Owner Tester")
+
+    # Create and publish a pack
+    res_create = client.post("/api/owner/quizzes", json={"title": "To Unpublish", "game_mode": "classic_zakovat"})
+    assert res_create.status_code == status.HTTP_201_CREATED
+    q_id = res_create.json()["quiz_id"]
+
+    version = db_session.query(QuizVersion).filter(QuizVersion.quiz_id == q_id).first()
+    version.status = "published"
+    version.published_manifest = {"title": "To Unpublish", "rounds": []}
+    db_session.commit()
+
+    # Unpublish
+    res_unpub = client.post(f"/api/owner/quizzes/{q_id}/unpublish")
+    assert res_unpub.status_code == status.HTTP_200_OK
+    data = res_unpub.json()
+    assert data["success"] is True
+    assert data["status"] == "draft"
+
+    # Verify in DB
+    db_session.refresh(version)
+    assert version.status == "draft"
+    assert version.published_manifest is None
+    assert version.published_at is None
+
+    # Unpublishing already-draft quiz returns 400
+    res_unpub_again = client.post(f"/api/owner/quizzes/{q_id}/unpublish")
+    assert res_unpub_again.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_owner_svoyak_publish_validation(client, owner_email_env, db_session):
+    """Owner publish validation validates Svoyak 5-theme 25-question structure."""
+    owner = register_and_login_user(client, owner_email_env, "Owner Tester")
+
+    # Create a draft svoyak quiz
+    quiz = Quiz(title="Svoyak Test", description="Svoyak Test")
+    db_session.add(quiz)
+    db_session.flush()
+
+    ver = QuizVersion(quiz_id=quiz.id, version_number=1, status="draft", game_mode="svoyak")
+    db_session.add(ver)
+    db_session.flush()
+
+    # Add 4 themes instead of 5
+    for t_idx in range(1, 5):
+        r = Round(quiz_version_id=ver.id, sequence=t_idx, round_type="svoyak_theme", config={"name": f"Mavzu {t_idx}"})
+        db_session.add(r)
+        db_session.flush()
+        for q_idx in range(1, 6):
+            q = Question(text=f"Q {t_idx}-{q_idx}", status="approved", default_points=q_idx * 10)
+            db_session.add(q)
+            db_session.flush()
+            db_session.add(AcceptedAnswer(question_id=q.id, answer_text=f"A {t_idx}-{q_idx}", is_primary=True))
+            db_session.add(RoundQuestion(round_id=r.id, question_id=q.id, sequence=q_idx, points_override=q_idx * 10))
+    db_session.commit()
+
+    # In owner list: 4 rounds should be invalid for svoyak
+    res_list = client.get("/api/owner/quizzes?game_mode=svoyak")
+    assert res_list.status_code == status.HTTP_200_OK
+    target = next((item for item in res_list.json() if item["quiz_id"] == quiz.id), None)
+    assert target is not None
+    assert target["is_valid"] is False
+
+    # Add 5th theme
+    r5 = Round(quiz_version_id=ver.id, sequence=5, round_type="svoyak_theme", config={"name": "Mavzu 5"})
+    db_session.add(r5)
+    db_session.flush()
+    for q_idx in range(1, 6):
+        q = Question(text=f"Q 5-{q_idx}", status="approved", default_points=q_idx * 10)
+        db_session.add(q)
+        db_session.flush()
+        db_session.add(AcceptedAnswer(question_id=q.id, answer_text=f"A 5-{q_idx}", is_primary=True))
+        db_session.add(RoundQuestion(round_id=r5.id, question_id=q.id, sequence=q_idx, points_override=q_idx * 10))
+    db_session.commit()
+
+    # Now 5 rounds and 25 questions should be valid!
+    res_list2 = client.get("/api/owner/quizzes?game_mode=svoyak")
+    assert res_list2.status_code == status.HTTP_200_OK
+    target2 = next((item for item in res_list2.json() if item["quiz_id"] == quiz.id), None)
+    assert target2 is not None
+    assert target2["is_valid"] is True
+
+
+def test_owner_list_and_search_users(client, owner_email_env, db_session):
+    """Owner can list users with pagination, search, and attempt stats."""
+    owner = register_and_login_user(client, owner_email_env, "Owner Tester")
+
+    # Create several users
+    u1_email = f"user_alpha_{uuid.uuid4().hex[:6]}@example.test"
+    u2_email = f"user_beta_{uuid.uuid4().hex[:6]}@example.test"
+    register_and_login_user(client, u1_email, "Alpha Player")
+    register_and_login_user(client, u2_email, "Beta Player")
+
+    # Log back in as owner
+    client.post("/api/auth/login", json={"email": owner_email_env, "password": "ValidPassword123!"})
+
+    # List all users
+    res = client.get("/api/owner/users?page=1&per_page=10")
+    assert res.status_code == status.HTTP_200_OK
+    data = res.json()
+    assert "users" in data
+    assert "pagination" in data
+    assert data["pagination"]["total_count"] >= 3
+    emails = [u["email"] for u in data["users"]]
+    assert u1_email in emails
+    assert u2_email in emails
+
+    # Search by unique keyword
+    res_search = client.get(f"/api/owner/users?search=Alpha")
+    assert res_search.status_code == status.HTTP_200_OK
+    search_data = res_search.json()
+    assert len(search_data["users"]) == 1
+    assert search_data["users"][0]["email"] == u1_email
+
+
+def test_owner_user_detail_and_update(client, owner_email_env, db_session):
+    """Owner can view user details with attempt history and update display name."""
+    owner = register_and_login_user(client, owner_email_env, "Owner Tester")
+
+    # Create target user
+    target_email = f"target_{uuid.uuid4().hex[:6]}@example.test"
+    target_user = register_and_login_user(client, target_email, "Original Name")
+    target_id = target_user["id"]
+
+    # Log back in as owner
+    client.post("/api/auth/login", json={"email": owner_email_env, "password": "ValidPassword123!"})
+
+    # Get details
+    res_detail = client.get(f"/api/owner/users/{target_id}")
+    assert res_detail.status_code == status.HTTP_200_OK
+    detail_data = res_detail.json()
+    assert detail_data["user"]["id"] == target_id
+    assert detail_data["user"]["display_name"] == "Original Name"
+    assert "attempts" in detail_data
+    assert "daily_submissions" in detail_data
+
+    # Update display name
+    res_update = client.put(f"/api/owner/users/{target_id}", json={"display_name": "Updated Safe Name"})
+    assert res_update.status_code == status.HTTP_200_OK
+    assert res_update.json()["user"]["display_name"] == "Updated Safe Name"
+
+    # Verify update persisted
+    res_detail2 = client.get(f"/api/owner/users/{target_id}")
+    assert res_detail2.json()["user"]["display_name"] == "Updated Safe Name"
+
+    # Invalid display name rejected
+    res_bad = client.put(f"/api/owner/users/{target_id}", json={"display_name": " "})
+    assert res_bad.status_code in [status.HTTP_422_UNPROCESSABLE_CONTENT, status.HTTP_400_BAD_REQUEST]
 

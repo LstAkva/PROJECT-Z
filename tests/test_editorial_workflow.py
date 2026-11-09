@@ -327,7 +327,7 @@ def test_pack_publish_readiness_states_and_publish_gate(client, db_session, owne
 
     # Publish attempt fails closed with 422
     res_pub = client.post(f"/api/owner/quizzes/{quiz.id}/publish", json={"visibility": "public"})
-    assert res_pub.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert res_pub.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     err_detail = res_pub.json()["detail"]
     assert "xatolar mavjud" in err_detail["message"].lower()
     assert len(err_detail["errors"]) == 24

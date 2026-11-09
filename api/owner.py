@@ -5,10 +5,10 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import func, distinct, or_, text
+from sqlalchemy import func, distinct, or_, text, case
 
 from database import get_db
-from models import User, Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAnswer
+from models import User, Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAnswer, SoloAttempt, DailySubmission
 from api.auth import get_current_user_required
 from api.drafts import run_publish_validation, execute_publish_version, CANONICAL_ROUND_TYPES
 from services.editorial import (
@@ -29,47 +29,7 @@ router = APIRouter(prefix="/api/owner", tags=["owner"])
 # 1. OWNER AUTHORIZATION LAYER
 # =============================================================================
 
-def get_owner_emails() -> List[str]:
-    """
-    Reads configured owner email addresses from environment variables.
-    Supports OWNER_EMAIL (singular) and OWNER_EMAILS (plural).
-    Strictly isolated: does NOT fall back to ADMIN_EMAILS or staging configs.
-    Never hardcodes owner credentials.
-    """
-    raw_singular = os.getenv("OWNER_EMAIL", "").strip()
-    raw_plural = os.getenv("OWNER_EMAILS", "").strip()
-    emails = []
-    if raw_singular:
-        emails.extend([e.strip().lower() for e in raw_singular.split(",") if e.strip()])
-    if raw_plural:
-        emails.extend([e.strip().lower() for e in raw_plural.split(",") if e.strip()])
-    return list(dict.fromkeys(emails))
-
-
-def verify_owner_access(
-    current_user: User = Depends(get_current_user_required),
-) -> User:
-    """
-    Authoritative server-side owner authorization guard.
-    - 401 Unauthorized if unauthenticated (enforced by get_current_user_required).
-    - 403 Forbidden (FAIL CLOSED) if OWNER_EMAIL / OWNER_EMAILS is missing or empty.
-    - 403 Forbidden if the authenticated user's email is not in the owner list.
-    - Returns current_user if authorized.
-    """
-    owner_emails = get_owner_emails()
-    if not owner_emails:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tizim egasi (Owner) konfiguratsiyasi mavjud emas. Kirish taqiqlangan.",
-        )
-
-    if current_user.email.lower() not in owner_emails:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Ushbu amal faqat tizim egasi (Owner) uchun ruxsat etilgan.",
-        )
-
-    return current_user
+from api.auth import get_owner_emails, verify_owner_access
 
 
 # =============================================================================
@@ -133,6 +93,10 @@ class BatchEditorialDecisionRequest(BaseModel):
 class AddAcceptedAnswerRequest(BaseModel):
     answer_text: str = Field(..., min_length=1, max_length=255)
     is_primary: bool = Field(default=False)
+
+
+class UpdateOwnerUserRequest(BaseModel):
+    display_name: str = Field(..., min_length=2, max_length=100)
 
 
 
@@ -234,8 +198,12 @@ def list_owner_quizzes(
         total_questions = sum(len(r.round_questions) for r in rounds)
 
         # Validation summary
-        is_valid = (latest_ver.status == "published") or (len(rounds) == 2 and total_questions == 24)
-        val_errors_count = 0 if is_valid else (24 - total_questions if len(rounds) == 2 else 2)
+        if latest_ver.game_mode == "svoyak":
+            is_valid = (latest_ver.status == "published") or (len(rounds) == 5 and total_questions == 25)
+            val_errors_count = 0 if is_valid else (25 - total_questions if len(rounds) == 5 else 5)
+        else:
+            is_valid = (latest_ver.status == "published") or (len(rounds) == 2 and total_questions == 24)
+            val_errors_count = 0 if is_valid else (24 - total_questions if len(rounds) == 2 else 2)
 
         results.append({
             "quiz_id": q.id,
@@ -1291,6 +1259,46 @@ def publish_owner_quiz(
     return execute_publish_version(version, db, visibility=visibility, category=category)
 
 
+@router.post("/quizzes/{quiz_id}/unpublish", status_code=status.HTTP_200_OK)
+def unpublish_owner_quiz(
+    quiz_id: int,
+    db: Session = Depends(get_db),
+    current_owner: User = Depends(verify_owner_access),
+):
+    """
+    Unpublishes a published quiz pack, converting its status back to draft.
+    Removes the pack from the public Arena catalog while keeping all content intact.
+    """
+    quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
+    if not quiz:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Viktorina topilmadi")
+
+    version = (
+        db.query(QuizVersion)
+        .filter(QuizVersion.quiz_id == quiz.id, QuizVersion.status == "published")
+        .order_by(QuizVersion.version_number.desc())
+        .first()
+    )
+    if not version:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ushbu viktorinaning nashr etilgan versiyasi topilmadi",
+        )
+
+    version.status = "draft"
+    version.published_manifest = None
+    version.published_at = None
+    db.commit()
+
+    return {
+        "success": True,
+        "quiz_id": quiz.id,
+        "version_id": version.id,
+        "status": "draft",
+        "message": f"'{quiz.title}' paketi nashrdan olindi va qoralama holatiga o'tkazildi.",
+    }
+
+
 # =============================================================================
 # 7. PACK GENERATOR v1 (QUESTION BANK → DRAFT PACKS)
 # =============================================================================
@@ -1364,4 +1372,220 @@ def generate_and_commit_pack(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+
+# =============================================================================
+# 8. USER MANAGEMENT
+# =============================================================================
+
+@router.get("/users", status_code=status.HTTP_200_OK)
+def list_owner_users(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_owner: User = Depends(verify_owner_access),
+):
+    """
+    Paginated user directory for Owner.
+    Supports searching by email and display_name.
+    Includes aggregated stats for total attempts and completed attempts.
+    """
+    query = db.query(User)
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        query = query.filter(or_(User.email.ilike(term), User.display_name.ilike(term)))
+
+    total_users = query.count()
+    users = (
+        query.order_by(User.created_at.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
+
+    user_ids = [u.id for u in users]
+    attempts_map = {}
+    daily_map = {}
+
+    if user_ids:
+        # Aggregated solo attempt counts
+        stats = (
+            db.query(
+                SoloAttempt.user_id,
+                func.count(SoloAttempt.id).label("total"),
+                func.sum(case((SoloAttempt.status == "completed", 1), else_=0)).label("completed"),
+            )
+            .filter(SoloAttempt.user_id.in_(user_ids))
+            .group_by(SoloAttempt.user_id)
+            .all()
+        )
+        for row in stats:
+            attempts_map[row[0]] = {
+                "total": int(row[1] or 0),
+                "completed": int(row[2] or 0),
+            }
+
+        # Aggregated daily submissions count
+        daily_stats = (
+            db.query(
+                DailySubmission.user_id,
+                func.count(DailySubmission.id).label("total"),
+            )
+            .filter(DailySubmission.user_id.in_(user_ids))
+            .group_by(DailySubmission.user_id)
+            .all()
+        )
+        for row in daily_stats:
+            daily_map[row[0]] = int(row[1] or 0)
+
+    user_list = []
+    for u in users:
+        u_stats = attempts_map.get(u.id, {"total": 0, "completed": 0})
+        user_list.append({
+            "id": u.id,
+            "email": u.email,
+            "display_name": u.display_name,
+            "auth_provider": u.auth_provider,
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+            "total_attempts": u_stats["total"],
+            "completed_attempts": u_stats["completed"],
+            "daily_submissions_count": daily_map.get(u.id, 0),
+        })
+
+    return {
+        "users": user_list,
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total_count": total_users,
+            "total_pages": (total_users + per_page - 1) // per_page if total_users > 0 else 1,
+        },
+    }
+
+
+@router.get("/users/{user_id}", status_code=status.HTTP_200_OK)
+def get_owner_user_detail(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_owner: User = Depends(verify_owner_access),
+):
+    """
+    Fetches full user profile details, game history (SoloAttempt), and Daily Question submissions.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Foydalanuvchi topilmadi")
+
+    # Fetch attempts
+    attempts = (
+        db.query(SoloAttempt)
+        .filter(SoloAttempt.user_id == user.id)
+        .options(joinedload(SoloAttempt.quiz_version).joinedload(QuizVersion.quiz))
+        .order_by(SoloAttempt.started_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    attempt_list = []
+    for a in attempts:
+        quiz_title = "Noma'lum"
+        game_mode = "classic_zakovat"
+        quiz_id = None
+        if a.quiz_version:
+            game_mode = a.quiz_version.game_mode
+            if a.quiz_version.quiz:
+                quiz_title = a.quiz_version.quiz.title
+                quiz_id = a.quiz_version.quiz.id
+
+        attempt_list.append({
+            "id": a.id,
+            "session_token": a.session_token,
+            "quiz_id": quiz_id,
+            "quiz_title": quiz_title,
+            "game_mode": game_mode,
+            "timer_mode": a.timer_mode,
+            "status": a.status,
+            "total_score": a.total_score,
+            "total_correct": a.total_correct,
+            "started_at": a.started_at.isoformat() if a.started_at else None,
+            "completed_at": a.completed_at.isoformat() if a.completed_at else None,
+        })
+
+    # Fetch daily submissions
+    daily_subs = (
+        db.query(DailySubmission)
+        .filter(DailySubmission.user_id == user.id)
+        .options(joinedload(DailySubmission.daily_question))
+        .order_by(DailySubmission.answered_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    daily_list = []
+    for ds in daily_subs:
+        schedule_date = ds.daily_question.schedule_date.isoformat() if ds.daily_question else None
+        daily_list.append({
+            "id": ds.id,
+            "daily_question_id": ds.daily_question_id,
+            "schedule_date": schedule_date,
+            "submitted_text": ds.submitted_text,
+            "is_correct": ds.is_correct,
+            "answered_at": ds.answered_at.isoformat() if ds.answered_at else None,
+        })
+
+    return {
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "display_name": user.display_name,
+            "auth_provider": user.auth_provider,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+        },
+        "stats": {
+            "total_attempts": len(attempts),
+            "completed_attempts": sum(1 for a in attempts if a.status == "completed"),
+            "daily_submissions": len(daily_subs),
+        },
+        "attempts": attempt_list,
+        "daily_submissions": daily_list,
+    }
+
+
+@router.put("/users/{user_id}", status_code=status.HTTP_200_OK)
+def update_owner_user(
+    user_id: int,
+    payload: UpdateOwnerUserRequest,
+    db: Session = Depends(get_db),
+    current_owner: User = Depends(verify_owner_access),
+):
+    """
+    Safe account action to update a user's display name.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Foydalanuvchi topilmadi")
+
+    new_name = payload.display_name.strip()
+    if len(new_name) < 2 or len(new_name) > 100:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Foydalanuvchi ismi 2 dan 100 tagacha belgidan iborat bo'lishi kerak",
+        )
+
+    user.display_name = new_name
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "success": True,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "display_name": user.display_name,
+            "auth_provider": user.auth_provider,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+        },
+        "message": f"Foydalanuvchi ismi muvaffaqiyatli yangilandi: '{new_name}'",
+    }
 

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZakoWhat — Maxfiylik Siyosati (Privacy Policy)</title>
+  <meta name="description" content="ZakoWhat platformasining shaxsiy ma'lumotlar va maxfiylik siyosati.">
+  <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/zakowhat-design-system.css">
+
+  <style>
+    .legal-container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 6rem;
+    }
+    .legal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 2.5rem;
+    }
+    .legal-prose h2 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.5rem;
+    }
+    .legal-prose h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+    .legal-prose p, .legal-prose li {
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .legal-prose ul {
+      padding-left: 1.5rem;
+      list-style-type: disc;
+      margin-bottom: 1rem;
+    }
+    .legal-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      background: rgba(197, 160, 89, 0.12);
+      color: var(--accent-brass);
+      border: 1px solid rgba(197, 160, 89, 0.3);
+      margin-bottom: 1rem;
+    }
+    .legal-notice-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      margin: 1.25rem 0;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+    }
+  </style>
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('zakowhat_theme') || localStorage.getItem('zakowhat-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body class="bg-[var(--bg-sanctum)] text-[var(--text-main)] min-h-screen flex flex-col font-sans">
+  {% include "components/header.html" %}
+
+  <main class="flex-grow legal-container">
+    <div class="legal-card space-y-6">
+      <div>
+        <h1 class="text-3xl font-display font-extrabold text-[var(--text-main)]">Maxfiylik Siyosati</h1>
+        <p class="text-xs text-[var(--text-dim)] font-mono mt-1">Oxirgi tahrir: 2026-yil oktyabr · O'RQ-547 va O'RQ-42 qonunchilik talablari asosida</p>
+      </div>
+
+      <div class="legal-prose">
+        <p>
+          ZakoWhat mustaqil intellektual viktorina platformasi (keyingi o'rinlarda «Platforma») foydalanuvchilarning shaxsiy ma'lumotlari daxlsizligini hurmat qiladi. Mazkur Maxfiylik siyosati O'zbekiston Respublikasining 2019-yil 2-iyuldagi <strong>«Shaxsiy ma'lumotlar to'g'risida»gi O'RQ-547-son Qonuni</strong> hamda xalqaro axborot xavfsizligi standartlariga muvofiq qaysi ma'lumotlar to'planishi, qayta ishlanishi va himoyalanishini belgilaydi.
+        </p>
+
+        <h2>1. Platforma Operatori va Aloqa Ma'lumotlari</h2>
+        <p>
+          ZakoWhat — intellektual o'yin ixlosmandlari uchun yaratilgan mustaqil loyiha:
+        </p>
+        <ul>
+          <li><strong>Loyiha:</strong> ZakoWhat intellektual maydoni</li>
+          <li><strong>Manzil:</strong> Toshkent, O'zbekiston</li>
+          <li><strong>Elektron pochta:</strong> exfert.contact@gmail.com</li>
+          <li><strong>Telegram:</strong> @zakowhat</li>
+        </ul>
+
+        <h2>2. To'planadigan Shaxsiy Ma'lumotlar Inventarizatsiyasi</h2>
+        <p>
+          Platformada shaxsiy ma'lumotlarni minimallashtirish (Data Minimization) tamoyili amal qiladi. Faqat xizmat ko'rsatish va o'yin jarayonini tashkil etish uchun zarur bo'lgan minimal ma'lumotlar yig'iladi:
+        </p>
+        <ul>
+          <li><strong>Akkaunt rekvizitlari:</strong> Ro'yxatdan o'tishda kiritilgan elektron pochta manzili, ko'rsatiladigan ism (display name), unikal taxallus (@username) hamda kriptografik bcrypt algoritmi bilan heshlangan parol. Ochiq ko'rinishdagi parollar HECH QACHON saqlanmaydi va uzatilmaydi.</li>
+          <li><strong>Foydalanuvchi profili parametrlari:</strong> Ixtiyoriy qisqa tarjimai hol (bio, 500 belgiga qadar), yuklangan profil surati (avatar) va ommaviylik sozlamalari (is_public, show_stats).</li>
+          <li><strong>O'yin faoliyati va natijalari:</strong> Ishtirok etilgan Zakovat to'plamlari, Svoya Igra o'yinlari, berilgan javoblar to'g'riligi, to'plangan ballar, sarflangan vaqt va kunlik savol urinishlari.</li>
+          <li><strong>Texnik sessiya parametrlari:</strong> Xavfsiz avtorizatsiyani saqlash uchun HttpOnly sessiya cookie'lari, CSRF xavfsizlik belgilari va foydalanuvchi tanlagan rang mavzusi (dark/light).</li>
+        </ul>
+
+        <h2>3. Ma'lumotlarning Ommaviy va Yopiq Doirasi</h2>
+        <p>
+          Platformada shaxsiy ma'lumotlarning ommaviyligi qat'iy chegaralangan:
+        </p>
+        <ul>
+          <li><strong>Ommaga ko'rinadigan ma'lumotlar:</strong> Umumiy liderlar jadvalida faqat foydalanuvchining ko'rsatiladigan ismi, @username, avatar rasmi va to'plangan ballari aks etadi. Shuningdek, agar foydalanuvchi o'z profilini «Ommaviy» qilib belgilagan bo'lsa, /u/{username} sahifasida uning bio va umumiy o'yin statistikasi ko'rinadi.</li>
+          <li><strong>Yopiq profil rejimi:</strong> Foydalanuvchi profilini «Yopiq» (Private) qilib o'rnatganda, boshqa ishtirokchilar uning biografiyasi va to'liq statistikasini ko'ra olmaydilar; faqat uning yopiq profil egasi ekanligi ko'rsatiladi.</li>
+          <li><strong>Qat'iy maxfiy ma'lumotlar:</strong> Foydalanuvchining elektron pochta manzili, parol heshi, sessiya tokenlari va xom javoblar logi hech qachon ommaga yoki boshqa foydalanuvchilarga oshkor etilmaydi.</li>
+        </ul>
+
+        <h2>4. Ma'lumotlar Subyektining Huquqlari (O'RQ-547 Qonuni, 18-20-moddalar)</h2>
+        <p>
+          Foydalanuvchilar qonunchilikda mustahkamlangan quyidagi fundamental huquqlarga ega va ularni bevosita platformada amalga oshirishlari mumkin:
+        </p>
+        <ul>
+          <li><strong>Tanishish huquqi:</strong> Foydalanuvchi o'z profil sahifasida saqlanayotgan barcha ma'lumotlari, o'yin tarixi va natijalari bilan erkin tanishishi mumkin.</li>
+          <li><strong>O'zgartirish va tuzatish huquqi:</strong> «Profil Sozlamalari» bo'limi orqali ism, @username, bio, profil rasmi va parolni istalgan vaqtda mustaqil yangilash mumkin.</li>
+          <li><strong>O'chirish va hisobni yopish huquqi:</strong> Foydalanuvchi «Profil Sozlamalari» bo'limidagi «Akkauntni o'chirish» vositasidan foydalanib o'z akkauntini, profil rasmini va barcha shaxsiy sozlamalarini to'liq o'chirishi mumkin. Bunda o'yin natijalari shaxssizlashtiriladi (anonimlashtiriladi).</li>
+          <li><strong>Rozilikni qaytarib olish:</strong> Foydalanuvchi cookie sozlamalarini o'zgartirish yoki akkauntni yopish orqali avval berilgan rozilikni bekor qilish huquqiga ega.</li>
+          <li><strong>Shikoyat qilish huquqi:</strong> Huquqlari buzilgan taqdirda, foydalanuvchi shaxsiy ma'lumotlar sohasidagi vakolatli davlat organiga (O'zbekiston Respublikasi Raqamli texnologiyalar vazirligi huzuridagi "O'zkomnazorat" inspeksiyasi) yoki sudga murojaat qilish huquqiga ega.</li>
+        </ul>
+
+        <h2>5. O'zbekiston Hududida Ma'lumotlarni Saqlash (Lokalizatsiya — 27-1-modda)</h2>
+        <p>
+          O'zbekiston Respublikasining «Shaxsiy ma'lumotlar to'g'risida»gi Qonunining 27-1-moddasi talablariga muvofiq, O'zbekiston Respublikasi fuqarolarining shaxsiy ma'lumotlariga ishlov beruvchi axborot tizimlari ma'lumotlar bazalarini jismoniy jihatdan O'zbekiston Respublikasi hududida joylashgan texnik vositalarda (serverlarda) saqlashi hamda belgilangan tartibda Shaxsiy ma'lumotlar bazalarining davlat reyestrida ro'yxatdan o'tkazishi shart.
+        </p>
+        <p>
+          Hozirgi ishlab chiqish (development) bosqichida tizim lokal ishlab chiquvchi muhitida sinovdan o'tkazilmoqda. Tizim ommaviy tijoriy yoki keng foydalanishga chiqarilishida barcha shaxsiy ma'lumotlar bazalari O'zbekiston hududidagi vakolatli ma'lumotlar markazlariga (serverlariga) joylashtiriladi.
+        </p>
+
+        <h2>6. Yoshi Cheklovlari va Voyaga Yetmaganlar Maxfiyligi</h2>
+        <p>
+          ZakoWhat intellektual mantiqiy maydon bo'lib, asosan 13 yoshdan oshgan auditoriyaga mo'ljallangan. 16 yoshga to'lmagan shaxslar platformadan ota-onalari yoki qonuniy vasiylari ruxsati bilan foydalanishlari tavsiya etiladi.
+        </p>
+        <p>
+          Platforma voyaga yetmaganlardan pasport ma'lumotlari, fotosuratlar, yashash manzillari yoki boshqa nozik shaxsiy ma'lumotlarni talab qilmaydi va to'plamaydi.
+        </p>
+
+        <h2>7. Uchinchi Tomon Reklamalari va Kelajakdagi Monetizatsiya (Google AdSense)</h2>
+        <p>
+          Ayni paytda ZakoWhat platformasida uchinchi tomon reklama skriptlari yoki kuzatuvchi tijoriy tarmoqlar o'rnatilmagan.
+        </p>
+        <p>
+          Kelajakda platforma faoliyatini moliyalashtirish maqsadida uchinchi tomon reklama provayderlari (masalan, Google AdSense) jalb etilishi mumkin. Bunday holatda:
+        </p>
+        <ul>
+          <li>Reklama provayderlari foydalanuvchilarning platformaga yoki boshqa veb-saytlarga oldingi tashriflariga asoslangan reklamalarni ko'rsatish uchun cookie fayllaridan foydalanishi mumkin;</li>
+          <li>Reklamalar o'yin jarayoniga xalaqit bermasligi, savol matnlari va javob tugmalaridan aniq ajratilishi ta'minlanadi;</li>
+          <li>Foydalanuvchilar Google Ad Settings (Reklama sozlamalari) orqali shaxsiylashtirilgan reklamalardan voz kechish imkoniyatiga ega bo'ladilar.</li>
+        </ul>
+
+        <h2>8. Mualliflik Huquqlari va Shikoyat Qilish Tartibi (Notice & Takedown)</h2>
+        <p>
+          ZakoWhat mualliflik huquqlarini (O'RQ-42-son Qonun) hurmat qiladi. Agar platformadagi biron bir savol, to'plam matni, tasvir yoki tushuntirish sizning mualliflik huquqingizni buzgan deb hisoblasangiz, siz <strong>exfert.contact@gmail.com</strong> manziliga shikoyat yuborishingiz mumkin.
+        </p>
+        <p>
+          Murojaatda quyidagilar ko'rsatilishi shart:
+        </p>
+        <ul>
+          <li>Mualliflik huquqi egasining F.I.Sh. yoki yuridik nomi va aloqa ma'lumotlari;</li>
+          <li>Huquqbuzarlik sodir etilgan deb hisoblangan aniq sahifa havolasi yoki savol identifikatori;</li>
+          <li>Huquq egasi ekanligingizni tasdiqlovchi birlamchi dalillar.</li>
+        </ul>
+        <p>
+          Platforma ma'muriyati bunday murojaatlarni 5 ish kuni ichida o'rganib chiqadi va qoidabuzarlik tasdiqlangan taqdirda material zudlik bilan platformadan olib tashlanadi.
+        </p>
+
+        <h2>9. Siyosatga O'zgartirishlar Kiritish</h2>
+        <p>
+          Platforma rivojlanishi, yangi texnologiyalar joriy etilishi yoki O'zbekiston qonunchiligidagi o'zgarishlar munosabati bilan ushbu Maxfiylik siyosatiga o'zgartirishlar kiritilishi mumkin. Yangilangan tahrir platformada e'lon qilingan paytdan boshlab kuchga kiradi.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  {% include "components/footer.html" %}
+  <script src="/static/js/zakowhat-navbar.js"></script>
+</body>
+</html>

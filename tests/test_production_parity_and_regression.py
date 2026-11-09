@@ -1,11 +1,25 @@
 import pytest
 from fastapi.testclient import TestClient
 from main import app
+from models import QuizVersion
 
 
-@pytest.fixture
-def client():
-    return TestClient(app)
+@pytest.fixture(autouse=True)
+def setup_regression_owner_auth(monkeypatch):
+    """Provides owner authorization for draft creation and fixture seeding."""
+    monkeypatch.setenv("OWNER_EMAIL", "testplayer@zakowhat.uz")
+
+
+def seed_24_question_zakovat(client):
+    """Ensures at least one 24-question classic zakovat quiz is published for gameplay tests."""
+    from tests.test_security_hardening import create_mock_complete_draft
+    quiz_id, draft_id = create_mock_complete_draft(client, "Canonical 24-Question Classic Zakovat")
+    pub_res = client.post(f"/api/drafts/{draft_id}/publish", json={"visibility": "public"})
+    assert pub_res.status_code == 200, pub_res.text
+    return quiz_id
+
+
+
 
 
 def test_production_dependency_google_auth_requests_importable():
@@ -36,7 +50,7 @@ def test_homepage_renders_grand_sanctum_and_never_old_mvp(client):
     
     # Must contain Grand Sanctum signatures
     assert "Daqiqa Ichra Haqiqat Jilvasi" in html
-    assert "Mustaqil Intellektual Maydon" in html
+    assert "Onlayn Intellektual Maydon" in html
     assert "ZakoWhat" in html
     assert "zakowhat-design-system.css" in html
     
@@ -97,7 +111,7 @@ def test_static_assets_load_cleanly(client):
     assert len(girih_res.content) > 500
 
 
-def test_public_catalog_never_exposes_drafts(client):
+def test_public_catalog_never_exposes_drafts(client, db_session):
     """
     Verifies that GET /api/quizzes strictly returns published quizzes only,
     and draft packs never leak into the public catalog.
@@ -105,16 +119,10 @@ def test_public_catalog_never_exposes_drafts(client):
     response = client.get("/api/quizzes")
     assert response.status_code == 200
     quizzes = response.json()
-    from database import SessionLocal
-    from models import QuizVersion
-    db = SessionLocal()
-    try:
-        for q in quizzes:
-            v = db.query(QuizVersion).filter(QuizVersion.id == q["version_id"]).first()
-            assert v is not None
-            assert v.status == "published"
-    finally:
-        db.close()
+    for q in quizzes:
+        v = db_session.query(QuizVersion).filter(QuizVersion.id == q["version_id"]).first()
+        assert v is not None
+        assert v.status == "published"
 
 
 
@@ -122,6 +130,7 @@ def test_owner_panel_endpoints_inaccessible_to_unauthorized(client):
     """
     Verifies that administrative Owner endpoints reject anonymous access with HTTP 401.
     """
+    client.cookies.clear()
     endpoints = [
         "/api/owner/status",
         "/api/owner/quizzes",
@@ -136,6 +145,7 @@ def test_question_bank_inaccessible_to_unauthorized(client):
     """
     Verifies that Question Bank explorer rejects anonymous access with HTTP 401.
     """
+    client.cookies.clear()
     res = client.get("/api/questions")
     assert res.status_code == 401
 
@@ -144,6 +154,7 @@ def test_staging_endpoints_inaccessible_to_unauthorized(client):
     """
     Verifies that Staging endpoints reject anonymous access with HTTP 401.
     """
+    client.cookies.clear()
     res = client.get("/api/play/staging/quizzes")
     assert res.status_code == 401
 
@@ -162,15 +173,28 @@ def test_arena_renders_catalog_even_with_active_anonymous_attempt(client):
     catalog (screen-selection), and NEVER automatically hijack or replace the view with
     the active game. The attempt remains resumable via explicit action ("Davom etish").
     """
-    # 1. Fetch available quizzes to get a playable published quiz
+    # 1. Ensure at least one published 24-question classic zakovat quiz exists
+    seed_24_question_zakovat(client)
+    seed_24_question_zakovat(client)
     res_quizzes = client.get("/api/quizzes")
     assert res_quizzes.status_code == 200
     quizzes = res_quizzes.json()
     assert len(quizzes) > 0, "At least one published quiz must exist"
-    quiz_id = quizzes[0]["quiz_id"]
+    zakovat_quizzes = [q for q in quizzes if q.get("game_mode") == "classic_zakovat" and q.get("total_questions") == 24]
+    assert len(zakovat_quizzes) > 0, "At least one published 24-question classic_zakovat quiz must exist"
+    quiz_id = zakovat_quizzes[0]["quiz_id"]
 
-    # 2. Anonymous player starts the quiz
-    client.cookies.clear()
+    # 2. Player starts the quiz
+    reg_res = client.post("/api/auth/register", json={
+        "display_name": "Arena Player",
+        "email": "arena_player@zakowhat.uz",
+        "password": "Password123!",
+    })
+    if reg_res.status_code == 409:
+        client.post("/api/auth/login", json={
+            "email": "arena_player@zakowhat.uz",
+            "password": "Password123!",
+        })
     start_res = client.post(f"/api/play/start/{quiz_id}")
     assert start_res.status_code == 201
     start_data = start_res.json()
@@ -346,14 +370,26 @@ def test_full_24_question_zakovat_completion_flow_and_review_data(client):
     - /results: Returns final summary with exact scores, time, round breakdown
     - /review: Returns full 24-question answer review with accepted answers and explanations
     """
+    seed_24_question_zakovat(client)
     res_quizzes = client.get("/api/quizzes")
     assert res_quizzes.status_code == 200
     quizzes = res_quizzes.json()
     assert len(quizzes) > 0, "At least one published quiz must exist"
-    quiz_id = quizzes[0]["quiz_id"]
+    zakovat_quizzes = [q for q in quizzes if q.get("game_mode") == "classic_zakovat" and q.get("total_questions") == 24]
+    assert len(zakovat_quizzes) > 0, "At least one published 24-question classic_zakovat quiz must exist"
+    quiz_id = zakovat_quizzes[0]["quiz_id"]
 
     # Start game
-    client.cookies.clear()
+    reg_res = client.post("/api/auth/register", json={
+        "display_name": "Full Player",
+        "email": "full_player@zakowhat.uz",
+        "password": "Password123!",
+    })
+    if reg_res.status_code == 409:
+        client.post("/api/auth/login", json={
+            "email": "full_player@zakowhat.uz",
+            "password": "Password123!",
+        })
     start_res = client.post(f"/api/play/start/{quiz_id}")
     assert start_res.status_code == 201
     start_data = start_res.json()
@@ -385,6 +421,9 @@ def test_full_24_question_zakovat_completion_flow_and_review_data(client):
             assert sub_data["reveal_available"] is True
         else:
             assert sub_data["quiz_completed"] is False
+            # Per-question reveal: the next question opens only via "Davom etish"
+            assert sub_data["awaiting_continue"] is True
+            assert client.post(f"/api/play/{token}/continue").status_code == 200
 
     # Finalize completion
     cont_res = client.post(f"/api/play/{token}/continue")
@@ -634,3 +673,48 @@ def test_frontend_login_in_flight_submission_guard(client):
         assert res["isAuthSubmittingAfter"] is False, "Expected isAuthSubmitting to reset to false after request completes"
     finally:
         driver.quit()
+
+
+def test_arena_template_auth_query_parameter_handling(client):
+    """
+    Regression test: Verifies that /arena parses the `auth` query parameter
+    on initial load ('login' or 'register') so navigation from homepage / or external
+    links automatically pops open the auth modal on the very first click, and cleanly
+    strips the query parameter on modal close via history.replaceState.
+    """
+    res = client.get("/arena")
+    assert res.status_code == 200
+    html = res.text
+
+    # Must parse auth parameter on DOMContentLoaded
+    assert "const authParam = initialParams.get('auth');" in html
+    assert "if (authParam === 'login' || authParam === 'register') {" in html
+    assert "openAuthModal(authParam);" in html
+
+    # Must expose openAuthModal and closeAuthModal to global window
+    assert "window.openAuthModal = openAuthModal;" in html
+    assert "window.closeAuthModal = closeAuthModal;" in html
+
+    # Must strip auth query parameter on close to prevent reopen loops
+    assert "currentUrl.searchParams.delete('auth');" in html
+    assert "window.history.replaceState({}, '', cleanPath);" in html
+
+    # Must support backdrop dismissal and keyboard Escape dismissal
+    assert 'onclick="if (event.target === this) closeAuthModal();"' in html
+    assert "if (e.key === 'Escape') {" in html
+
+
+def test_header_navbar_auth_redirection_and_trigger(client):
+    """
+    Regression test: Verifies that static/js/zakowhat-navbar.js properly wires
+    the Kirish and Ro'yxatdan o'tish buttons across pages.
+    """
+    res = client.get("/static/js/zakowhat-navbar.js")
+    assert res.status_code == 200
+    js = res.text
+
+    # Must check window.openAuthModal first (for in-place arena open)
+    assert "if (typeof window.openAuthModal === 'function')" in js
+    # Must fallback to navigating to /arena?auth=type
+    assert "window.location.href = `/arena?auth=${type}`;" in js
+

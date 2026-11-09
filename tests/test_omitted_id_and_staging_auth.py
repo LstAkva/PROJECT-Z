@@ -7,6 +7,19 @@ from models import SoloAttempt, AnswerRecord, User
 from tests.test_security_hardening import create_mock_complete_draft
 
 
+def press_davom_etish(client, token, headers=None):
+    """Per-question reveal: the next question is withheld until the player continues (POST /continue)."""
+    res = client.post(f"/api/play/{token}/continue", headers=headers or {})
+    assert res.status_code == status.HTTP_200_OK, res.text
+    return res.json()["current_state"]
+
+
+@pytest.fixture(autouse=True)
+def setup_omitted_id_owner_auth(monkeypatch):
+    """Sets owner authorization for draft creation and publishing in regression tests."""
+    monkeypatch.setenv("OWNER_EMAIL", "testplayer@zakowhat.uz")
+
+
 # ==============================================================================
 # FINDING 1 REGRESSION TESTS: OMITTED-ID IDEMPOTENCY & STATE AUTHORITATIVENESS
 # ==============================================================================
@@ -28,8 +41,7 @@ def test_regression_a_previous_answer_equals_current_wrong_answer_advances_norma
     # Q1: "Javob 1", Q2: "Toshkent", Q3: "Javob 3"
     client.post(f"/api/drafts/{draft_id}/publish")
 
-    client.cookies.clear()
-    start_res = client.post(f"/api/play/start/{quiz_id}", json={"timer_mode": "no_timer"})
+    start_res = client.post(f"/api/play/start/{quiz_id}", json={"timer_mode": "with_timer"})
     assert start_res.status_code == status.HTTP_201_CREATED
     token = start_res.json()["session_token"]
 
@@ -38,14 +50,15 @@ def test_regression_a_previous_answer_equals_current_wrong_answer_advances_norma
     assert ans1.status_code == status.HTTP_200_OK
     assert ans1.json()["is_correct"] is True
     assert ans1.json()["total_score"] == 1
-    assert ans1.json()["next_state"]["round_question_index"] == 1  # Q2
+    assert ans1.json()["next_state"] is None  # withheld during the reveal
+    assert press_davom_etish(client, token)["round_question_index"] == 1  # Q2
 
     # 2. Answer Q2 with "Javob 2" -> correct, score 2, advances to Q3
     ans2 = client.post(f"/api/play/{token}/answer", json={"answer": "Javob 2"})
     assert ans2.status_code == status.HTTP_200_OK
     assert ans2.json()["is_correct"] is True
     assert ans2.json()["total_score"] == 2
-    assert ans2.json()["next_state"]["round_question_index"] == 2  # Q3
+    assert press_davom_etish(client, token)["round_question_index"] == 2  # Q3
 
     # State before Q3 submission
     state_before_q3 = client.get(f"/api/play/{token}").json()
@@ -65,8 +78,9 @@ def test_regression_a_previous_answer_equals_current_wrong_answer_advances_norma
     assert data3["points_awarded"] == 0
     # MUST preserve score
     assert data3["total_score"] == 2
-    # MUST advance attempt state to Q4 (round_question_index = 3)
-    assert data3["next_state"]["round_question_index"] == 3
+    # MUST advance attempt state to Q4 (round_question_index = 3), revealed via "Davom etish"
+    assert data3["awaiting_continue"] is True
+    assert press_davom_etish(client, token)["round_question_index"] == 3
 
     # Verify server state is now on Q4
     state_after_q3 = client.get(f"/api/play/{token}").json()
@@ -85,8 +99,7 @@ def test_regression_b_stale_replay_of_previous_answer_duplicate_no_advancement(c
     quiz_id, draft_id = create_mock_complete_draft(client, "Regression B Pack")
     client.post(f"/api/drafts/{draft_id}/publish")
 
-    client.cookies.clear()
-    start_res = client.post(f"/api/play/start/{quiz_id}", json={"timer_mode": "no_timer"})
+    start_res = client.post(f"/api/play/start/{quiz_id}", json={"timer_mode": "with_timer"})
     assert start_res.status_code == status.HTTP_201_CREATED
     data = start_res.json()
     token = data["session_token"]
@@ -100,7 +113,19 @@ def test_regression_b_stale_replay_of_previous_answer_duplicate_no_advancement(c
     assert ans1.status_code == status.HTTP_200_OK
     assert ans1.json()["is_correct"] is True
     assert ans1.json()["total_score"] == 1
-    assert ans1.json()["next_state"]["round_question_index"] == 1  # Q2
+    assert ans1.json()["next_state"] is None  # withheld during the reveal
+
+    # Stale replay DURING the reveal: duplicate, and must not leak the next question
+    replay_during_reveal = client.post(
+        f"/api/play/{token}/answer",
+        json={"question_id": q1_id, "answer": "Javob 1"}
+    ).json()
+    assert replay_during_reveal["is_duplicate"] is True
+    assert replay_during_reveal["awaiting_continue"] is True
+    assert replay_during_reveal["next_state"] is None
+    assert replay_during_reveal["total_score"] == 1
+
+    assert press_davom_etish(client, token)["round_question_index"] == 1  # Q2
 
     # Attempt is now at Q2
     state_q2 = client.get(f"/api/play/{token}").json()
@@ -130,9 +155,9 @@ def test_regression_b_stale_replay_of_previous_answer_duplicate_no_advancement(c
     )
     assert ans2.status_code == status.HTTP_200_OK
     assert ans2.json()["total_score"] == 2
-    assert ans2.json()["next_state"]["round_question_index"] == 2  # Q3
+    assert ans2.json()["awaiting_continue"] is True
 
-    # 4. Replay exact Q2 request using same Idempotency-Key header (even with IDs omitted)
+    # 4. Replay exact Q2 request using same Idempotency-Key header (even with IDs omitted) during the reveal
     replay_idemp = client.post(
         f"/api/play/{token}/answer",
         headers={"Idempotency-Key": "idemp-req-q2-unique"},
@@ -142,7 +167,8 @@ def test_regression_b_stale_replay_of_previous_answer_duplicate_no_advancement(c
     rep_idemp_data = replay_idemp.json()
     assert rep_idemp_data.get("is_duplicate") is True
     assert rep_idemp_data["total_score"] == 2
-    assert rep_idemp_data["next_state"]["round_question_index"] == 2  # Stays at Q3, NO advancement!
+    assert rep_idemp_data["next_state"] is None  # never leaks Q3 before "Davom etish"
+    assert press_davom_etish(client, token)["round_question_index"] == 2  # Q3, NO extra advancement
 
     state_still_q3 = client.get(f"/api/play/{token}").json()
     assert state_still_q3["round_question_index"] == 2
@@ -160,14 +186,14 @@ def test_regression_c_q12_stale_replay_intermediate_break(client):
     quiz_id, draft_id = create_mock_complete_draft(client, "Regression C Pack")
     client.post(f"/api/drafts/{draft_id}/publish")
 
-    client.cookies.clear()
-    start_res = client.post(f"/api/play/start/{quiz_id}", json={"timer_mode": "no_timer"})
+    start_res = client.post(f"/api/play/start/{quiz_id}", json={"timer_mode": "with_timer"})
     token = start_res.json()["session_token"]
 
-    # Play Q1..Q11
+    # Play Q1..Q11 (each reveal requires "Davom etish")
     for i in range(1, 12):
         ans_i = client.post(f"/api/play/{token}/answer", json={"answer": f"Javob {i}"})
         assert ans_i.status_code == status.HTTP_200_OK
+        press_davom_etish(client, token)
 
     # Answer Q12 -> intermediate break
     ans12 = client.post(f"/api/play/{token}/answer", json={"answer": "Javob 12"})
@@ -209,19 +235,22 @@ def test_regression_d_q24_stale_replay_completion(client):
     quiz_id, draft_id = create_mock_complete_draft(client, "Regression D Pack")
     client.post(f"/api/drafts/{draft_id}/publish")
 
-    client.cookies.clear()
-    start_res = client.post(f"/api/play/start/{quiz_id}", json={"timer_mode": "no_timer"})
+    start_res = client.post(f"/api/play/start/{quiz_id}", json={"timer_mode": "with_timer"})
     token = start_res.json()["session_token"]
 
-    # Play Q1..Q12 -> break -> continue -> Q13..Q24
+    # Play Q1..Q12 -> break -> continue -> Q13..Q24 (each mid-round reveal requires "Davom etish")
     for i in range(1, 13):
-        client.post(f"/api/play/{token}/answer", json={"answer": f"Javob {i}"})
+        ans = client.post(f"/api/play/{token}/answer", json={"answer": f"Javob {i}"})
+        if ans.json().get("awaiting_continue"):
+            press_davom_etish(client, token)
     client.post(f"/api/play/{token}/continue")
     for i in range(13, 25):
         ans = client.post(f"/api/play/{token}/answer", json={"answer": f"Javob {i}"})
         if i == 24:
             assert ans.json()["quiz_completed"] is True
             assert ans.json()["total_score"] == 24
+        elif ans.json().get("awaiting_continue"):
+            press_davom_etish(client, token)
 
     # Finalize to completed
     client.get(f"/api/play/{token}/results")

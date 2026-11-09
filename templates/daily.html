@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZakoWhat — Kun Savoli (Daily Question)</title>
+  <meta name="description" content="Har kuni bitta saralangan Zakovat savoli. O'z bilim va mantiqiy tafakkuringizni sinang.">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-favicon.svg">
+
+  <!-- Architectural Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Core Design System -->
+  <link rel="stylesheet" href="/static/css/zakowhat-design-system.css">
+  
+  <style>
+    .daily-container {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 6rem;
+    }
+    .daily-badge-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .daily-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--accent-brass);
+    }
+    .daily-date-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .daily-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+    .daily-question-text {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.28rem;
+      line-height: 1.65;
+      color: var(--text-main);
+      white-space: pre-line;
+      margin-bottom: 2rem;
+    }
+    .daily-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .daily-input-group {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .daily-input {
+      flex: 1;
+      min-width: 240px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.85rem 1.15rem;
+      color: var(--text-main);
+      font-size: 1.05rem;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .daily-input:focus {
+      border-color: var(--accent-brass);
+    }
+    .daily-submit-btn {
+      padding: 0.85rem 1.75rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+    .daily-result-banner {
+      padding: 1.25rem 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .daily-result-correct {
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #4ade80;
+    }
+    .daily-result-incorrect {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #f87171;
+    }
+        .daily-attempts-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.85rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .daily-attempts-label {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .daily-pips {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .daily-pip {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border-subtle);
+      background: transparent;
+      display: inline-block;
+      transition: all 0.25s ease;
+    }
+    .daily-pip.pip-used {
+      background: #f87171;
+      border-color: #f87171;
+      box-shadow: 0 0 6px rgba(248, 113, 113, 0.4);
+    }
+    .daily-pip.pip-correct {
+      background: #4ade80;
+      border-color: #4ade80;
+      box-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
+    }
+    .daily-pip.pip-current {
+      border-color: var(--accent-brass);
+      background: rgba(212, 163, 89, 0.25);
+    }
+    .daily-guess-history {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.85rem;
+      padding: 0.65rem 0.95rem;
+      background: rgba(239, 68, 68, 0.07);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 8px;
+    }
+    .daily-guess-history-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .daily-guess-tag {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #f87171;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.84rem;
+      font-family: 'JetBrains Mono', monospace;
+      text-decoration: line-through;
+    }
+    .daily-guess-tag-correct {
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      color: #4ade80;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.84rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .daily-revealed-section {
+      background: var(--bg-main);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .daily-revealed-title {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    .daily-revealed-answer {
+      font-family: 'Cinzel', serif;
+      font-size: 1.35rem;
+      color: var(--accent-brass);
+      margin-bottom: 1rem;
+    }
+    .daily-revealed-explanation {
+      font-size: 0.98rem;
+      line-height: 1.55;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 0.75rem;
+    }
+    .daily-auth-prompt {
+      padding: 1.5rem;
+      background: var(--bg-main);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .daily-empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+    .daily-empty-icon {
+      margin-bottom: 1.25rem;
+      color: var(--accent-brass);
+      opacity: 0.8;
+    }
+    @media (max-width: 640px) {
+      .daily-card {
+        padding: 1.5rem;
+      }
+      .daily-question-text {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('zakowhat_theme') || localStorage.getItem('zakowhat-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body>
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-link">Asosiy mazmunga o‘tish</a>
+
+  <!-- Unified Masthead Header Component -->
+  {% include "components/header.html" %}
+
+  <main id="main-content" class="daily-container">
+    <div class="daily-badge-row">
+      <div class="daily-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span>Kun Savoli</span>
+      </div>
+      <div id="dailyDateDisplay" class="daily-date-pill"></div>
+    </div>
+
+    <!-- Daily Question Content Container -->
+    <div id="dailyContentWrapper">
+      <div style="text-align: center; padding: 3rem 0; color: var(--text-muted);">
+        Yuklanmoqda...
+      </div>
+    </div>
+  </main>
+  {% include "components/footer.html" %}
+  {% include "components/auth_modal.html" %}
+
+  <script>
+    // Theme handled globally by zakowhat-navbar.js
+
+    // Daily Question Fetch & Render (3 Tries Supported)
+    async function loadDailyQuestion(focusInput = false) {
+      const container = document.getElementById('dailyContentWrapper');
+      const dateDisplay = document.getElementById('dailyDateDisplay');
+
+      try {
+        const res = await fetch('/api/daily/today');
+        const data = await res.json();
+
+        if (data.date) {
+          dateDisplay.textContent = data.date;
+        }
+
+        if (data.status === 'unavailable' || !data.question) {
+          container.innerHTML = `
+            <div class="daily-card daily-empty-state">
+              <svg class="daily-empty-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              <h2 style="font-family: 'Cinzel', serif; margin-bottom: 0.75rem; color: var(--text-main);">
+                Hozircha yangi savollar mavjud emas
+              </h2>
+              <p style="color: var(--text-muted); max-width: 480px; margin: 0 auto 1.5rem;">
+                Bugungi kun uchun savol rejalashtirilmagan. Yangi saralangan savollar tez orada qo'shiladi.
+              </p>
+              <a href="/arena" class="btn btn-secondary">Arenaga o'tish</a>
+            </div>
+          `;
+          return;
+        }
+
+        const q = data.question;
+        const hasSubmitted = data.has_submitted;
+        const isAuth = data.is_authenticated;
+        const sub = data.user_submission;
+        const maxAttempts = data.max_attempts || 3;
+
+        let actionHtml = '';
+
+        if (hasSubmitted && sub) {
+          const isCorrect = sub.is_correct;
+          const attemptsUsed = sub.attempts_used || 1;
+          const history = sub.history || [sub.submitted_text];
+
+          actionHtml = `
+            <div class="daily-result-banner ${isCorrect ? 'daily-result-correct' : 'daily-result-incorrect'}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                ${isCorrect 
+                  ? '<polyline points="20 6 9 17 4 12"></polyline>' 
+                  : '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>'}
+              </svg>
+              <span>${isCorrect ? `To'g'ri javob! ${attemptsUsed}-urinishda topdingiz!` : 'Afsuski, 3 ta urinishingiz ham tugadi.'}</span>
+            </div>
+            <div class="daily-revealed-section">
+              <div class="daily-revealed-title">${history.length > 1 ? 'Sizning urinishlaringiz' : 'Sizning javobingiz'}</div>
+              <div style="margin-bottom: 1.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                ${history.map((h, i) => {
+                  const isThisCorrect = isCorrect && (i === history.length - 1);
+                  return `<span class="${isThisCorrect ? 'daily-guess-tag-correct' : 'daily-guess-tag'}">${i + 1}. ${escapeHtml(h)}</span>`;
+                }).join('')}
+              </div>
+
+              <div class="daily-revealed-title">To'g'ri javob</div>
+              <div class="daily-revealed-answer">${escapeHtml(q.correct_answer || '')}</div>
+
+              ${q.explanation ? `
+                <div class="daily-revealed-explanation">
+                  <strong>Izoh:</strong> ${escapeHtml(q.explanation)}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        } else if (!isAuth) {
+          actionHtml = `
+            <div class="daily-auth-prompt">
+              <p style="margin-bottom: 1rem;">Kun savoliga javob berish (3 ta urinish) va natijangizni saqlash uchun tizimga kiring.</p>
+              <button type="button" onclick="handleNavbarAuth('login')" class="btn btn-primary" style="padding: 0.65rem 1.5rem; cursor: pointer;">Tizimga kirish / Ro'yxatdan o'tish</button>
+            </div>
+          `;
+        } else {
+          const attemptsUsed = sub ? (sub.attempts_used || 0) : 0;
+          const attemptsRemaining = sub ? (sub.attempts_remaining || maxAttempts) : maxAttempts;
+          const history = sub ? (sub.history || []) : [];
+
+          // Build attempt pips
+          let pipsHtml = '';
+          for (let i = 1; i <= maxAttempts; i++) {
+            if (i <= attemptsUsed) {
+              pipsHtml += `<span class="daily-pip pip-used" title="Noto'g'ri urinish"></span>`;
+            } else if (i === attemptsUsed + 1) {
+              pipsHtml += '<span class="daily-pip pip-current" title="Joriy urinish"></span>';
+            } else {
+              pipsHtml += '<span class="daily-pip" title="Kutilayotgan urinish"></span>';
+            }
+          }
+
+          let historyHtml = '';
+          if (history.length > 0) {
+            historyHtml = `
+              <div class="daily-guess-history">
+                <span class="daily-guess-history-label">Oldingi urinishlar:</span>
+                ${history.map((h, i) => `<span class="daily-guess-tag">${i + 1}. ${escapeHtml(h)}</span>`).join('')}
+              </div>
+            `;
+          }
+
+          actionHtml = `
+            <div class="daily-attempts-header">
+              <div class="daily-attempts-label">
+                <span>Urinish: ${attemptsUsed + 1} / ${maxAttempts}</span>
+                <div class="daily-pips">
+                  ${pipsHtml}
+                </div>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--accent-brass); font-family: 'JetBrains Mono', monospace;">
+                ${attemptsRemaining} ta urinishingiz qoldi
+              </div>
+            </div>
+
+            ${historyHtml}
+
+            <form id="dailyAnswerForm" class="daily-form">
+              <div class="daily-input-group">
+                <input 
+                  type="text" 
+                  id="dailyAnswerInput" 
+                  class="daily-input" 
+                  placeholder="${attemptsUsed > 0 ? 'Boshqa variant kiriting...' : 'Javobingizni kiriting...'}" 
+                  autocomplete="off" 
+                  required
+                />
+                <button type="submit" id="dailySubmitBtn" class="btn btn-primary daily-submit-btn">
+                  Javob berish
+                </button>
+              </div>
+              <div id="dailyFormError" style="color: #f87171; font-size: 0.88rem; display: none;"></div>
+              <div id="dailyFormNotice" style="color: #fbbf24; font-size: 0.88rem; display: none;"></div>
+            </form>
+          `;
+        }
+
+        container.innerHTML = `
+          <div class="daily-card">
+            <div class="daily-question-text">${escapeHtml(q.text)}</div>
+            <div id="dailyActionArea">
+              ${actionHtml}
+            </div>
+          </div>
+        `;
+
+        const form = document.getElementById('dailyAnswerForm');
+        if (form) {
+          form.addEventListener('submit', handleDailySubmit);
+          if (focusInput) {
+            const input = document.getElementById('dailyAnswerInput');
+            if (input) input.focus();
+          }
+        }
+
+      } catch (err) {
+        container.innerHTML = `
+          <div class="daily-card" style="text-align: center; color: #f87171;">
+            Savolni yuklashda xatolik yuz berdi. Iltimos, sahifani yangilang.
+          </div>
+        `;
+      }
+    }
+
+    async function handleDailySubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('dailyAnswerInput');
+      const submitBtn = document.getElementById('dailySubmitBtn');
+      const errBox = document.getElementById('dailyFormError');
+      const noticeBox = document.getElementById('dailyFormNotice');
+
+      const ans = (input.value || '').trim();
+      if (!ans) return;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Tekshirilmoqda...';
+      if (errBox) errBox.style.display = 'none';
+      if (noticeBox) noticeBox.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/daily/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answer: ans })
+        });
+
+        if (res.status === 409) {
+          // Already finished all attempts
+          await loadDailyQuestion();
+          return;
+        }
+
+        if (!res.ok) {
+          const errData = await res.json();
+          const detail = typeof errData.detail === 'string' ? errData.detail : (errData.detail?.message || 'Xatolik yuz berdi');
+          errBox.textContent = detail;
+          errBox.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Javob berish';
+          return;
+        }
+
+        const data = await res.json();
+        // If finished or correct, re-render revealed state
+        // If still has tries left, re-render input state with focus
+        await loadDailyQuestion(true);
+
+      } catch (err) {
+        if (errBox) {
+          errBox.textContent = "Tarmoq xatosi. Iltimos, qaytadan urinib ko'ring.";
+          errBox.style.display = 'block';
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Javob berish';
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.loadDailyQuestion = loadDailyQuestion;
+    document.addEventListener('DOMContentLoaded', loadDailyQuestion);
+  </script>
+  <script src="/static/js/zakowhat-navbar.js"></script>
+</body>
+</html>

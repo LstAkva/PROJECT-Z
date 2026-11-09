@@ -1,7 +1,19 @@
+import os
 import pytest
 from fastapi import status
 from datetime import datetime, timezone, timedelta
 from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAnswer, SoloAttempt, User
+
+
+STAGING_TEST_EDITORS = ",".join(
+    ["editor@zakowhat.uz", "testplayer@zakowhat.uz"] + [f"editor{i}@zakowhat.uz" for i in range(1, 10)]
+)
+
+
+@pytest.fixture(autouse=True)
+def staging_allowlist(monkeypatch):
+    """Staging fails closed without an explicit allowlist in every environment; these tests use editors."""
+    monkeypatch.setenv("STAGING_AUTHORIZED_EMAILS", STAGING_TEST_EDITORS)
 
 
 def authenticate_editor(client, email="editor@zakowhat.uz"):
@@ -15,44 +27,52 @@ def authenticate_editor(client, email="editor@zakowhat.uz"):
 
 def create_staged_classic_pack(client, pack_num=1):
     """Creates a staged draft Classic Zakovat pack with the canonical architecture (2 rounds of 12 questions)."""
-    title = f"Classic Zakovat — Pack {pack_num:02d}"
-    res = client.post("/api/drafts", json={
-        "title": title,
-        "description": f"Official Classic Zakovat pack {pack_num:02d} for staging.",
-        "game_mode": "classic_zakovat",
-    })
-    assert res.status_code == status.HTTP_201_CREATED
-    draft_id = res.json()["version_id"]
-
-    # 2 rounds of type zakovat_classic, 12 questions each (sequences 1..12)
-    for r_seq, r_title in [(1, "1-tur"), (2, "2-tur")]:
-        r_res = client.post(f"/api/drafts/{draft_id}/rounds", json={
-            "round_type": "zakovat_classic",
-            "name": r_title,
+    orig_owner = os.environ.get("OWNER_EMAIL")
+    os.environ["OWNER_EMAIL"] = "testplayer@zakowhat.uz"
+    try:
+        title = f"Classic Zakovat — Pack {pack_num:02d}"
+        res = client.post("/api/drafts", json={
+            "title": title,
+            "description": f"Official Classic Zakovat pack {pack_num:02d} for staging.",
+            "game_mode": "classic_zakovat",
         })
-        assert r_res.status_code == status.HTTP_201_CREATED
-        round_id = r_res.json()["round_id"]
+        assert res.status_code == status.HTTP_201_CREATED, res.text
+        draft_id = res.json()["version_id"]
 
-        start_q = (r_seq - 1) * 12 + 1
-        end_q = start_q + 12
-        for i in range(start_q, end_q):
-            q_res = client.post(f"/api/drafts/{draft_id}/rounds/{round_id}/questions", json={
-                "text": f"Pack {pack_num:02d} Savol #{i}: Ushbu savol matni.",
-                "primary_answer": f"Javob {i}",
-                "accepted_answers": [f"Variant {i}"],
-                "explanation": f"Izoh #{i} uchun batafsil ma'lumot.",
-                "points": 1,
+        # 2 rounds of type zakovat_classic, 12 questions each (sequences 1..12)
+        for r_seq, r_title in [(1, "1-tur"), (2, "2-tur")]:
+            r_res = client.post(f"/api/drafts/{draft_id}/rounds", json={
+                "round_type": "zakovat_classic",
+                "name": r_title,
             })
-            assert q_res.status_code == status.HTTP_201_CREATED
+            assert r_res.status_code == status.HTTP_201_CREATED
+            round_id = r_res.json()["round_id"]
 
-    val_res = client.post(f"/api/drafts/{draft_id}/validate")
-    assert val_res.status_code == status.HTTP_200_OK
-    assert val_res.json()["valid"] is True
+            start_q = (r_seq - 1) * 12 + 1
+            end_q = start_q + 12
+            for i in range(start_q, end_q):
+                q_res = client.post(f"/api/drafts/{draft_id}/rounds/{round_id}/questions", json={
+                    "text": f"Pack {pack_num:02d} Savol #{i}: Ushbu savol matni.",
+                    "primary_answer": f"Javob {i}",
+                    "accepted_answers": [f"Variant {i}"],
+                    "explanation": f"Izoh #{i} uchun batafsil ma'lumot.",
+                    "points": 1,
+                })
+                assert q_res.status_code == status.HTTP_201_CREATED
 
-    # Pack remains DRAFT (not published)
-    quiz_res = client.get(f"/api/drafts/{draft_id}")
-    quiz_id = quiz_res.json()["quiz_id"]
-    return quiz_id, draft_id
+        val_res = client.post(f"/api/drafts/{draft_id}/validate")
+        assert val_res.status_code == status.HTTP_200_OK
+        assert val_res.json()["valid"] is True
+
+        # Pack remains DRAFT (not published)
+        quiz_res = client.get(f"/api/drafts/{draft_id}")
+        quiz_id = quiz_res.json()["quiz_id"]
+        return quiz_id, draft_id
+    finally:
+        if orig_owner is not None:
+            os.environ["OWNER_EMAIL"] = orig_owner
+        else:
+            os.environ.pop("OWNER_EMAIL", None)
 
 
 def test_staging_quizzes_listing(client):
@@ -66,9 +86,14 @@ def test_staging_quizzes_listing(client):
     q2_id, _ = create_staged_classic_pack(client, pack_num=2)
 
     # Create an unrelated draft quiz (not a staged classic pack)
-    client.post("/api/drafts", json={"title": "Mening Shaxsiy Kvizim", "game_mode": "modern_multiround"})
+    os.environ["OWNER_EMAIL"] = "testplayer@zakowhat.uz"
+    try:
+        client.post("/api/drafts", json={"title": "Mening Shaxsiy Kvizim", "game_mode": "modern_multiround"})
+    finally:
+        os.environ.pop("OWNER_EMAIL", None)
 
     # 1. Unauthenticated request is rejected with 401
+    client.cookies.clear()
     unauth_res = client.get("/api/play/staging/quizzes")
     assert unauth_res.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -125,6 +150,7 @@ def test_staging_play_start_creates_isolated_attempt(client, db_session):
     quiz_id, _ = create_staged_classic_pack(client, pack_num=3)
 
     # 1. Unauthenticated request is rejected with 401
+    client.cookies.clear()
     unauth_res = client.post(f"/api/play/staging/start/{quiz_id}")
     assert unauth_res.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -228,7 +254,13 @@ def test_staging_full_24_question_gameplay_loop(client, db_session):
             assert sub_data["round_completed"] is False
             assert sub_data["quiz_completed"] is False
             expected_q_idx = i if i < 12 else (i - 12)
-            assert sub_data["next_state"]["round_question_index"] == expected_q_idx
+            # Per-question reveal: next question withheld until "Davom etish" (/continue)
+            assert sub_data["awaiting_continue"] is True
+            assert sub_data["next_state"] is None
+            assert "correct_answer" in sub_data
+            cont_q = client.post(f"/api/play/{token}/continue")
+            assert cont_q.status_code == status.HTTP_200_OK
+            assert cont_q.json()["current_state"]["round_question_index"] == expected_q_idx
         else:
             # Q24 (Q12 of 2-tur) completes the match
             assert sub_data["round_completed"] is True
@@ -352,9 +384,13 @@ def test_question_time_limit_calculation(client):
     words_100 = " ".join(["so'z"] * 100)
     assert calculate_question_time_limit(words_100, "zakovat_classic") == 130
 
-    # Very long question (200 words): capped at 150s
+    # Very long question (200 words): 90 + 80 = 170s
     words_200 = " ".join(["so'z"] * 200)
-    assert calculate_question_time_limit(words_200, "zakovat_classic") == 150
+    assert calculate_question_time_limit(words_200, "zakovat_classic") == 170
+
+    # Extremely long question (250 words): capped at 180s
+    words_250 = " ".join(["so'z"] * 250)
+    assert calculate_question_time_limit(words_250, "zakovat_classic") == 180
 
     # Minimum bound enforced: empty or 0 words -> 90s
     assert calculate_question_time_limit("", "zakovat_classic") == 90
@@ -390,8 +426,11 @@ def test_active_time_capped_by_question_time_limit(client, db_session):
     token = start_res.json()["session_token"]
 
     attempt = db_session.query(SoloAttempt).filter(SoloAttempt.session_token == token).first()
-    # Simulate user opened question 10 minutes (600s) ago
-    attempt.question_opened_at = datetime.now(timezone.utc) - timedelta(seconds=600)
+    # Simulate user opened question 200s ago (exceeds question timer ~92s, but within 300s session limit)
+    attempt.question_opened_at = datetime.now(timezone.utc) - timedelta(seconds=200)
+    meta = dict(attempt.attempt_metadata or {})
+    meta["last_active_at"] = (datetime.now(timezone.utc) - timedelta(seconds=200)).isoformat()
+    attempt.attempt_metadata = meta
     db_session.commit()
 
     sub_res = client.post(f"/api/play/{token}/answer", json={"answer": "Javob 1"})
@@ -446,6 +485,7 @@ def test_anonymous_user_staging_does_not_consume_quota(client, db_session):
     quiz_id, _ = create_staged_classic_pack(client, pack_num=8)
 
     # 1. Anonymous visitor is rejected
+    client.cookies.clear()
     res_anon = client.post(f"/api/play/staging/start/{quiz_id}")
     assert res_anon.status_code == status.HTTP_401_UNAUTHORIZED
 

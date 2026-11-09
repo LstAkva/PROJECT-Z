@@ -1,6 +1,6 @@
 import secrets
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, JSON, Boolean, UniqueConstraint, Index, text
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Date, BigInteger, JSON, Boolean, UniqueConstraint, Index, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from database import Base
@@ -120,6 +120,14 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=True)  # None для Google OAuth пользователей
     display_name = Column(String(100), nullable=False)
+    username = Column(String(50), unique=True, index=True, nullable=True)
+    avatar_url = Column(String(500), nullable=True)
+    bio = Column(Text, nullable=True)
+    is_public = Column(Boolean, default=True, nullable=False)
+    show_stats = Column(Boolean, default=True, nullable=False)
+    theme_preference = Column(String(20), default="dark", nullable=False)
+    cookie_consent = Column(String(50), default="necessary", nullable=False)
+    consent_recorded_at = Column(DateTime, nullable=True)
     auth_provider = Column(String(50), default="local", nullable=False)  # 'local' или 'google'
     google_id = Column(String(255), unique=True, index=True, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -180,3 +188,44 @@ class AnswerRecord(Base):
     attempt = relationship("SoloAttempt", back_populates="answers")
     question = relationship("Question")
     round_question = relationship("RoundQuestion", back_populates="answer_records")
+
+
+# --- KUN SAVOLI (DAILY QUESTION) ---
+
+class DailyQuestion(Base):
+    """Kunlik bitta saralangan savol (Daily Question), Asia/Tashkent kalendar sanasi bo'yicha."""
+    __tablename__ = "daily_questions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    schedule_date = Column(Date, unique=True, index=True, nullable=False)
+    question_id = Column(String(100), nullable=False)
+    message_id = Column(Integer, nullable=False, index=True)
+    channel_id = Column(BigInteger, nullable=False, default=2010763825)
+    question_text = Column(Text, nullable=False)
+    primary_answer = Column(String(500), nullable=False)
+    explanation = Column(Text, nullable=True)
+    accepted_answers = Column(JSONB().with_variant(JSON, "sqlite"), nullable=False, default=list)
+    source_meta = Column(JSONB().with_variant(JSON, "sqlite"), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    submissions = relationship("DailySubmission", back_populates="daily_question", cascade="all, delete-orphan")
+
+
+class DailySubmission(Base):
+    """Foydalanuvchining Kun Savoliga yuborgan javobi va natijasi."""
+    __tablename__ = "daily_submissions"
+    __table_args__ = (
+        UniqueConstraint("daily_question_id", "user_id", name="uq_daily_submission_question_user"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    daily_question_id = Column(Integer, ForeignKey("daily_questions.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    anon_id = Column(String(64), nullable=True, index=True)
+    submitted_text = Column(String(500), nullable=False)
+    is_correct = Column(Boolean, nullable=False)
+    answered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    submission_meta = Column(JSONB().with_variant(JSON, "sqlite"), nullable=True)
+
+    daily_question = relationship("DailyQuestion", back_populates="submissions")
+    user = relationship("User")

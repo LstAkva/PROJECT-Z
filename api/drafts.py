@@ -9,8 +9,13 @@ from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAn
 from api.quizzes import CANONICAL_ROUND_TYPES, compile_published_manifest, sanitize_round_config
 from services.editorial import get_question_editorial_status
 from services.official_pack_qa import MEDIA_DEPENDENCY_RE
+from api.auth import verify_owner_access
 
-router = APIRouter(prefix="/api/drafts", tags=["drafts"])
+router = APIRouter(
+    prefix="/api/drafts",
+    tags=["drafts"],
+    dependencies=[Depends(verify_owner_access)],
+)
 
 
 # =========================================================
@@ -18,9 +23,10 @@ router = APIRouter(prefix="/api/drafts", tags=["drafts"])
 # =========================================================
 
 class CreateDraftQuizRequest(BaseModel):
-    title: str = Field(..., min_length=1)
+    title: Optional[str] = None
     description: Optional[str] = None
     game_mode: Optional[str] = "modern_multiround"
+    from_quiz_id: Optional[int] = None
 
 
 class UpdateDraftQuizRequest(BaseModel):
@@ -188,7 +194,7 @@ def validate_and_normalize_authored_question(
     """
     if not payload.text or not payload.text.strip():
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Savol matni bo'sh bo'lishi mumkin emas",
         )
 
@@ -202,7 +208,7 @@ def validate_and_normalize_authored_question(
     if round_type == "gulmisiz_rayhonmisiz":
         if not payload.options or len(payload.options) != 4:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Gulmisiz, rayhonmisiz? turi uchun aynan 4 ta variant (A, B, C, D) kiritilishi shart",
             )
         expected_keys = ["A", "B", "C", "D"]
@@ -213,7 +219,7 @@ def validate_and_normalize_authored_question(
             opt_text = opt.text.strip() if opt.text else ""
             if not opt_text:
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail=f"Variant {key} matni bo'sh bo'lishi mumkin emas",
                 )
             normalized_options.append({"key": key, "text": opt_text})
@@ -222,7 +228,7 @@ def validate_and_normalize_authored_question(
         correct_key = (payload.correct_option or "").strip().upper()
         if correct_key not in expected_keys:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="To'g'ri variant A, B, C yoki D bo'lishi shart",
             )
 
@@ -244,7 +250,7 @@ def validate_and_normalize_authored_question(
 
         if is_true is None:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Aldama meni turi uchun to'g'ri javob 'ha' (rost) yoki 'yo'q' (yolg'on) sifatida belgilanishi shart",
             )
 
@@ -262,7 +268,7 @@ def validate_and_normalize_authored_question(
         primary_ans = (payload.primary_answer or "").strip()
         if not primary_ans:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Rasmiyatchilik turi uchun to'g'ri javob kiritilishi shart",
             )
         alt_answers = [a.strip() for a in (payload.accepted_answers or []) if a and a.strip()]
@@ -273,7 +279,7 @@ def validate_and_normalize_authored_question(
         primary_ans = (payload.primary_answer or "").strip()
         if not primary_ans:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Asosiy to'g'ri javob kiritilishi shart",
             )
         alt_answers = [a.strip() for a in (payload.accepted_answers or []) if a and a.strip()]
@@ -286,13 +292,99 @@ def validate_and_normalize_authored_question(
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_draft(payload: CreateDraftQuizRequest, db: Session = Depends(get_db)):
-    """Creates a new empty Quiz container and draft QuizVersion."""
-    title = payload.title.strip()
-    if not title:
+    """Creates a new empty Quiz container and draft QuizVersion, or clones an existing quiz into a new draft version."""
+    if payload.from_quiz_id:
+        target_quiz = db.query(Quiz).filter(Quiz.id == payload.from_quiz_id).first()
+        if not target_quiz:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Kviz (ID: {payload.from_quiz_id}) topilmadi",
+            )
+        # Check if an active draft already exists for this quiz (idempotent reuse)
+        existing_draft = (
+            db.query(QuizVersion)
+            .filter(QuizVersion.quiz_id == target_quiz.id, QuizVersion.status == "draft")
+            .order_by(QuizVersion.version_number.desc())
+            .first()
+        )
+        if existing_draft:
+            return {
+                "success": True,
+                "message": "Mavjud qoralama yuklandi",
+                "quiz_id": target_quiz.id,
+                "version_id": existing_draft.id,
+                "version_number": existing_draft.version_number,
+                "title": target_quiz.title,
+                "game_mode": existing_draft.game_mode,
+                "status": existing_draft.status,
+            }
+
+        # Find latest version to clone from
+        latest_ver = (
+            db.query(QuizVersion)
+            .filter(QuizVersion.quiz_id == target_quiz.id)
+            .order_by(QuizVersion.version_number.desc())
+            .first()
+        )
+        next_version_num = (latest_ver.version_number + 1) if latest_ver else 1
+        new_version = QuizVersion(
+            quiz_id=target_quiz.id,
+            version_number=next_version_num,
+            game_mode=payload.game_mode or (latest_ver.game_mode if latest_ver else "modern_multiround"),
+            status="draft",
+            published_manifest=None,
+        )
+        db.add(new_version)
+        db.flush()
+
+        # Clone rounds and round_questions from latest_ver into this draft
+        if latest_ver and latest_ver.rounds:
+            for r in sorted(latest_ver.rounds, key=lambda x: x.sequence):
+                new_round = Round(
+                    quiz_version_id=new_version.id,
+                    sequence=r.sequence,
+                    round_type=r.round_type,
+                    config=dict(r.config) if r.config else {},
+                )
+                db.add(new_round)
+                db.flush()
+                rqs = (
+                    db.query(RoundQuestion)
+                    .filter(RoundQuestion.round_id == r.id)
+                    .order_by(RoundQuestion.sequence.asc())
+                    .all()
+                )
+                for rq in rqs:
+                    new_rq = RoundQuestion(
+                        round_id=new_round.id,
+                        question_id=rq.question_id,
+                        sequence=rq.sequence,
+                        points_override=rq.points_override,
+                        config_override=dict(rq.config_override) if rq.config_override else None,
+                    )
+                    db.add(new_rq)
+
+        db.commit()
+        db.refresh(new_version)
+
+        return {
+            "success": True,
+            "message": f"Yangi qoralama (versiya {new_version.version_number}) yaratildi",
+            "quiz_id": target_quiz.id,
+            "version_id": new_version.id,
+            "version_number": new_version.version_number,
+            "title": target_quiz.title,
+            "game_mode": new_version.game_mode,
+            "status": new_version.status,
+        }
+
+    # Standalone draft quiz
+    if not payload.title or not payload.title.strip():
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Quiz nomi bo'sh bo'lishi mumkin emas",
         )
+    title = payload.title.strip()
 
     quiz = Quiz(
         title=title,
@@ -386,7 +478,7 @@ def update_draft(draft_id: int, payload: UpdateDraftQuizRequest, db: Session = D
         t = payload.title.strip()
         if not t:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Quiz nomi bo'sh bo'lishi mumkin emas",
             )
         quiz.title = t
@@ -431,8 +523,12 @@ def delete_draft(draft_id: int, db: Session = Depends(get_db)):
         and (q.source_meta or {}).get("draft_id") == version.id
     ]
 
-    # Delete quiz container (cascades to QuizVersion, Round, RoundQuestion)
-    db.delete(quiz)
+    # Delete quiz container or only this version if other versions exist
+    version_count = db.query(QuizVersion).filter(QuizVersion.quiz_id == quiz.id).count()
+    if version_count > 1:
+        db.delete(version)
+    else:
+        db.delete(quiz)
     db.flush()
 
     # Clean up questions authored exclusively for this draft if not used in any other round
@@ -456,7 +552,7 @@ def add_round(draft_id: int, payload: AddRoundRequest, db: Session = Depends(get
 
     if payload.round_type not in CANONICAL_ROUND_TYPES:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Noma'lum raund turi: {payload.round_type}",
         )
 
@@ -494,7 +590,7 @@ def reorder_rounds(draft_id: int, payload: ReorderRoundsRequest, db: Session = D
 
     if len(payload.round_ids) != len(rounds) or set(payload.round_ids) != set(round_map.keys()):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Barcha raund ID lari to'liq va takrorlanmasdan uzatilishi shart",
         )
 
@@ -525,7 +621,7 @@ def update_round(draft_id: int, round_id: int, payload: UpdateRoundRequest, db: 
     if payload.round_type is not None:
         if payload.round_type not in CANONICAL_ROUND_TYPES:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Noma'lum raund turi: {payload.round_type}",
             )
         round_obj.round_type = payload.round_type
@@ -686,7 +782,7 @@ def reorder_questions(
     rq_map = {rq.id: rq for rq in rqs}
     if len(payload.round_question_ids) != len(rqs) or set(payload.round_question_ids) != set(rq_map.keys()):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Barcha savollar to'liq va takrorlanmasdan uzatilishi shart",
         )
 
@@ -726,7 +822,7 @@ def update_authored_question(
         t = payload.text.strip()
         if not t:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Savol matni bo'sh bo'lishi mumkin emas",
             )
         q.text = t
@@ -752,7 +848,7 @@ def update_authored_question(
     if payload.options is not None:
         if len(payload.options) != 4:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Variantlar soni aynan 4 ta bo'lishi shart",
             )
         expected_keys = ["A", "B", "C", "D"]
@@ -763,7 +859,7 @@ def update_authored_question(
             opt_text = opt.text.strip() if opt.text else ""
             if not opt_text:
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail=f"Variant {key} matni bo'sh bo'lishi mumkin emas",
                 )
             normalized_options.append({"key": key, "text": opt_text})
@@ -976,18 +1072,20 @@ def run_publish_validation(version: QuizVersion, db: Session) -> dict:
 
             # Missing media dependency check
             if q and q.text and MEDIA_DEPENDENCY_RE.search(q.text):
-                structured_errors.append({
-                    "scope": "question",
-                    "field": "media",
-                    "round_id": r.id,
-                    "round_sequence": r.sequence,
-                    "round_type": r.round_type,
-                    "question_id": q.id,
-                    "question_sequence": rq.sequence,
-                    "global_sequence": global_seq,
-                    "code": "MISSING_MEDIA_DEPENDENCY",
-                    "message": f"{q_label} — missing media dependency (etishmayotgan rasm/tarqatma materialga havola aniqlandi)"
-                })
+                has_media = bool(q.media_url and q.media_url.strip())
+                if not has_media:
+                    structured_errors.append({
+                        "scope": "question",
+                        "field": "media",
+                        "round_id": r.id,
+                        "round_sequence": r.sequence,
+                        "round_type": r.round_type,
+                        "question_id": q.id,
+                        "question_sequence": rq.sequence,
+                        "global_sequence": global_seq,
+                        "code": "MISSING_MEDIA_DEPENDENCY",
+                        "message": f"{q_label} — missing media dependency (etishmayotgan rasm/tarqatma materialga havola aniqlandi)"
+                    })
 
             # Editorial decision check
             if q:
@@ -1372,6 +1470,11 @@ def start_preview_simulation(draft_id: int, db: Session = Depends(get_db)):
         active_time_seconds=0,
         question_opened_at=now,
         status="in_progress",
+        attempt_metadata={
+            "is_preview": True,
+            "is_staging": True,
+            "created_from": "creator_preview",
+        },
     )
     db.add(attempt)
     db.commit()
@@ -1391,6 +1494,8 @@ def start_preview_simulation(draft_id: int, db: Session = Depends(get_db)):
     return {
         "session_token": attempt.session_token,
         "is_preview": True,
+        "quiz_id": version.quiz_id,
+        "version_id": version.id,
         "quiz_title": version.quiz.title,
         "game_mode": version.game_mode,
         "current_state": {
@@ -1457,7 +1562,7 @@ def execute_publish_version(
     val_report = run_publish_validation(version, db)
     if not val_report["valid"]:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={
                 "message": "Kviz nashr qilish uchun to'liq emas yoki xatolar mavjud",
                 "errors": val_report["errors"],

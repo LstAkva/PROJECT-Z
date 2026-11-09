@@ -413,17 +413,25 @@
                 <!-- Injected via JS -->
             </div>
 
-            <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
+            <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
                 <button onclick="closePreviewModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
                     Yopish
                 </button>
-                <button onclick="startPreviewSimulator()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 flex items-center gap-2 cursor-pointer transition-all">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>O'ynab ko'rish (Simulyatsiya)</span>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="startPlayerUiPreview()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-emerald-300 hover:text-white flex items-center gap-1.5 cursor-pointer transition-all" title="Haqiqiy o'yinchi interfeysida ochish">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        <span>O'yinchi ekranida ochish</span>
+                    </button>
+                    <button onclick="startPreviewSimulator()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 flex items-center gap-2 cursor-pointer transition-all">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Tezkor simulyator</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1575,9 +1583,27 @@
             document.getElementById('modal-preview').classList.add('hidden');
         }
 
-        // --- SIMULATOR ---
+        // --- SIMULATOR & PLAYER UI PREVIEW ---
         let simSessionToken = null;
         let simCurrentState = null;
+
+        async function startPlayerUiPreview() {
+            if (!currentDraft) return;
+            try {
+                const res = await fetch(`/api/drafts/${currentDraft.version_id}/preview/start`, { method: 'POST' });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Preview sessiyasini boshlab bo'lmadi");
+                }
+                const data = await res.json();
+                sessionStorage.setItem('zakowhat_session_token', data.session_token);
+                sessionStorage.setItem('zakowhat_quiz_id', data.quiz_id || currentDraft.quiz_id || currentDraft.version_id);
+                sessionStorage.setItem('zakowhat_timer_mode', 'with_timer');
+                window.open(`/play/${data.quiz_id || currentDraft.quiz_id || currentDraft.version_id}`, '_blank');
+            } catch (err) {
+                alert("Xatolik: " + err.message);
+            }
+        }
 
         async function startPreviewSimulator() {
             if (!currentDraft) return;
