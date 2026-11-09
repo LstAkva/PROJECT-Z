@@ -77,8 +77,9 @@ def test_homepage_approved_copy_present(client):
     html = _homepage(client)
     assert "<title>ZakoWhat — Zakovat va Svoya Igra onlayn</title>" in html
     assert "Daqiqa Ichra Haqiqat Jilvasi" in html
-    assert "Onlayn Intellektual Maydon" in html
-    assert "Zakovat va Svoya Igra to‘plamlarini istalgan vaqtda, o‘zingiz o‘ynang." in html
+    assert "Onlayn Intellektual Platforma" in html
+    assert "Zakovat va Svoya Igra — jamoa va boshlovchisiz." in html
+    assert "Intellektual Maydon</span>" not in html.split("</header>")[0]
     assert "Ikki o‘yin — bitta maydon" in html
     assert 'id="game-card-zakovat"' in html and 'id="game-card-svoyak"' in html
     assert "To‘plamlarni o‘ynash uchun bepul ro‘yxatdan o‘ting." in html

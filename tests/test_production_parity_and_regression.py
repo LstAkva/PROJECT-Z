@@ -50,7 +50,7 @@ def test_homepage_renders_grand_sanctum_and_never_old_mvp(client):
     
     # Must contain Grand Sanctum signatures
     assert "Daqiqa Ichra Haqiqat Jilvasi" in html
-    assert "Onlayn Intellektual Maydon" in html
+    assert "Onlayn Intellektual Platforma" in html
     assert "ZakoWhat" in html
     assert "zakowhat-design-system.css" in html
     
@@ -718,3 +718,13 @@ def test_header_navbar_auth_redirection_and_trigger(client):
     # Must fallback to navigating to /arena?auth=type
     assert "window.location.href = `/arena?auth=${type}`;" in js
 
+
+
+def test_arena_has_no_separate_featured_section(client):
+    """Regression: the "Tanlangan Turnir" block (newest pack pulled out of its section) was removed;
+    every pack is listed exactly once inside its game-mode section."""
+    html = client.get("/arena").text
+    assert "Tanlangan Turnir" not in html
+    assert "arena-featured-section" not in html
+    assert "arena-featured-card" not in html
+    assert "const remainingQuizzes = quizzes;" in html

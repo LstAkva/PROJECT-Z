@@ -198,18 +198,6 @@
 
             <!-- Main Quizzes List Container -->
             <div id="arena-content" class="space-y-8 hidden">
-                <!-- Featured Quiz Section (shown if any featured/primary quiz exists) -->
-                <div id="arena-featured-section" class="hidden space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-xs font-bold text-[var(--text-dim)] uppercase tracking-wider">
-                            Tanlangan Turnir
-                        </h2>
-                    </div>
-                    <div id="arena-featured-card">
-                        <!-- Rendered dynamically -->
-                    </div>
-                </div>
-
                 <!-- Quizzes List -->
                 <div>
                     <div id="arena-quizzes-grid" class="space-y-4">
@@ -2157,14 +2145,12 @@
             const loadingEl = document.getElementById('arena-loading');
             const emptyEl = document.getElementById('arena-empty');
             const contentEl = document.getElementById('arena-content');
-            const featuredSection = document.getElementById('arena-featured-section');
             const gridEl = document.getElementById('arena-quizzes-grid');
             const countEl = document.getElementById('arena-quizzes-count');
 
             if (loadingEl) loadingEl.classList.remove('hidden');
             if (emptyEl) emptyEl.classList.add('hidden');
             if (contentEl) contentEl.classList.add('hidden');
-            if (featuredSection) featuredSection.classList.add('hidden');
 
             const toolbar = document.getElementById('arena-filters-toolbar');
             if (toolbar) toolbar.classList.add('hidden');
@@ -2324,8 +2310,6 @@
             const loadingEl = document.getElementById('arena-loading');
             const emptyEl = document.getElementById('arena-empty');
             const contentEl = document.getElementById('arena-content');
-            const featuredSection = document.getElementById('arena-featured-section');
-            const featuredCard = document.getElementById('arena-featured-card');
             const gridEl = document.getElementById('arena-quizzes-grid');
             const countEl = document.getElementById('arena-quizzes-count');
 
@@ -2390,75 +2374,8 @@
                 if (countEl) countEl.innerText = quizzes.length;
                 if (contentEl) contentEl.classList.remove('hidden');
 
-                // Featured Quiz Rendering (only when in default view: no search, all categories, all modes)
-                const isDefaultView = !state.searchQuery && state.currentCategory === 'all' && state.currentMode === 'all';
-                let featuredQuizId = null;
-                if (isDefaultView && quizzes.length > 0 && featuredSection && featuredCard) {
-                    const f = quizzes[0];
-                    featuredQuizId = f.quiz_id;
-                    featuredSection.classList.remove('hidden');
-
-                    let fTopPlayerHtml = '';
-                    if (f.top_player) {
-                        fTopPlayerHtml = `
-                            <div class="arena-leader-bar">
-                                <div class="arena-leader-label">
-                                    <span>Peshqadam:</span>
-                                    <strong class="arena-leader-name">${escapeHtml(f.top_player.display_name)}</strong>
-                                </div>
-                                <div class="arena-leader-score">
-                                    <span>${formatLeaderboardResult(f.top_player, f.game_mode === 'svoyak')}</span>
-                                    <span class="opacity-60">• ${f.top_player.formatted_time}</span>
-                                </div>
-                            </div>
-                        `;
-                    }
-
-                    featuredCard.innerHTML = `
-                        <div class="arena-pack-card arena-featured-card">
-                            <div>
-                                ${packCategoryLabelHtml(f.category)}
-
-                                <h3 onclick="openQuizDetail(${f.quiz_id})" class="pack-title cursor-pointer transition-colors text-xl font-bold">
-                                    ${escapeHtml(formatPlayerFacingTitle(f.title))}
-                                </h3>
-
-                                <p class="pack-desc">
-                                    ${escapeHtml(cleanPlayerFacingDescription(f.description, f.game_mode === 'classic_zakovat', f.game_mode === 'svoyak'))}
-                                </p>
-                            </div>
-
-                            <div class="pack-meta-row">
-                                <div class="pack-specs">
-                                    ${f.game_mode === "svoyak"
-                                        ? `<span>25 savol</span><span>·</span><span>5 mavzu</span><span>·</span><span>~25 daq</span>`
-                                        : `<span>24 savol</span><span>·</span><span>2 tur</span><span>·</span><span>~24 daq</span>`}
-                                </div>
-                                <div class="pack-actions">
-                                    <button
-                                        type="button"
-                                        onclick="openQuizDetail(${f.quiz_id})"
-                                        class="btn-text-subtle text-xs"
-                                    >
-                                        Batafsil
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onclick="handleCardPlayAction(${f.quiz_id})"
-                                        class="btn btn-primary text-xs px-4 py-1.5 font-medium"
-                                    >
-                                        <span>${hasActiveSessionForQuiz(f.quiz_id) ? 'Davom etish' : 'O‘ynash'}</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else if (featuredSection) {
-                    featuredSection.classList.add('hidden');
-                }
-
-                // Grid list rendering: ALWAYS exclude featuredQuizId if it is shown above, eliminating duplicate card!
-                const remainingQuizzes = featuredQuizId ? quizzes.filter(q => q.quiz_id !== featuredQuizId) : quizzes;
+                // Every pack is listed once, inside its game-mode section (no separate featured card).
+                const remainingQuizzes = quizzes;
 
                 function buildCardHtml(q) {
                     const isClassic = (q.game_mode === 'classic_zakovat' || q.game_mode === 'zakovat_classic');
