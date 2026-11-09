@@ -86,7 +86,7 @@ def test_arena_route_renders_catalog_container(client):
     assert response.status_code == 200
     html = response.text
     assert "ZAKOWHAT ARENA" in html
-    assert "Rasmiy Viktorina To‘plamlari" in html
+    assert "Zakovat Savollar To‘plamlari" in html
     assert "Zakovat Platform MVP" not in html
 
 
@@ -213,7 +213,7 @@ def test_arena_renders_catalog_even_with_active_anonymous_attempt(client):
 
     # Contract A: HTML must render the Arena Catalog SPA container (screen-selection)
     assert "ZAKOWHAT ARENA" in html
-    assert "Rasmiy Viktorina To‘plamlari" in html
+    assert "Zakovat Savollar To‘plamlari" in html
     assert 'id="screen-selection"' in html
     assert 'id="screen-gameplay"' in html
 

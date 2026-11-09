@@ -27,6 +27,7 @@
         .animate-fade-in { animation: fadeIn 0.2s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
     </style>
+    <script src="{{ static_url('js/zakowhat-dialog.js') }}"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
@@ -1361,37 +1362,31 @@
         }
 
         async function handleCreateQuizSubmit(e) {
-            console.log(">>> handleCreateQuizSubmit CALLED!");
             if (e && e.preventDefault) e.preventDefault();
             const title = document.getElementById('create-quiz-title').value;
             const description = document.getElementById('create-quiz-desc').value;
 
             try {
-                console.log(">>> Sending POST /api/owner/quizzes...");
                 const res = await fetch('/api/owner/quizzes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title, description, game_mode: 'classic_zakovat' })
                 });
-                console.log(">>> POST /api/owner/quizzes status:", res.status);
                 if (!res.ok) {
                     const err = await res.json();
                     throw new Error(err.detail || "Paket yaratib bo'lmadi");
                 }
                 const data = await res.json();
-                console.log(">>> Created quiz data:", JSON.stringify(data));
                 closeCreateQuizModal();
-                console.log(">>> Closed create modal, opening pack editor...");
                 await openPackEditor(data.quiz_id);
-                console.log(">>> Opened pack editor!");
             } catch(err) {
                 console.error(">>> ERROR in handleCreateQuizSubmit:", err);
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
         async function handleDeleteQuiz(quizId) {
-            if (!confirm(`Haqiqatan ham #${quizId} paketini o'chirmoqchimisiz?`)) return;
+            if (!(await zwConfirm(`Haqiqatan ham #${quizId} paketini o'chirmoqchimisiz?`, { variant: "danger", title: "Paketni o'chirish", confirmText: "O'chirish" }))) return;
             try {
                 const res = await fetch(`/api/owner/quizzes/${quizId}`, { method: 'DELETE' });
                 if (!res.ok) {
@@ -1401,7 +1396,7 @@
                 await loadQuizzesList();
                 await loadDashboardData();
             } catch(err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -1454,7 +1449,7 @@
                 }
 
             } catch(e) {
-                alert(e.message);
+                await zwAlert(e.message);
                 closePackEditor();
             }
         }
@@ -1534,7 +1529,7 @@
 
         async function batchApprovePackQuestions() {
             if (!state.currentEditorQuizId) return;
-            if (!confirm("Haqiqatan ham ushbu paketdagi barcha savollarni ma'qullashni (Approve) xohlaysizmi?\n\nBu har bir savolga 'approved' maqomini beradi.")) return;
+            if (!(await zwConfirm("Haqiqatan ham ushbu paketdagi barcha savollarni ma'qullashni (Approve) xohlaysizmi?\n\nBu har bir savolga 'approved' maqomini beradi.", { title: "Savollarni ma'qullash", confirmText: "Ma'qullash" }))) return;
 
             try {
                 const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}/decision`, {
@@ -1548,7 +1543,7 @@
                 }
                 await refreshEditorQuiz();
             } catch(err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -1565,7 +1560,7 @@
                 }
                 await refreshEditorQuiz();
             } catch(err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -1656,20 +1651,20 @@
                 const val = await res.json().catch(() => ({}));
                 if (!res.ok) {
                     const errorMsg = (val && val.detail) ? val.detail : `Server xatosi (HTTP ${res.status})`;
-                    alert("Xatolik: " + errorMsg);
+                    await zwAlert("Xatolik: " + errorMsg);
                     return;
                 }
                 renderValidationCard(val);
                 if (val.valid) {
-                    alert("✓ Validatsiya muvaffaqiyatli: 2x12 to'liq va barcha talablarga javob beradi!");
+                    await zwAlert("✓ Validatsiya muvaffaqiyatli: 2x12 to'liq va barcha talablarga javob beradi!");
                 } else {
                     const errMsgs = (val.errors && Array.isArray(val.errors) && val.errors.length > 0)
                         ? val.errors.join('\n')
                         : "Noma'lum validatsiya xatosi";
-                    alert(`✕ Validatsiya xatosi:\n${errMsgs}`);
+                    await zwAlert(`✕ Validatsiya xatosi:\n${errMsgs}`);
                 }
             } catch(err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -1701,7 +1696,7 @@
                 if (!res.ok) throw new Error("Qayta tartiblashda xatolik");
                 await refreshEditorQuiz();
             } catch(e) {
-                alert(e.message);
+                await zwAlert(e.message);
             }
         }
 
@@ -1714,7 +1709,7 @@
                 if (!res.ok) throw new Error("Savolni olib tashlab bo'lmadi");
                 await refreshEditorQuiz();
             } catch(e) {
-                alert(e.message);
+                await zwAlert(e.message);
             }
         }
 
@@ -1867,14 +1862,14 @@
                 closeQuestionPicker();
                 await refreshEditorQuiz();
             } catch(err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
         // 6. PUBLISHING MODAL & ACTION
         function openPublishModal() {
             if (!state.editorQuizDetail || !state.editorQuizDetail.validation.valid) {
-                alert("Paketda xatoliklar mavjud. Nashr qilishdan oldin ularni bartaraf eting.");
+                zwAlert("Paketda xatoliklar mavjud. Nashr qilishdan oldin ularni bartaraf eting.");
                 return;
             }
             document.getElementById('modal-publish').classList.remove('hidden');
@@ -1901,11 +1896,11 @@
                 }
                 const result = await res.json();
                 closePublishModal();
-                alert(`✓ Viktorina muvaffaqiyatli nashr qilindi! Endi u ommaviy Arenada barcha o'yinchilar uchun ochiq.`);
+                await zwAlert(`✓ Viktorina muvaffaqiyatli nashr qilindi! Endi u ommaviy Arenada barcha o'yinchilar uchun ochiq.`);
                 await refreshEditorQuiz();
                 await loadDashboardData();
             } catch(err) {
-                alert("Nashr qilishda xatolik: " + err.message);
+                await zwAlert("Nashr qilishda xatolik: " + err.message);
             } finally {
                 btn.disabled = false;
                 btn.innerText = "Tasdiqlash va Nashr Qilish";
@@ -2132,7 +2127,7 @@
 
                 document.getElementById('modal-question-detail').classList.remove('hidden');
             } catch(e) {
-                alert(e.message);
+                await zwAlert(e.message);
             }
         }
 
@@ -2186,7 +2181,7 @@
                     await refreshEditorQuiz();
                 }
             } catch(err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -2216,13 +2211,13 @@
                     await refreshEditorQuiz();
                 }
             } catch(err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
         async function handleDeleteAcceptedAnswer(answerId) {
             if (!state.inspectingQuestionId) return;
-            if (!confirm("Ushbu javobni o'chirishni tasdiqlaysizmi?")) return;
+            if (!(await zwConfirm("Ushbu javobni o'chirishni tasdiqlaysizmi?", { variant: "danger", title: "Javobni o'chirish", confirmText: "O'chirish" }))) return;
 
             try {
                 const res = await fetch(`/api/owner/questions/${state.inspectingQuestionId}/answers/${answerId}`, {
@@ -2237,7 +2232,7 @@
                     await refreshEditorQuiz();
                 }
             } catch(err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -2257,16 +2252,16 @@
                     await refreshEditorQuiz();
                 }
             } catch(err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
         async function handleCandidateReplace(candidateId) {
             if (!state.inspectingRqId || !state.inspectingRoundId || !state.currentEditorQuizId) {
-                alert("Savol paket kontekstida tahrirlanmayapti.");
+                await zwAlert("Savol paket kontekstida tahrirlanmayapti.");
                 return;
             }
-            if (!confirm(`Haqiqatan ham ushbu savolni tavsiya etilgan zaxira savoli (#${candidateId}) bilan almashtirmoqchimisiz?`)) return;
+            if (!(await zwConfirm(`Haqiqatan ham ushbu savolni tavsiya etilgan zaxira savoli (#${candidateId}) bilan almashtirmoqchimisiz?`, { title: "Savolni almashtirish", confirmText: "Almashtirish" }))) return;
 
             try {
                 const res = await fetch(`/api/owner/quizzes/${state.currentEditorQuizId}/rounds/${state.inspectingRoundId}/questions/${state.inspectingRqId}/replace`, {
@@ -2281,7 +2276,7 @@
                 closeQuestionDetailModal();
                 await refreshEditorQuiz();
             } catch(err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -2312,7 +2307,7 @@
             const seedInput = document.getElementById('gen-seed-input');
             const seedVal = parseInt(seedInput.value, 10);
             if (isNaN(seedVal)) {
-                alert("Iltimos, to'g'ri son shaklidagi seed kiriting.");
+                await zwAlert("Iltimos, to'g'ri son shaklidagi seed kiriting.");
                 return;
             }
             const gameMode = document.getElementById('gen-game-mode-select').value;
@@ -2343,7 +2338,7 @@
                 state.currentCandidateData = data;
                 renderCandidatePreview(data);
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = oldText;
@@ -2391,7 +2386,7 @@
 
         async function handleCommitGeneratedPack() {
             if (!state.currentCandidateData) {
-                alert("Avval paketni ko'rish (preview) orqali generatsiya qiling.");
+                await zwAlert("Avval paketni ko'rish (preview) orqali generatsiya qiling.");
                 return;
             }
             const seed = state.currentCandidateData.seed;
@@ -2400,7 +2395,7 @@
             const title = document.getElementById('gen-commit-title').value.trim();
             const desc = document.getElementById('gen-commit-desc').value.trim();
 
-            if (!confirm(`Haqiqatan ham ushbu 24-savolli paketni DRAFT sifatida saqlamoqchimisiz?\n\nSeed: ${seed}`)) {
+            if (!(await zwConfirm(`Haqiqatan ham ushbu 24-savolli paketni DRAFT sifatida saqlamoqchimisiz?\n\nSeed: ${seed}`, { variant: "info", title: "Qoralama sifatida saqlash", confirmText: "Saqlash" }))) {
                 return;
             }
 
@@ -2428,7 +2423,7 @@
                 }
 
                 const result = await res.json();
-                alert(`Muvaffaqiyatli saqlandi! Viktorina ID: #${result.quiz_id} ("${result.title}").\n\nEndi 2x12 Pack Editorda tahririyat ko'rigiga yo'naltirilmoqda.`);
+                await zwAlert(`Muvaffaqiyatli saqlandi! Viktorina ID: #${result.quiz_id} ("${result.title}").\n\nEndi 2x12 Pack Editorda tahririyat ko'rigiga yo'naltirilmoqda.`);
 
                 // Refresh dashboard and quizzes list
                 await loadDashboardData();
@@ -2437,7 +2432,7 @@
                 // Switch to quizzes view and open pack editor directly
                 openPackEditor(result.quiz_id);
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = oldText;
@@ -2449,19 +2444,19 @@
         // UNPUBLISH QUIZ ACTION
         // =================================================================
         async function triggerUnpublishQuiz(quizId) {
-            if (!confirm("Haqiqatan ham ushbu paketni nashrdan olib, qoralama holatiga qaytarmoqchimisiz?")) return;
+            if (!(await zwConfirm("Haqiqatan ham ushbu paketni nashrdan olib, qoralama holatiga qaytarmoqchimisiz?", { variant: "danger", title: "Nashrdan olish", confirmText: "Nashrdan olish" }))) return;
             try {
                 const res = await fetch(`/api/owner/quizzes/${quizId}/unpublish`, { method: 'POST' });
                 if (!res.ok) {
                     const err = await res.json();
-                    alert(err.detail || "Nashrdan olishda xatolik");
+                    await zwAlert(err.detail || "Nashrdan olishda xatolik");
                     return;
                 }
                 await loadQuizzesList();
                 await loadDashboardData();
             } catch(e) {
                 console.error(e);
-                alert("Xatolik yuz berdi");
+                await zwAlert("Xatolik yuz berdi");
             }
         }
 
@@ -2555,7 +2550,7 @@
             try {
                 const res = await fetch(`/api/owner/users/${userId}`);
                 if (!res.ok) {
-                    alert("Foydalanuvchi ma'lumotlarini yuklab bo'lmadi");
+                    await zwAlert("Foydalanuvchi ma'lumotlarini yuklab bo'lmadi");
                     return;
                 }
                 const data = await res.json();
@@ -2619,7 +2614,7 @@
                 modal.classList.remove('hidden');
             } catch(e) {
                 console.error(e);
-                alert("Xatolik: " + e.message);
+                await zwAlert("Xatolik: " + e.message);
             }
         }
 

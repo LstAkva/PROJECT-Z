@@ -709,7 +709,8 @@ def test_frontend_render_validation_card_and_trigger_safely_handle_error_payload
         res5 = driver.execute_async_script("""
             var done = arguments[arguments.length - 1];
             var lastAlert = null;
-            window.alert = function(msg) { lastAlert = msg; };
+            // Native alert() was replaced by the ZakoWhat dialog component (returns a Promise).
+            window.zwAlert = function(msg) { lastAlert = msg; return Promise.resolve(); };
             state.currentEditorQuizId = 999;
             window.fetch = function() {
                 return Promise.resolve({

@@ -5,6 +5,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import os
+import hashlib
+from functools import lru_cache
 from database import test_database_connection, get_db
 from api.quizzes import router as quizzes_router
 from api.play import router as play_router
@@ -101,6 +103,29 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 templates = Jinja2Templates(directory="templates")
+
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
+
+@lru_cache(maxsize=None)
+def static_url(path: str) -> str:
+    """
+    Versioned URL for a static asset: /static/<path>?v=<content hash>.
+    The hash changes whenever the file's content changes, so browsers fetch the new
+    CSS/JS after a deploy instead of reusing a stale cached copy. Computed once per
+    process (files do not change while a deployment is running).
+    """
+    clean = path.lstrip("/")
+    try:
+        with open(os.path.join(STATIC_DIR, clean), "rb") as f:
+            version = hashlib.sha256(f.read()).hexdigest()[:12]
+    except OSError:
+        return f"/static/{clean}"
+    return f"/static/{clean}?v={version}"
+
+
+templates.env.globals["static_url"] = static_url
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(quizzes_router)

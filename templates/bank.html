@@ -42,6 +42,7 @@
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
     </style>
+    <script src="{{ static_url('js/zakowhat-dialog.js') }}"></script>
 </head>
 <body class="min-h-full flex flex-col font-sans selection:bg-indigo-500 selection:text-white custom-gradient pb-24">
 
@@ -829,7 +830,7 @@
 
                 document.getElementById('modal-detail').classList.remove('hidden');
             } catch (err) {
-                alert('Xatolik: ' + err.message);
+                await zwAlert('Xatolik: ' + err.message);
             }
         }
 
@@ -842,7 +843,7 @@
         // =========================================================
         function openDraftModal() {
             if (selectedQuestions.size === 0) {
-                alert('Iltimos, avval savollarni tanlang.');
+                zwAlert('Iltimos, avval savollarni tanlang.');
                 return;
             }
 

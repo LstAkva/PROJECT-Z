@@ -359,17 +359,19 @@ def test_unlisted_direct_link_gameplay_remains_functional(client):
 
 
 def test_arena_categories_endpoint(client):
-    """15. /api/quizzes/categories returns standard + custom categories."""
+    """15. /api/quizzes/categories returns only categories of visible published packs.
+    (Previously it padded the list with fixed categories such as "Adabiyot va San'at" that
+    had no packs, so those filter pills always led to an empty Arena.)"""
     create_and_publish_quiz(client, title="Kosmos Tarixi", category="Koinot")
 
     cat_res = client.get("/api/quizzes/categories")
     assert cat_res.status_code == status.HTTP_200_OK
     cats = cat_res.json()["categories"]
-    assert "Umumiy" in cats
-    assert "Zakovat" in cats
-    assert "Tarix" in cats
-    assert "Adabiyot va San'at" in cats
     assert "Koinot" in cats
+    for empty_category in ("Fan va Texnologiya", "Adabiyot va San'at"):
+        assert empty_category not in cats
+    for cat in cats:
+        assert client.get("/api/quizzes", params={"category": cat}).json(), f"category {cat!r} has no packs"
 
 
 def test_arena_search_with_uzbek_apostrophe_variants(client):

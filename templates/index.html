@@ -28,7 +28,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- Core ZakoWhat Design System v1.1 -->
-    <link rel="stylesheet" href="/static/css/zakowhat-design-system.css">
+    <link rel="stylesheet" href="{{ static_url('css/zakowhat-design-system.css') }}">
 
     <script>
         (function() {
@@ -62,6 +62,7 @@
             }
         }
     </script>
+    <script src="{{ static_url('js/zakowhat-dialog.js') }}"></script>
 </head>
 <body class="min-h-full flex flex-col font-sans selection:bg-amber-600/30 selection:text-white">
 
@@ -97,7 +98,7 @@
                         <span>SARALANGAN TO‘PLAMLAR</span>
                     </div>
                     <h1 class="arena-catalog-title">
-                        Rasmiy Viktorina To‘plamlari
+                        Zakovat Savollar To‘plamlari
                     </h1>
                     <p class="arena-catalog-desc">
                         Zakovat anʼanalariga asoslangan 2×12 formatidagi saralangan intellektual to‘plamlar. O‘z bilimingizni sinab ko‘ring va yetakchilar safiga qo‘shiling.
@@ -210,13 +211,7 @@
                 </div>
 
                 <!-- Quizzes List -->
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2">
-                        <h2 class="text-xs font-bold text-[var(--text-dim)] uppercase tracking-wider flex items-center gap-2">
-                            <span>Barcha Viktorinalar</span>
-                            <span id="arena-quizzes-count" class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--bg-card)] text-[var(--text-brass)] border border-[var(--border-subtle)]">0</span>
-                        </h2>
-                    </div>
+                <div>
                     <div id="arena-quizzes-grid" class="space-y-4">
                         <!-- Cards rendered dynamically -->
                     </div>
@@ -1690,7 +1685,7 @@
                 if (anonBanner) anonBanner.classList.add('hidden');
 
                 if (data.attempt_claimed) {
-                    alert('Tabriklaymiz! Sizning yakunlangan natijangiz yangi akkauntingizga muvaffaqiyatli biriktirildi va liderlar jadvaliga kiritildi!');
+                    await zwAlert('Tabriklaymiz! Sizning yakunlangan natijangiz yangi akkauntingizga muvaffaqiyatli biriktirildi va liderlar jadvaliga kiritildi!');
                 }
 
                 // If user was attempting to play a quiz before auth, auto-start it now!
@@ -1916,7 +1911,7 @@
             if (restored) {
                 window.history.pushState({}, '', `/play/${quizId || ''}`);
             } else {
-                alert("Sessiyani davom ettirib bo'lmadi. Yangi o'yin boshlashingiz mumkin.");
+                await zwAlert("Sessiyani davom ettirib bo'lmadi. Yangi o'yin boshlashingiz mumkin.");
                 await loadPlayerProfile();
             }
         };
@@ -1979,7 +1974,7 @@
                 const anonBanner = document.getElementById('results-anon-banner');
                 if (anonBanner) anonBanner.classList.add('hidden');
             } catch (err) {
-                alert('Google Sign-In: ' + err.message);
+                await zwAlert('Google Sign-In: ' + err.message);
             }
         }
 
@@ -2311,6 +2306,14 @@
             openQuizDetail(quizId);
         }
 
+        // Generic labels repeat the section/mode and add noise; real themes (Tarix, Mantiq…) are kept.
+        const GENERIC_CATEGORY_LABELS = ['umumiy', 'zakovat', 'svoya igra', 'viktorina', 'klassik zakovat'];
+        function packCategoryLabelHtml(category) {
+            const c = (category || '').trim();
+            if (!c || GENERIC_CATEGORY_LABELS.includes(c.toLowerCase())) return '';
+            return `<div class="pack-card-header"><span class="pack-category">${escapeHtml(c)}</span></div>`;
+        }
+
         async function loadQuizzes() {
             state.isStaging = false;
             const stagingBanner = document.getElementById('staging-mode-banner');
@@ -2414,10 +2417,7 @@
                     featuredCard.innerHTML = `
                         <div class="arena-pack-card arena-featured-card">
                             <div>
-                                <div class="pack-card-header">
-                                    <span class="pack-category">${escapeHtml(f.category || 'Umumiy')}</span>
-                                    <span class="pack-mode-pill">Tanlangan to‘plam</span>
-                                </div>
+                                ${packCategoryLabelHtml(f.category)}
 
                                 <h3 onclick="openQuizDetail(${f.quiz_id})" class="pack-title cursor-pointer transition-colors text-xl font-bold">
                                     ${escapeHtml(formatPlayerFacingTitle(f.title))}
@@ -2464,11 +2464,6 @@
                     const isClassic = (q.game_mode === 'classic_zakovat' || q.game_mode === 'zakovat_classic');
                     const isSvoyak = (q.game_mode === 'svoyak');
 
-                    // Subtle mode indicator only when viewing "All" catalog
-                    const modeTag = state.currentMode === 'all'
-                        ? `<span class="pack-mode-pill">${isClassic ? 'Zakovat' : (isSvoyak ? 'Svoya Igra' : 'Viktorina')}</span>`
-                        : '';
-
                     const specsText = isClassic
                         ? `<span>24 savol</span><span>·</span><span>2 tur</span><span>·</span><span>~24 daq</span>`
                         : (isSvoyak
@@ -2478,10 +2473,7 @@
                     return `
                         <div class="arena-pack-card" data-quiz-id="${q.quiz_id}">
                             <div>
-                                <div class="pack-card-header">
-                                    <span class="pack-category">${escapeHtml(q.category || 'Umumiy')}</span>
-                                    ${modeTag}
-                                </div>
+                                ${packCategoryLabelHtml(q.category)}
 
                                 <h3 onclick="openQuizDetail(${q.quiz_id})" class="pack-title cursor-pointer transition-colors">
                                     ${escapeHtml(formatPlayerFacingTitle(q.title))}
@@ -2528,13 +2520,9 @@
                         if (classicPacks.length > 0) {
                             html += `
                                 <div class="arena-mode-section space-y-4 mb-8">
-                                    <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5">
-                                        <div>
-                                            <h3 class="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider">Klassik Zakovat To‘plamlari</h3>
-                                                <p class="text-[11px] text-[var(--text-dim)]">2 tur, 24 ta savol, 180 soniyalik tanaffus</p>
-                                            </div>
-                                        </div>
-                                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--bg-card)] text-[var(--text-brass)] border border-[var(--border-subtle)] font-bold">${classicPacks.length} ta to‘plam</span>
+                                    <div class="border-b border-[var(--border-subtle)] pb-2.5">
+                                        <h3 class="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider">Klassik Zakovat To‘plamlari</h3>
+                                        <p class="text-[11px] text-[var(--text-dim)]">2 tur, 24 ta savol, 180 soniyalik tanaffus</p>
                                     </div>
                                     <div class="space-y-4">
                                         ${classicPacks.map(buildCardHtml).join('')}
@@ -2546,13 +2534,9 @@
                         if (svoyakGames.length > 0) {
                             html += `
                                 <div class="arena-mode-section space-y-4 mb-8">
-                                    <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5">
-                                        <div>
-                                            <h3 class="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider">Svoya Igra O‘yinlari</h3>
-                                                <p class="text-[11px] text-[var(--text-dim)]">5 mavzu, 25 ta savol (10 dan 50 ballgacha), interaktiv doska</p>
-                                            </div>
-                                        </div>
-                                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--bg-card)] text-[var(--text-brass)] border border-[var(--border-subtle)] font-bold">${svoyakGames.length} ta o‘yin</span>
+                                    <div class="border-b border-[var(--border-subtle)] pb-2.5">
+                                        <h3 class="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider">Svoya Igra O‘yinlari</h3>
+                                        <p class="text-[11px] text-[var(--text-dim)]">5 mavzu, 25 ta savol (10 dan 50 ballgacha), interaktiv doska</p>
                                     </div>
                                     <div class="space-y-4">
                                         ${svoyakGames.map(buildCardHtml).join('')}
@@ -2564,10 +2548,6 @@
                         if (otherQuizzes.length > 0) {
                             html += `
                                 <div class="arena-mode-section space-y-4 mb-8">
-                                    <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5">
-                                        <h3 class="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider">Boshqa Viktorinalar</h3>
-                                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--bg-card)] text-[var(--text-brass)] border border-[var(--border-subtle)] font-bold">${otherQuizzes.length}</span>
-                                    </div>
                                     <div class="space-y-4">
                                         ${otherQuizzes.map(buildCardHtml).join('')}
                                     </div>
@@ -2582,12 +2562,9 @@
                         const modeDesc = isClassic ? '2 tur, 24 ta savol, 180 soniyalik tanaffus' : '5 mavzu, 25 ta savol (10 dan 50 ballgacha)';
                         gridEl.innerHTML = `
                             <div class="arena-mode-section space-y-4">
-                                <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5">
-                                    <div>
-                                        <h3 class="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider">${modeTitle}</h3>
-                                        <p class="text-[11px] text-[var(--text-dim)]">${modeDesc}</p>
-                                    </div>
-                                    <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--bg-card)] text-[var(--text-brass)] border border-[var(--border-subtle)] font-bold">${remainingQuizzes.length} ta to‘plam</span>
+                                <div class="border-b border-[var(--border-subtle)] pb-2.5">
+                                    <h3 class="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider">${modeTitle}</h3>
+                                    <p class="text-[11px] text-[var(--text-dim)]">${modeDesc}</p>
                                 </div>
                                 <div class="space-y-4">
                                     ${remainingQuizzes.map(buildCardHtml).join('')}
@@ -2754,7 +2731,7 @@
 
                 modal.classList.remove('hidden');
             } catch (err) {
-                alert(err.message);
+                await zwAlert(err.message);
             }
         }
 
@@ -2964,7 +2941,7 @@
                         }
                     }
                     const err = await res.json();
-                    alert(err.detail || "Siz bir martalik bepul sinov urinishingizdan foydalandingiz. Barcha viktorinalarni cheksiz o'ynash va reytingda qatnashish uchun ro'yxatdan o'ting!");
+                    await zwAlert(err.detail || "Siz bir martalik bepul sinov urinishingizdan foydalandingiz. Barcha viktorinalarni cheksiz o'ynash va reytingda qatnashish uchun ro'yxatdan o'ting!");
                     openAuthModal('register');
                     return;
                 }
@@ -3016,7 +2993,7 @@
                     renderQuestionState(data.current_state);
                 }
             } catch (err) {
-                alert('Xatolik: ' + err.message);
+                await zwAlert('Xatolik: ' + err.message);
             }
         }
 
@@ -3308,7 +3285,7 @@
                 hideAnswerReveal();
                 state.isSubmitting = false;
             } catch (err) {
-                alert('Xatolik: ' + (err && err.message ? err.message : err));
+                await zwAlert('Xatolik: ' + (err && err.message ? err.message : err));
                 if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = 'Davom etish &rarr;';
@@ -3423,7 +3400,7 @@
                 }, 1100);
 
             } catch (err) {
-                alert('Xatolik: ' + err.message);
+                await zwAlert('Xatolik: ' + err.message);
                 state.isSubmitting = false;
                 state.lastSubmitWasPass = false;
                 if (input) input.disabled = false;
@@ -3510,7 +3487,7 @@
                     showScreen('screen-gameplay');
                 }
             } catch (err) {
-                alert('Xatolik: ' + err.message);
+                await zwAlert('Xatolik: ' + err.message);
             } finally {
                 isContinuingFromBreak = false;
                 if (btn) {
@@ -3661,7 +3638,7 @@
 
                 showScreen('screen-reveal');
             } catch (err) {
-                alert('Reveal xatoligi: ' + err.message);
+                await zwAlert('Reveal xatoligi: ' + err.message);
             }
         }
 
@@ -3684,7 +3661,7 @@
                     showScreen('screen-gameplay');
                 }
             } catch (err) {
-                alert('Xatolik: ' + err.message);
+                await zwAlert('Xatolik: ' + err.message);
                 if (btn) btn.disabled = false;
             } finally {
                 isContinuingRound = false;
@@ -3717,7 +3694,7 @@
             try {
                 await loadFinalResults();
             } catch (err) {
-                alert('Natijalarni yuklashda xatolik: ' + err.message);
+                await zwAlert('Natijalarni yuklashda xatolik: ' + err.message);
                 if (btn) btn.disabled = false;
                 if (btnLabel) btnLabel.innerText = "Yakuniy Natijalarni Ko'rish";
             } finally {
@@ -3801,7 +3778,7 @@
 
                 showScreen('screen-results');
             } catch (err) {
-                alert('Natijalar xatoligi: ' + err.message);
+                await zwAlert('Natijalar xatoligi: ' + err.message);
                 throw err;
             } finally {
                 isLoadingResults = false;
@@ -3814,7 +3791,7 @@
         async function openReviewModal() {
             const token = state.sessionToken || state.lastCompletedSessionToken;
             if (!token) {
-                alert('Sessiya topilmadi');
+                await zwAlert('Sessiya topilmadi');
                 return;
             }
 
@@ -3861,7 +3838,7 @@
 
                 document.getElementById('modal-review').classList.remove('hidden');
             } catch (err) {
-                alert('Javoblarni ko\'rishda xatolik: ' + err.message);
+                await zwAlert('Javoblarni ko\'rishda xatolik: ' + err.message);
             }
         }
 
@@ -4306,7 +4283,7 @@
                 });
                 if (!res.ok) {
                     const err = await res.json();
-                    alert(err.detail || "Savolni ochib bo'lmadi");
+                    await zwAlert(err.detail || "Savolni ochib bo'lmadi");
                     state.isSubmitting = false;
                     return;
                 }
@@ -4322,7 +4299,7 @@
                 renderQuestionState(data);
             } catch(err) {
                 state.isSubmitting = false;
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -4343,7 +4320,7 @@
             if (!file) return;
 
             if (file.size > 2 * 1024 * 1024) {
-                alert("Rasm hajmi 2 MB dan oshmasligi kerak!");
+                await zwAlert("Rasm hajmi 2 MB dan oshmasligi kerak!");
                 return;
             }
 
@@ -4358,20 +4335,20 @@
                     });
                     const data = await res.json();
                     if (!res.ok) {
-                        alert(data.detail || "Avatarni yuklashda xatolik yuz berdi");
+                        await zwAlert(data.detail || "Avatarni yuklashda xatolik yuz berdi");
                         return;
                     }
                     await loadPlayerProfile();
                     if (window.checkNavbarAuth) window.checkNavbarAuth();
                 } catch (err) {
-                    alert("Serverga ulanishda xatolik");
+                    await zwAlert("Serverga ulanishda xatolik");
                 }
             };
             reader.readAsDataURL(file);
         }
 
         async function handleAvatarDelete() {
-            if (!confirm("Profil rasmini o'chirishni tasdiqlaysizmi?")) return;
+            if (!(await zwConfirm("Profil rasmini o'chirishni tasdiqlaysizmi?", { variant: "danger", title: "Profil rasmini o'chirish", confirmText: "O'chirish" }))) return;
             try {
                 const res = await fetch('/api/auth/avatar', { method: 'DELETE' });
                 if (res.ok) {
@@ -4379,7 +4356,7 @@
                     if (window.checkNavbarAuth) window.checkNavbarAuth();
                 }
             } catch (e) {
-                alert("Avatarni o'chirishda xatolik");
+                await zwAlert("Avatarni o'chirishda xatolik");
             }
         }
 
@@ -4468,7 +4445,7 @@
         }
 
         async function handleAccountDeletePrompt() {
-            const confirmWord = prompt("Akkauntingizni o'chirish uchun 'DELETE' so'zini yoki emailingizni kiriting:");
+            const confirmWord = await zwPrompt("Akkauntingizni o'chirish uchun 'DELETE' so'zini yoki emailingizni kiriting:", "", { variant: "danger", title: "Akkauntni o'chirish", confirmText: "Akkauntni o'chirish", placeholder: "DELETE" });
             if (!confirmWord) return;
 
             try {
@@ -4479,13 +4456,13 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    alert(data.detail || "Akkauntni o'chirishda xatolik");
+                    await zwAlert(data.detail || "Akkauntni o'chirishda xatolik");
                     return;
                 }
-                alert(data.message);
+                await zwAlert(data.message);
                 window.location.href = '/';
             } catch (e) {
-                alert("Tarmoq xatosi");
+                await zwAlert("Tarmoq xatosi");
             }
         }
 
@@ -4497,7 +4474,7 @@
             try {
                 const res = await fetch(`/api/users/${identifier}/public`);
                 if (!res.ok) {
-                    alert("Foydalanuvchi topilmadi yoki ma'lumotlar mavjud emas");
+                    await zwAlert("Foydalanuvchi topilmadi yoki ma'lumotlar mavjud emas");
                     return;
                 }
                 const data = await res.json();
@@ -4564,8 +4541,8 @@
             if (modal) modal.classList.add('hidden');
         }
 
-        function confirmExitGameplay() {
-            if (confirm("O'yindan chiqishni xohlaysizmi? O'yindagi natijangiz saqlanadi va xohlagan vaqtda davom ettirishingiz mumkin.")) {
+        async function confirmExitGameplay() {
+            if (await zwConfirm("O'yindan chiqishni xohlaysizmi? O'yindagi natijangiz saqlanadi va xohlagan vaqtda davom ettirishingiz mumkin.", { title: "O'yindan chiqish", confirmText: "Chiqish", cancelText: "O'yinda qolish" })) {
                 goToQuizSelection();
             }
         }
@@ -4670,7 +4647,7 @@
                 }
             } catch (err) {
                 console.error("Restart error:", err);
-                alert(err.message || "To'plamni qaytadan boshlab bo'lmadi");
+                await zwAlert(err.message || "To'plamni qaytadan boshlab bo'lmadi");
                 if (btn) {
                     btn.disabled = false;
                     btn.innerText = "Ha, qaytadan boshlash";
@@ -4830,6 +4807,6 @@
             }
         });
     </script>
-    <script src="/static/js/zakowhat-navbar.js"></script>
+    <script src="{{ static_url('js/zakowhat-navbar.js') }}"></script>
 </body>
 </html>

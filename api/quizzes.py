@@ -475,10 +475,7 @@ def get_categories(
         if cat and cat.strip() and cat.strip().lower() not in ("klassik zakovat", "classic_zakovat", "all", "barchasi"):
             categories.add(cat.strip())
 
-    if not mode_filter:
-        for b in ["Umumiy", "Zakovat", "Tarix", "Fan va Texnologiya", "Adabiyot va San'at"]:
-            categories.add(b)
-
+    # No padding with fixed categories: a filter pill must lead to at least one visible pack.
     if not categories:
         if mode_filter == "svoyak":
             categories = {"Milliy meros", "Tarix", "Geografiya", "Madaniyat", "Mantiq"}

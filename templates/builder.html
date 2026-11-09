@@ -41,6 +41,7 @@
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
     </style>
+    <script src="{{ static_url('js/zakowhat-dialog.js') }}"></script>
 </head>
 <body class="min-h-full flex flex-col font-sans selection:bg-indigo-500 selection:text-white custom-gradient pb-24">
 
@@ -687,7 +688,7 @@
                 renderRounds();
                 isDirty = false;
             } catch (err) {
-                alert("Qoralamani yuklashda xatolik: " + err.message);
+                await zwAlert("Qoralamani yuklashda xatolik: " + err.message);
                 setSaveStatus("Xatolik", "error");
             }
         }
@@ -707,12 +708,12 @@
                 const data = await res.json();
                 await loadDraft(data.version_id);
             } catch (err) {
-                alert("Yangi kviz yaratishda xatolik: " + err.message);
+                await zwAlert("Yangi kviz yaratishda xatolik: " + err.message);
             }
         }
 
         async function createNewDraftPrompt() {
-            const title = prompt("Yangi kviz nomini kiriting:", "Yangi Intellektual Kviz");
+            const title = await zwPrompt("Yangi kviz nomini kiriting:", "Yangi Intellektual Kviz", { title: "Yangi kviz", confirmText: "Yaratish" });
             if (title && title.trim()) {
                 await createNewDraft(title.trim());
             }
@@ -725,7 +726,7 @@
             const mode = document.getElementById('draft-mode-select').value;
 
             if (!title) {
-                alert("Quiz nomi bo'sh bo'lishi mumkin emas");
+                await zwAlert("Quiz nomi bo'sh bo'lishi mumkin emas");
                 return;
             }
 
@@ -991,7 +992,7 @@
                 if (!res.ok) throw new Error("Raund qo'shishda xatolik");
                 await loadDraft(currentDraft.version_id);
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
                 setSaveStatus("Xatolik", "error");
             }
         }
@@ -1019,12 +1020,12 @@
                 if (!res.ok) throw new Error("Raundlarni tartiblashda xatolik");
                 await loadDraft(currentDraft.version_id);
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
         async function handleDeleteRound(roundId) {
-            if (!confirm("Haqiqatan ham bu raundni va undagi barcha savollarni o'chirmoqchimisiz?")) return;
+            if (!(await zwConfirm("Haqiqatan ham bu raundni va undagi barcha savollarni o'chirmoqchimisiz?", { variant: "danger", title: "Raundni o'chirish", confirmText: "O'chirish" }))) return;
 
             setSaveStatus("O'chirilmoqda...", "loading");
             try {
@@ -1034,7 +1035,7 @@
                 if (!res.ok) throw new Error("Raundni o'chirishda xatolik");
                 await loadDraft(currentDraft.version_id);
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -1397,12 +1398,12 @@
                 if (!res.ok) throw new Error("Savollarni tartiblashda xatolik");
                 await loadDraft(currentDraft.version_id);
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
         async function handleDeleteQuestion(roundId, rqId) {
-            if (!confirm("Haqiqatan ham bu savolni raunddan o'chirmoqchimisiz?")) return;
+            if (!(await zwConfirm("Haqiqatan ham bu savolni raunddan o'chirmoqchimisiz?", { variant: "danger", title: "Savolni o'chirish", confirmText: "O'chirish" }))) return;
 
             setSaveStatus("O'chirilmoqda...", "loading");
             try {
@@ -1412,7 +1413,7 @@
                 if (!res.ok) throw new Error("Savolni o'chirishda xatolik");
                 await loadDraft(currentDraft.version_id);
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -1492,7 +1493,7 @@
                 const report = await res.json();
                 showValidationReport(report);
             } catch (err) {
-                alert("Tekshiruvda xatolik: " + err.message);
+                await zwAlert("Tekshiruvda xatolik: " + err.message);
             }
         }
 
@@ -1601,7 +1602,7 @@
                 sessionStorage.setItem('zakowhat_timer_mode', 'with_timer');
                 window.open(`/play/${data.quiz_id || currentDraft.quiz_id || currentDraft.version_id}`, '_blank');
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -1789,7 +1790,7 @@
                 }
                 feedbackArea.classList.remove('hidden');
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
                 if (answerArea) answerArea.classList.remove('opacity-50', 'pointer-events-none');
             }
         }
@@ -1859,7 +1860,7 @@
                     </div>
                 `;
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -1906,7 +1907,7 @@
                     renderSimQuestion(contData.current_state);
                 }
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
@@ -1915,7 +1916,7 @@
             if (!currentDraft) return;
 
             if (currentDraft.status === 'published') {
-                alert("Ushbu kviz allaqachon nashr qilingan.");
+                await zwAlert("Ushbu kviz allaqachon nashr qilingan.");
                 return;
             }
 
@@ -1945,7 +1946,7 @@
 
                 document.getElementById('modal-publish-confirm').classList.remove('hidden');
             } catch (err) {
-                alert("Tekshiruvda xatolik yuz berdi: " + err.message);
+                await zwAlert("Tekshiruvda xatolik yuz berdi: " + err.message);
                 setSaveStatus("Xatolik", "error");
             }
         }
@@ -1971,7 +1972,7 @@
                     body: JSON.stringify({ visibility: visibility, category: category })
                 });
                 if (res.status === 409) {
-                    alert("Bu kviz allaqachon nashr qilingan.");
+                    await zwAlert("Bu kviz allaqachon nashr qilingan.");
                     closePublishConfirmModal();
                     await loadDraft(currentDraft.version_id);
                     return;
@@ -1985,9 +1986,9 @@
 
                 closePublishConfirmModal();
                 await loadDraft(currentDraft.version_id);
-                alert(`Tabriklaymiz! "${data.title}" kvizi muvaffaqiyatli nashr qilindi va o'yinchilar uchun ochildi.`);
+                await zwAlert(`Tabriklaymiz! "${data.title}" kvizi muvaffaqiyatli nashr qilindi va o'yinchilar uchun ochildi.`);
             } catch (err) {
-                alert("Nashr qilishda xatolik: " + err.message);
+                await zwAlert("Nashr qilishda xatolik: " + err.message);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<span>Ha, Nashr Qilish</span>';
@@ -2050,7 +2051,7 @@
         }
 
         async function handleDeleteDraft(draftId) {
-            if (!confirm("Haqiqatan ham bu qoralamani o'chirmoqchimisiz?")) return;
+            if (!(await zwConfirm("Haqiqatan ham bu qoralamani o'chirmoqchimisiz?", { variant: "danger", title: "Qoralamani o'chirish", confirmText: "O'chirish" }))) return;
             try {
                 const res = await fetch(`/api/drafts/${draftId}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error("O'chirishda xatolik");
@@ -2062,7 +2063,7 @@
                     await openDraftsListModal();
                 }
             } catch (err) {
-                alert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + err.message);
             }
         }
 
