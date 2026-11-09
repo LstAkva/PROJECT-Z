@@ -211,8 +211,73 @@
     window.location.href = '/';
   };
 
+  // 5b. Password visibility toggle (eye icon) for inputs marked with data-password-toggle.
+  //     The input keeps its own classes/styles; only right padding is added so text never runs under the icon.
+  var PW_EYE = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var PW_EYE_OFF = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+  var PW_LABEL_SHOW = 'Parolni ko‘rsatish';
+  var PW_LABEL_HIDE = 'Parolni yashirish';
+
+  function ensurePasswordToggleStyle() {
+    if (document.getElementById('zw-pw-toggle-style')) return;
+    var style = document.createElement('style');
+    style.id = 'zw-pw-toggle-style';
+    style.textContent =
+      '.zw-pw-field{position:relative;display:block;width:100%;}' +
+      '.zw-pw-field>input{padding-right:2.75rem !important;}' +
+      '.zw-pw-toggle{position:absolute;top:50%;right:0.35rem;transform:translateY(-50%);width:2.25rem;height:2.25rem;' +
+      'display:flex;align-items:center;justify-content:center;padding:0;margin:0;border:0;border-radius:6px;' +
+      'background:transparent;color:var(--text-muted,#BDB4AE);cursor:pointer;transition:color .15s ease;}' +
+      '.zw-pw-toggle:hover{color:var(--accent-brass,#C5A059);}' +
+      '.zw-pw-toggle:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(197,160,89,.55);}';
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function enhancePasswordInput(input) {
+    if (!input || input.dataset.pwToggleReady === '1') return;
+    input.dataset.pwToggleReady = '1';
+    ensurePasswordToggleStyle();
+
+    var wrapper = document.createElement('span');
+    wrapper.className = 'zw-pw-field';
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    var btn = document.createElement('button');
+    btn.type = 'button';  // never submits the form
+    btn.className = 'zw-pw-toggle';
+    btn.setAttribute('aria-label', PW_LABEL_SHOW);
+    btn.setAttribute('aria-pressed', 'false');
+    btn.setAttribute('aria-controls', input.id || '');
+    btn.innerHTML = PW_EYE;
+    wrapper.appendChild(btn);
+
+    // Keep focus (and the caret) in the field when the icon is clicked with a mouse/touch.
+    btn.addEventListener('mousedown', function(e) { e.preventDefault(); });
+
+    btn.addEventListener('click', function() {
+      var hadFocus = document.activeElement === input || document.activeElement === btn;
+      var start = input.selectionStart, end = input.selectionEnd;
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';  // value is untouched
+      btn.innerHTML = show ? PW_EYE_OFF : PW_EYE;
+      btn.setAttribute('aria-label', show ? PW_LABEL_HIDE : PW_LABEL_SHOW);
+      btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+      if (hadFocus && document.activeElement !== btn) {
+        input.focus();
+        try { if (start !== null && end !== null) input.setSelectionRange(start, end); } catch (e) {}
+      }
+    });
+  }
+
+  function initPasswordToggles(root) {
+    (root || document).querySelectorAll('input[data-password-toggle]').forEach(enhancePasswordInput);
+  }
+  window.initPasswordToggles = initPasswordToggles;
+
   // 6. Initialization on DOMContentLoaded
   document.addEventListener('DOMContentLoaded', function() {
+    initPasswordToggles(document);
     let savedTheme = 'dark';
     try {
       savedTheme = localStorage.getItem('zakowhat_theme') || localStorage.getItem('zakowhat-theme') || 'dark';

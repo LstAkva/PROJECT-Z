@@ -134,10 +134,11 @@
     const b = document.getElementById('cookie-consent-banner');
     if (b) b.classList.add('hidden');
     try {
-      await fetch('/api/auth/profile/settings', {
-        method: 'PATCH',
+      // Existing backend endpoint (api/auth.py record_consent); stores the choice for signed-in users.
+      await fetch('/api/auth/consent', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ consent_analytics: (finalChoice === 'all') })
+        body: JSON.stringify({ cookie_consent: finalChoice === 'all' ? 'all' : 'necessary' })
       });
     } catch(e) {}
     closeConsentModal();
