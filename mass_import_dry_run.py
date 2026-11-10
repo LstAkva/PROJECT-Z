@@ -241,6 +241,8 @@ if __name__ == "__main__":
         "6.json",
         "7.json"
     ]
+    from services.raw_sources import raw_export_path
+    target_files = [raw_export_path(name) for name in target_files]  # local-only raw exports
     print("Starting STRICT READ-ONLY mass import dry-run...")
     run_dry_run(target_files)
     print("\nDry-run completed successfully.")

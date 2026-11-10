@@ -32,10 +32,18 @@ htmlcov/
 # -----------------------------------------------------------------------------
 # Raw Telegram Chat Exports & Intermediate Dumps
 # -----------------------------------------------------------------------------
-[0-9].json
-result.json
-result_*.json
+# Raw exports are LOCAL-ONLY source files: they contain third-party channel messages and must
+# never be committed. They live in data/raw/telegram/ (see services/raw_sources.py).
+data/raw/
 data/raw_exports/
+# Same files if they are ever placed in the project root again:
+/[0-9].json
+/[0-9][0-9].json
+/result.json
+/result_*.json
+# Extractor debug dumps (contain raw message blocks):
+/debug_*.json
+# Large intermediate extractor outputs (re-creatable from the raw exports):
 data/*_extracted/
 
 # -----------------------------------------------------------------------------

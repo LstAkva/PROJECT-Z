@@ -751,7 +751,11 @@ def extract_eski_savollar(
 if __name__ == "__main__":
     import sys
     sys.stdout.reconfigure(encoding="utf-8")
-    src = "result.json"
+    try:
+        from services.raw_sources import raw_export_path
+    except ImportError:  # run as a plain script from inside services/
+        from raw_sources import raw_export_path
+    src = raw_export_path("result.json")  # local-only raw export (data/raw/telegram/)
     dst = os.path.join("data", "eski_savollar_extracted")
     print(f"Running Eski Savollar extraction: {src} -> {dst}...")
     res = extract_eski_savollar(src, dst)

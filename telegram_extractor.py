@@ -14,6 +14,7 @@ from services.svoyak_extractor import (
     extract_svoyak_dataset,
     generate_stable_id as generate_stable_id_v2,
 )
+from services.raw_sources import raw_export_path
 
 
 def parse_answer_block(ans_raw: str) -> Tuple[str, List[str], Optional[str]]:
@@ -51,7 +52,7 @@ def generate_canonical_1(output_dir: str = "data/svoyak_extracted") -> Dict[str,
     Outputs to dedicated directory without overwriting canonical_1.json.
     """
     print(f"Executing improved Svoya Igra extraction on '1.json' -> '{output_dir}'...")
-    stats = extract_svoyak_dataset("1.json", output_dir=output_dir)
+    stats = extract_svoyak_dataset(raw_export_path("1.json"), output_dir=output_dir)
     return stats
 
 
@@ -60,6 +61,8 @@ def main():
     parser.add_argument("--input", "-i", default="1.json", help="Path to input Telegram JSON file (e.g. 1.json, 2.json)")
     parser.add_argument("--out-dir", "-o", default="data/svoyak_extracted", help="Output directory for extracted files")
     args = parser.parse_args()
+    # Raw exports are local-only: looked up in data/raw/telegram/ (or ZAKOWHAT_RAW_TELEGRAM_DIR), then the project root.
+    args.input = raw_export_path(args.input)
 
     if not os.path.exists(args.input):
         print(f"Error: Input file '{args.input}' not found.")
