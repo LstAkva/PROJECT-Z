@@ -503,6 +503,17 @@
         }
 
         const data = await res.json();
+        // Same answer as an earlier try: no attempt was spent, just tell the player.
+        if (data.status === 'duplicate') {
+          if (noticeBox) {
+            noticeBox.textContent = data.message || 'Bu javobni allaqachon sinab ko‘rgansiz.';
+            noticeBox.style.display = 'block';
+          }
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Javob berish';
+          input.select();
+          return;
+        }
         // If finished or correct, re-render revealed state
         // If still has tries left, re-render input state with focus
         await loadDailyQuestion(true);

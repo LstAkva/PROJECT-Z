@@ -10,6 +10,7 @@ from services.daily_question import (
     get_tashkent_today,
     get_or_schedule_daily_question,
     submit_daily_answer,
+    is_repeated_daily_answer,
 )
 
 router = APIRouter(prefix="/api/daily", tags=["daily_question"])
@@ -153,6 +154,20 @@ def submit_today_answer(
                     "history": history
                 }
             )
+
+        # Same answer as an earlier try: tell the player, do not spend an attempt.
+        if is_repeated_daily_answer(payload.answer, history):
+            return {
+                "status": "duplicate",
+                "is_correct": False,
+                "is_finished": False,
+                "attempts_used": attempts,
+                "attempts_remaining": max(0, 3 - attempts),
+                "history": history,
+                "submitted_text": existing.submitted_text,
+                "answered_at": existing.answered_at.isoformat(),
+                "message": "Bu javobni allaqachon sinab ko‘rgansiz. Boshqa variant kiriting — urinish sarflanmadi.",
+            }
 
     client_ip = get_client_ip(request)
     submission, already_finished = submit_daily_answer(

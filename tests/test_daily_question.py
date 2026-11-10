@@ -672,3 +672,40 @@ def test_daily_question_visual_dependency_suffix_regression():
     assert "eski_2010763825_360" in qids
     assert bank[192]["question_id"] == "eski_2010763825_360"
     assert bank[192]["primary_answer"] == "Iuda"
+
+
+def test_repeated_answer_does_not_consume_an_attempt(client, db_session, auth_users):
+    """Regression: typing an answer already tried (e.g. "k" twice) consumed an attempt but was not
+    added to the history, so the player saw two answers and "3 ta urinishingiz ham tugadi"."""
+    user1, _ = auth_users
+    from api.auth import create_access_token
+    headers = {"Authorization": f"Bearer {create_access_token(user1.id, user1.email)}"}
+
+    def submit(answer):
+        return client.post("/api/daily/submit", json={"answer": answer}, headers=headers)
+
+    assert submit("idk").json()["attempts_used"] == 1
+    assert submit("k").json()["attempts_used"] == 2
+
+    # Repeats (exact, different case/spacing) are reported and cost nothing.
+    for repeat in ("k", " K ", "IDK"):
+        res = submit(repeat)
+        assert res.status_code == 200
+        body = res.json()
+        assert body["status"] == "duplicate"
+        assert body["is_finished"] is False
+        assert body["attempts_used"] == 2 and body["attempts_remaining"] == 1
+        assert body["history"] == ["idk", "k"]
+        assert "correct_answer" not in body
+        assert "urinish sarflanmadi" in body["message"]
+
+    today = client.get("/api/daily/today", headers=headers).json()
+    assert today["has_submitted"] is False
+    assert today["user_submission"]["attempts_used"] == 2
+
+    # The real third attempt still works, is recorded, and finishes the question.
+    third = submit("uchinchi boshqa javob").json()
+    assert third["status"] == "finished"
+    assert third["attempts_used"] == 3
+    assert third["history"] == ["idk", "k", "uchinchi boshqa javob"]
+    assert len(third["history"]) == third["attempts_used"]

@@ -188,6 +188,12 @@ def evaluate_daily_answer(submitted_text: str, daily_question: DailyQuestion) ->
 MAX_DAILY_ATTEMPTS = 3
 
 
+def is_repeated_daily_answer(submitted_text: str, history) -> bool:
+    """True when the (normalized) answer equals one the player already tried today."""
+    norm = normalize_uzbek_latin(submitted_text or "")
+    return bool(norm) and any(normalize_uzbek_latin(h or "") == norm for h in (history or []))
+
+
 def submit_daily_answer(
     db: Session,
     daily_question: DailyQuestion,
@@ -223,11 +229,15 @@ def submit_daily_answer(
         if is_finished:
             return existing, True
 
+        # A repeat of an answer already tried today costs nothing: previously it consumed an
+        # attempt but was not added to the history, so a player saw two answers and "3 tries used".
+        if is_repeated_daily_answer(clean_text, history):
+            return existing, False
+
         # Process next attempt
         is_correct, match_type = evaluate_daily_answer(clean_text, daily_question)
         attempts += 1
-        if clean_text not in history:
-            history.append(clean_text)
+        history.append(clean_text)
         is_finished = is_correct or (attempts >= MAX_DAILY_ATTEMPTS)
 
         existing.submitted_text = clean_text
