@@ -80,6 +80,15 @@ EXPECTED_PACKS: Dict[int, str] = {
 }
 FORBIDDEN_SOURCE_IDS = {86, 87}
 
+# Second approved batch (owner instruction 2026-11-10): Classic Zakovat Pack 06-08.
+PACKS_06_08: Dict[int, str] = {
+    48: "Classic Zakovat — Pack 06",
+    49: "Classic Zakovat — Pack 07",
+    50: "Classic Zakovat — Pack 08",
+}
+BATCHES: Dict[str, Dict[int, str]] = {"rc1": EXPECTED_PACKS, "packs-06-08": PACKS_06_08}
+APPROVED_PACKS: Dict[int, str] = {**EXPECTED_PACKS, **PACKS_06_08}
+
 SOURCE_ENDPOINT = "ep-damp-frog-b1y9sc7x"
 NEON_PROJECT = "old-bird-43200046"
 PRODUCTION_BRANCH = "br-small-base-b1pev96p"
@@ -240,7 +249,7 @@ def load_source(src: Session, pack_ids: Iterable[int]) -> Dict[int, Dict[str, An
     for qid in pack_ids:
         if qid in FORBIDDEN_SOURCE_IDS:
             raise TransferError(f"Source quiz {qid} is a test pack and must never be transferred.")
-        if qid not in EXPECTED_PACKS:
+        if qid not in APPROVED_PACKS:
             raise TransferError(f"Source quiz {qid} is not in the approved pack list.")
 
     quizzes = {q.id: q.title for q in src.scalars(select(Quiz).where(Quiz.id.in_(pack_ids)))}
@@ -256,8 +265,8 @@ def load_source(src: Session, pack_ids: Iterable[int]) -> Dict[int, Dict[str, An
     for qid in pack_ids:
         if qid not in quizzes:
             raise TransferError(f"Source quiz {qid} not found.")
-        if quizzes[qid] != EXPECTED_PACKS[qid]:
-            raise TransferError(f"Source quiz {qid} title mismatch: {quizzes[qid]!r} != {EXPECTED_PACKS[qid]!r}")
+        if quizzes[qid] != APPROVED_PACKS[qid]:
+            raise TransferError(f"Source quiz {qid} title mismatch: {quizzes[qid]!r} != {APPROVED_PACKS[qid]!r}")
         if qid not in latest:
             raise TransferError(f"Source quiz {qid} has no published version.")
 
@@ -529,6 +538,8 @@ def make_engine(url: str):
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--commit", action="store_true", help="Persist the transfer (default: dry run, rolled back).")
+    parser.add_argument("--batch", choices=sorted(BATCHES), default="rc1",
+                        help="Which approved batch of packs to transfer (default: rc1 = the original 10).")
     parser.add_argument("--production-branch-approved", default=None,
                         help=f"Required to target the production branch; must equal {PRODUCTION_BRANCH}.")
     args = parser.parse_args(argv)
@@ -556,7 +567,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"source: {src_id}")
         print(f"target: {tgt_id}")
         check_identities(src_id, tgt_id, revision, args.production_branch_approved)
-        source_packs = load_source(Session(bind=src_conn), list(EXPECTED_PACKS))
+        print(f"batch: {args.batch} -> source quizzes {sorted(BATCHES[args.batch])}")
+        source_packs = load_source(Session(bind=src_conn), list(BATCHES[args.batch]))
         src_conn.rollback()
     src_engine.dispose()
     read_seconds = round(time.monotonic() - t0, 2)

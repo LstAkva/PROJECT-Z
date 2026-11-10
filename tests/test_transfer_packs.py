@@ -252,3 +252,27 @@ def test_direct_url_bypasses_neon_pooler():
     url = "postgresql://u:p@ep-ancient-hall-b1lq9aa7-pooler.c-5.eu-central-1.aws.neon.tech/neondb?sslmode=require"
     assert tp.direct_url(url) == "postgresql://u:p@ep-ancient-hall-b1lq9aa7.c-5.eu-central-1.aws.neon.tech/neondb?sslmode=require"
     assert tp.direct_url("postgresql://u:p@localhost/db") == "postgresql://u:p@localhost/db"
+
+
+def test_second_batch_packs_06_08_transfers_only_those_three(source_db, target_db):
+    """Batch "packs-06-08": approved separately; the first batch is untouched and not required."""
+    draft = source_db.query(QuizVersion).filter_by(quiz_id=48).one()
+    draft.status = "published"
+    _add_pack(source_db, 49, "Classic Zakovat — Pack 07", "classic_zakovat")
+    _add_pack(source_db, 50, "Classic Zakovat — Pack 08", "classic_zakovat")
+    source_db.commit()
+
+    assert tp.BATCHES["packs-06-08"] == tp.PACKS_06_08 and set(tp.PACKS_06_08) == {48, 49, 50}
+    report = tp.run_transfer(source_db, target_db, SRC, pack_ids=list(tp.PACKS_06_08))
+    target_db.commit()
+    assert report["ok"], report["validation_errors"]
+    assert sorted(i["source_quiz_id"] for i in report["copied"]) == [48, 49, 50]
+    assert report["actual_delta"]["quizzes"] == 3 and report["actual_delta"]["questions"] == 12
+
+    again = tp.run_transfer(source_db, target_db, SRC, pack_ids=list(tp.PACKS_06_08))
+    assert again["copied"] == [] and len(again["skipped"]) == 3
+
+
+def test_unapproved_pack_id_is_refused(source_db, target_db):
+    with pytest.raises(tp.TransferError, match="not in the approved pack list"):
+        tp.run_transfer(source_db, target_db, SRC, pack_ids=[65])
