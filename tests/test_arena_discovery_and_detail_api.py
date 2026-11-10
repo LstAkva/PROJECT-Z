@@ -413,3 +413,20 @@ def test_arena_game_mode_filter_blitz_and_standard(client):
     std_ids = [q["quiz_id"] for q in std_res]
     assert std_id in std_ids
     assert blitz_id not in std_ids
+
+
+def test_arena_lists_packs_in_added_order_regardless_of_published_at(client, db_session):
+    """Regression: Arena order followed published_at, so a pack added later but carrying an older
+    publication timestamp (Pack 02 vs Pack 01) was listed below the pack added before it."""
+    first, _ = create_and_publish_quiz(client, title="Pack Alpha")
+    second, _ = create_and_publish_quiz(client, title="Pack Beta")
+    third, _ = create_and_publish_quiz(client, title="Pack Gamma")
+    assert first < second < third
+
+    # The middle pack was originally published long before the others.
+    version = db_session.query(QuizVersion).filter_by(quiz_id=second).one()
+    version.published_at = datetime(2026, 9, 28, tzinfo=timezone.utc)
+    db_session.commit()
+
+    ids = [q["quiz_id"] for q in client.get("/api/quizzes").json()]
+    assert ids == [third, second, first]

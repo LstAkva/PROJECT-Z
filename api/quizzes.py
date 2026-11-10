@@ -436,11 +436,10 @@ def list_quizzes(
             "top_player": top_player,
         })
 
-    # Sort recent quizzes first
-    results.sort(
-        key=lambda x: (x.get("published_at") or "", x["quiz_id"]),
-        reverse=True
-    )
+    # Newest added first. Ordered by quiz id (the order packs were added), not by published_at:
+    # a pack whose publication timestamp is older than its neighbours (e.g. Pack 02, first published
+    # in September and transferred later) would otherwise appear out of sequence below Pack 01.
+    results.sort(key=lambda x: x["quiz_id"], reverse=True)
     return results
 
 
