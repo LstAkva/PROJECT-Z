@@ -59,3 +59,43 @@ def test_brand_tokens_exist():
                          "--brass": "#D8B779", "--ivory": "#F1EBDD"}.items():
         assert re.search(rf"{token}:\s*{value};", css), token
     assert "--brand-mark-color: var(--burgundy);" in css and "--brand-mark-color: var(--ivory);" in css
+
+
+def test_arena_uses_design_system_classes_not_dark_utility_boxes(client):
+    """Arena redesign: heading, filters, loading and empty states are styled by the design system.
+    Regression for the dark grey loading box that sat on the ivory page."""
+    html = client.get("/arena").text
+    arena = html.split('id="screen-gameplay"')[0]
+    for cls in ("arena-eyebrow", "arena-catalog-title", "mode-switcher-container", "category-pills-label",
+                "arena-loading-spinner", "arena-skeleton-card", "arena-sections",
+                "arena-section-title", "arena-card-grid"):
+        assert cls in html, cls
+    loading = re.search(r'<div id="arena-loading"[^>]*>', arena).group(0)
+    assert 'class="arena-loading"' in loading and "bg-black" not in loading and "zinc" not in loading
+    assert 'id="zw-spark-arena-empty"' in arena              # empty state shows the brand mark
+    assert "zakowhat-insignia.svg" not in arena
+    assert 'data-mode="classic_zakovat"' in html and 'data-mode="svoyak"' in html
+
+
+def test_arena_empty_result_hides_previous_cards(client):
+    """Regression: a search with no matches left the previous results visible under the empty state."""
+    html = client.get("/arena").text
+    public_list = html[html.index("async function loadQuizzes()"):]
+    start = public_list.index("if (!quizzes || quizzes.length === 0) {")
+    block = public_list[start:start + 400]
+    assert "contentEl.classList.add('hidden')" in block
+
+
+def test_arena_css_is_themed_by_tokens():
+    css = Path("static/css/zakowhat-design-system.css").read_text(encoding="utf-8")
+    title = re.search(r"\.arena-catalog-title \{[^}]*\}", css).group(0)
+    assert "var(--font-serif)" in title and "uppercase" not in title
+    assert re.search(r"\.pack-title \{[^}]*var\(--font-serif\)", css)
+    assert re.search(r'\.arena-pack-card\[data-mode="classic_zakovat"\] \{\s*border-top-color: var\(--burgundy\);', css)
+    assert re.search(r'\.arena-pack-card\[data-mode="svoyak"\] \{\s*border-top-color: var\(--accent-brass\);', css)
+    # Hero glow fades at the edges (no rectangular clipping) and the light theme keeps a soft glow.
+    assert re.search(r"\.hero-girih-canvas \{[^}]*mask-image: radial-gradient", css)
+    light_body = re.search(r'\[data-theme="light"\] body \{[^}]*\}', css).group(0)
+    assert "radial-gradient" in light_body
+    for selector in ('[data-theme="light"] .arena-pack-card {', '[data-theme="light"] .arena-toolbar {'):
+        assert selector not in css  # covered by tokens now, no per-theme duplicates

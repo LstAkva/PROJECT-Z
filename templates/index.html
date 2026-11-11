@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% from "components/brand_mark.html" import brand_mark %}<!DOCTYPE html>
 <html lang="uz" data-theme="light" class="h-full">
 <head>
     <meta charset="UTF-8">
@@ -92,9 +92,9 @@
             <!-- Arena Catalog Header -->
             <div class="arena-catalog-header">
                 <div class="space-y-2">
-                    <div class="pack-badge inline-flex items-center gap-2">
+                    <div class="arena-eyebrow">
                         <span>ZAKOWHAT ARENA</span>
-                        <span class="opacity-40">•</span>
+                        <span class="arena-eyebrow-sep" aria-hidden="true">/</span>
                         <span>SARALANGAN TO‘PLAMLAR</span>
                     </div>
                     <h1 class="arena-catalog-title">
@@ -111,7 +111,7 @@
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <!-- Search Input -->
                     <form role="search" onsubmit="event.preventDefault();" class="relative flex-1" autocomplete="off">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                        <span class="arena-search-icon absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
@@ -136,7 +136,7 @@
                             type="button"
                             id="arena-search-clear"
                             onclick="clearSearchInput()"
-                            class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-white cursor-pointer text-xs"
+                            class="arena-search-clear hidden absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-xs"
                             title="Tozalash"
                         >
                             ✕
@@ -144,14 +144,14 @@
                     </form>
 
                     <!-- Game Mode Filter Segmented Control (Responsive Grid on Mobile) -->
-                    <div class="mode-switcher-container flex items-center p-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] gap-1 shrink-0">
-                        <button type="button" id="mode-tab-all" data-mode="all" onclick="setArenaMode('all')" class="mode-tab-btn active px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer">
+                    <div class="mode-switcher-container" role="group" aria-label="O‘yin formati">
+                        <button type="button" id="mode-tab-all" data-mode="all" onclick="setArenaMode('all')" class="mode-tab-btn active">
                             <span>Barchasi</span>
                         </button>
-                        <button type="button" id="mode-tab-classic" data-mode="classic_zakovat" onclick="setArenaMode('classic_zakovat')" class="mode-tab-btn px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer">
+                        <button type="button" id="mode-tab-classic" data-mode="classic_zakovat" onclick="setArenaMode('classic_zakovat')" class="mode-tab-btn">
                             <span>Zakovat</span>
                         </button>
-                        <button type="button" id="mode-tab-svoyak" data-mode="svoyak" onclick="setArenaMode('svoyak')" class="mode-tab-btn px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer">
+                        <button type="button" id="mode-tab-svoyak" data-mode="svoyak" onclick="setArenaMode('svoyak')" class="mode-tab-btn">
                             <span>Svoya Igra</span>
                         </button>
                     </div>
@@ -164,26 +164,28 @@
                 </div>
 
                 <!-- Category Pills Wrap (Fully Wrapped on Mobile - Zero Hidden Horizontal Scrolling) -->
-                <div class="category-pills-bar flex flex-wrap items-center gap-2 pb-1 pt-2.5 border-t border-[var(--border-subtle)] text-xs">
-                    <span class="text-[11px] font-semibold text-[var(--accent-brass)] uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
-                        <span>Mavzular:</span>
-                    </span>
-                    <div id="arena-category-pills" class="flex items-center gap-1.5 flex-wrap">
+                <div class="category-pills-bar">
+                    <span class="category-pills-label">Mavzular</span>
+                    <div id="arena-category-pills" class="category-pills-list">
                         <!-- Category Pills rendered dynamically -->
                     </div>
                 </div>
             </div>
 
             <!-- Arena Loading Area -->
-            <div id="arena-loading" class="p-12 rounded-md border border-zinc-800 bg-black/40 text-center space-y-3">
-                <div class="w-8 h-8 border-2 border-[var(--oxblood-600)] border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p class="text-sm text-zinc-400">Arenadagi to‘plamlar yuklanmoqda...</p>
+            <div id="arena-loading" class="arena-loading" role="status" aria-live="polite">
+                <div class="arena-loading-spinner" aria-hidden="true"></div>
+                <p class="arena-loading-text">Arenadagi to‘plamlar yuklanmoqda...</p>
+                <div class="arena-skeleton-grid" aria-hidden="true">
+                    <div class="arena-skeleton-card"></div>
+                    <div class="arena-skeleton-card"></div>
+                </div>
             </div>
 
             <!-- Intentional Empty State (Architectural Geometric Codex) -->
             <div id="arena-empty" class="hidden arena-empty-state animate-fade-in">
                 <div class="arena-empty-seal">
-                    <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat Girih" class="w-full h-full opacity-60">
+                    {{ brand_mark("arena-empty") }}
                 </div>
                 <h3 id="arena-empty-title" class="arena-empty-title">Hozircha ochiq turnirlar to‘plami mavjud emas</h3>
                 <p id="arena-empty-desc" class="arena-empty-desc">
@@ -200,7 +202,7 @@
             <div id="arena-content" class="space-y-8 hidden">
                 <!-- Quizzes List -->
                 <div>
-                    <div id="arena-quizzes-grid" class="space-y-4">
+                    <div id="arena-quizzes-grid" class="arena-sections">
                         <!-- Cards rendered dynamically -->
                     </div>
                 </div>
@@ -2353,6 +2355,8 @@
                 if (loadingEl) loadingEl.classList.add('hidden');
 
                 if (!quizzes || quizzes.length === 0) {
+                    // Nothing matched: hide the previous results so they do not linger under the empty state.
+                    if (contentEl) contentEl.classList.add('hidden');
                     if (emptyEl) {
                         const isFiltered = Boolean(state.searchQuery || state.currentMode !== 'all' || state.currentCategory !== 'all');
                         document.getElementById('arena-empty-title').innerText = isFiltered
@@ -2388,7 +2392,7 @@
                             : `<span>${q.total_questions} savol</span><span>·</span><span>~${q.estimated_duration_minutes || q.total_questions} daq</span>`);
 
                     return `
-                        <div class="arena-pack-card" data-quiz-id="${q.quiz_id}">
+                        <div class="arena-pack-card" data-quiz-id="${q.quiz_id}" data-mode="${isClassic ? 'classic_zakovat' : (isSvoyak ? 'svoyak' : 'other')}">
                             <div>
                                 ${packCategoryLabelHtml(q.category)}
 
@@ -2436,12 +2440,12 @@
 
                         if (classicPacks.length > 0) {
                             html += `
-                                <div class="arena-mode-section space-y-4 mb-8">
-                                    <div class="border-b border-[var(--border-subtle)] pb-2.5">
-                                        <h3 class="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider">Klassik Zakovat To‘plamlari</h3>
-                                        <p class="text-[11px] text-[var(--text-dim)]">2 tur, 24 ta savol, 180 soniyalik tanaffus</p>
+                                <div class="arena-mode-section" data-mode="classic_zakovat">
+                                    <div class="arena-section-head">
+                                        <h3 class="arena-section-title">Klassik Zakovat To‘plamlari</h3>
+                                        <p class="arena-section-meta">2 tur, 24 ta savol, 180 soniyalik tanaffus</p>
                                     </div>
-                                    <div class="space-y-4">
+                                    <div class="arena-card-grid">
                                         ${classicPacks.map(buildCardHtml).join('')}
                                     </div>
                                 </div>
@@ -2450,12 +2454,12 @@
 
                         if (svoyakGames.length > 0) {
                             html += `
-                                <div class="arena-mode-section space-y-4 mb-8">
-                                    <div class="border-b border-[var(--border-subtle)] pb-2.5">
-                                        <h3 class="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider">Svoya Igra O‘yinlari</h3>
-                                        <p class="text-[11px] text-[var(--text-dim)]">5 mavzu, 25 ta savol (10 dan 50 ballgacha), interaktiv doska</p>
+                                <div class="arena-mode-section" data-mode="svoyak">
+                                    <div class="arena-section-head">
+                                        <h3 class="arena-section-title">Svoya Igra O‘yinlari</h3>
+                                        <p class="arena-section-meta">5 mavzu, 25 ta savol (10 dan 50 ballgacha), interaktiv doska</p>
                                     </div>
-                                    <div class="space-y-4">
+                                    <div class="arena-card-grid">
                                         ${svoyakGames.map(buildCardHtml).join('')}
                                     </div>
                                 </div>
@@ -2464,8 +2468,8 @@
 
                         if (otherQuizzes.length > 0) {
                             html += `
-                                <div class="arena-mode-section space-y-4 mb-8">
-                                    <div class="space-y-4">
+                                <div class="arena-mode-section" data-mode="other">
+                                    <div class="arena-card-grid">
                                         ${otherQuizzes.map(buildCardHtml).join('')}
                                     </div>
                                 </div>
@@ -2478,12 +2482,12 @@
                         const modeTitle = isClassic ? 'Klassik Zakovat To‘plamlari' : 'Svoya Igra O‘yinlari';
                         const modeDesc = isClassic ? '2 tur, 24 ta savol, 180 soniyalik tanaffus' : '5 mavzu, 25 ta savol (10 dan 50 ballgacha)';
                         gridEl.innerHTML = `
-                            <div class="arena-mode-section space-y-4">
-                                <div class="border-b border-[var(--border-subtle)] pb-2.5">
-                                    <h3 class="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider">${modeTitle}</h3>
-                                    <p class="text-[11px] text-[var(--text-dim)]">${modeDesc}</p>
+                            <div class="arena-mode-section" data-mode="${isClassic ? 'classic_zakovat' : 'svoyak'}">
+                                <div class="arena-section-head">
+                                    <h3 class="arena-section-title">${modeTitle}</h3>
+                                    <p class="arena-section-meta">${modeDesc}</p>
                                 </div>
-                                <div class="space-y-4">
+                                <div class="arena-card-grid">
                                     ${remainingQuizzes.map(buildCardHtml).join('')}
                                 </div>
                             </div>

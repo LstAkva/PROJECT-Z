@@ -85,7 +85,7 @@
   --bg-void: var(--obsidian-950);
   --bg-surface: var(--obsidian-850);
   --bg-surface-elevated: var(--obsidian-800);
-  --bg-card: rgba(23, 19, 28, 0.85);
+  --bg-card: rgba(37, 32, 37, 0.92);
   --bg-table-felt: #24050A;
   --bg-table-rim: #150B10;
 
@@ -283,7 +283,10 @@ body {
 }
 
 [data-theme="light"] body {
-  background-image: none;
+  /* Same idea as the dark theme: a soft burgundy glow from the top, with a warm brass note below. */
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(120, 47, 59, 0.13) 0%, transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(216, 183, 121, 0.16) 0%, transparent 45%);
 }
 
 /* Focus Visibility & Accessibility */
@@ -972,6 +975,9 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
   z-index: 1;
   overflow: hidden;
+  /* Fade the glow and ornament out toward the edges so the section has no visible box edge. */
+  -webkit-mask-image: radial-gradient(ellipse 70% 78% at 62% 42%, #000 45%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 78% at 62% 42%, #000 45%, transparent 100%);
 }
 
 .hero-girih-lighting {
@@ -986,7 +992,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-theme="light"] .hero-girih-lighting {
-  background: radial-gradient(circle, rgba(120, 47, 59, 0.07) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(120, 47, 59, 0.20) 0%, rgba(120, 47, 59, 0.08) 40%, transparent 70%);
 }
 
 .hero-girih-svg {
@@ -1001,7 +1007,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-theme="light"] .hero-girih-svg {
-  opacity: 0.16;
+  opacity: 0.24;
   color: var(--burgundy); /* Faint ornament engraving in brand burgundy on ivory */
 }
 
@@ -2128,51 +2134,71 @@ h1, h2, h3, h4, h5, h6 {
    13. ARENA CATALOG COMPONENTS (Curated Intellectual Codex)
    -------------------------------------------------------------------------- */
 .arena-catalog-header {
-  margin-bottom: var(--space-6);
-  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-8);
+  border-bottom: 1px solid var(--border-medium);
   padding-bottom: var(--space-6);
 }
 
 .arena-catalog-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
-  font-weight: 800;
-  letter-spacing: 0.01em;
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 4.6vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
   color: var(--text-main);
-  margin-top: var(--space-2);
-  margin-bottom: var(--space-2);
-  line-height: 1.25;
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-3);
+  line-height: 1.08;
 }
 
 .arena-catalog-desc {
   color: var(--text-muted);
-  font-size: 0.95rem;
-  max-width: 680px;
+  font-size: 1.02rem;
+  max-width: 620px;
   line-height: 1.6;
 }
 
-/* Arena Filter Toolbar */
+/* Small editorial label above the Arena title */
+.arena-eyebrow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--link-color);
+}
+
+.arena-eyebrow-sep {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+/* Arena Filter Toolbar: open on the page, closed by a hairline (no boxed panel) */
 .arena-toolbar {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: var(--space-4) var(--space-5);
-  margin-bottom: var(--space-6);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  padding: 0 0 var(--space-5);
+  margin-bottom: var(--space-8);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .arena-search-input {
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
-  background-color: var(--bg-app);
+  background-color: var(--bg-surface-elevated);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-sm);
   color: var(--text-main);
   font-family: var(--font-sans);
   font-size: 0.92rem;
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   -webkit-appearance: textfield;
   appearance: textfield;
 }
@@ -2188,7 +2214,21 @@ h1, h2, h3, h4, h5, h6 {
 
 .arena-search-input:focus {
   outline: none;
-  border-color: var(--brass-400);
+  border-color: var(--link-color);
+  box-shadow: 0 0 0 3px rgba(120, 47, 59, 0.14);
+}
+
+.arena-search-input::placeholder {
+  color: var(--text-dim);
+}
+
+.arena-search-icon,
+.arena-search-clear {
+  color: var(--text-dim);
+}
+
+.arena-search-clear:hover {
+  color: var(--text-main);
 }
 
 .arena-select {
@@ -2210,7 +2250,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Category Filter Tabs */
 .category-pill {
-  padding: 0.35rem 0.85rem;
+  padding: 0.32rem 0.75rem;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 500;
@@ -2221,7 +2261,7 @@ h1, h2, h3, h4, h5, h6 {
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: all var(--transition-fast);
+  transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
 }
 
 .category-pill:hover {
@@ -2230,50 +2270,70 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .category-pill.active {
-  background: var(--oxblood-800);
-  color: var(--alabaster);
-  border-color: var(--oxblood-600);
+  background: rgba(120, 47, 59, 0.1);
+  color: var(--link-color);
+  border-color: currentColor;
   font-weight: 600;
+}
+
+.category-pills-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+}
+
+.category-pills-label {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.category-pills-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Format switcher: the selected format is an inverted (ink / ivory) tab, so it never competes with burgundy actions */
+.mode-switcher-container {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  background: transparent;
 }
 
 /* Game Mode Switcher Tab Buttons */
 .mode-tab-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 3px;
   background: transparent;
   color: var(--text-muted);
   border: 1px solid transparent;
   cursor: pointer;
   white-space: nowrap;
-  transition: all var(--transition-fast);
+  transition: color var(--transition-fast), background var(--transition-fast);
 }
 
 .mode-tab-btn:hover {
   color: var(--text-main);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(120, 47, 59, 0.07);
 }
 
 .mode-tab-btn.active {
-  background: var(--oxblood-900);
-  color: var(--brass-300);
-  border: 1px solid var(--oxblood-700);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="light"] .mode-tab-btn:hover {
-  background: rgba(110, 85, 40, 0.06);
-  color: var(--text-main);
-}
-
-[data-theme="light"] .mode-tab-btn.active {
-  background: var(--oxblood-700);
-  color: #FFFFFF;
-  border-color: var(--oxblood-600);
-  box-shadow: 0 1px 4px rgba(139, 29, 39, 0.2);
-}
-
-[data-theme="light"] .category-pill.active {
-  background: var(--oxblood-700);
-  color: #FFFFFF;
-  border-color: var(--oxblood-500);
+  background: var(--text-main);
+  color: var(--bg-app);
+  border-color: var(--text-main);
 }
 
 /* Compact & Hidden Scrollbars */
@@ -2315,26 +2375,34 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Intentional Empty State */
 .arena-empty-state {
-  background: var(--bg-surface);
-  border: 1px dashed var(--border-medium);
-  border-radius: var(--radius-md);
-  padding: var(--space-16) var(--space-6);
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--border-medium);
+  border-bottom: 1px solid var(--border-medium);
+  border-radius: 0;
+  padding: var(--space-12) var(--space-6);
   text-align: center;
   position: relative;
   overflow: hidden;
 }
 
 .arena-empty-seal {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto var(--space-4);
-  opacity: 0.6;
+  width: 60px;
+  height: 48px;
+  margin: 0 auto var(--space-5);
+  opacity: 0.45;
+}
+
+.arena-empty-seal .brand-mark {
+  width: 100%;
+  height: 100%;
 }
 
 .arena-empty-title {
-  font-family: var(--font-display);
-  font-size: 1.45rem;
-  font-weight: 700;
+  font-family: var(--font-serif);
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
   color: var(--text-main);
   margin-bottom: var(--space-2);
 }
@@ -2347,12 +2415,113 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.6;
 }
 
-/* Pack Cards (Refined Architectural Codex Ledger) */
-.arena-pack-card {
-  background: var(--bg-surface);
+/* Loading state: quiet spinner and card placeholders on the page surface (no dark box) */
+.arena-loading {
+  padding: var(--space-6) 0 var(--space-8);
+  text-align: center;
+}
+
+.arena-loading-spinner {
+  width: 26px;
+  height: 26px;
+  margin: 0 auto;
+  border: 2px solid var(--border-medium);
+  border-top-color: var(--link-color);
+  border-radius: 50%;
+  animation: zw-spin 0.8s linear infinite;
+}
+
+.arena-loading-text {
+  margin-top: var(--space-3);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.arena-skeleton-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.arena-skeleton-card {
+  height: 148px;
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: var(--space-5);
+  border-top: 3px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  animation: zw-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes zw-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes zw-pulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arena-loading-spinner,
+  .arena-skeleton-card {
+    animation: none;
+  }
+}
+
+/* Format sections: serif title on a strong rule, cards in a two-column catalogue grid */
+.arena-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.arena-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem var(--space-4);
+  padding-bottom: 0.6rem;
+  margin-bottom: var(--space-5);
+  border-bottom: 2px solid var(--text-main);
+}
+
+.arena-section-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.45rem, 2.4vw, 1.8rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--text-main);
+}
+
+.arena-section-meta {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.arena-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 900px) {
+  .arena-card-grid,
+  .arena-skeleton-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Pack cards: flat paper card with a coloured top rule that marks the format
+   (burgundy = Classic Zakovat, brass = Svoya Igra) */
+.arena-pack-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-top: 3px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: var(--space-5) var(--space-5) var(--space-4);
   position: relative;
   transition: border-color var(--transition-fast), background var(--transition-fast);
   display: flex;
@@ -2361,9 +2530,23 @@ h1, h2, h3, h4, h5, h6 {
   gap: var(--space-3);
 }
 
+.arena-pack-card[data-mode="classic_zakovat"] {
+  border-top-color: var(--burgundy);
+}
+
+.arena-pack-card[data-mode="svoyak"] {
+  border-top-color: var(--accent-brass);
+}
+
 .arena-pack-card:hover {
-  border-color: var(--border-medium);
+  border-left-color: var(--border-medium);
+  border-right-color: var(--border-medium);
+  border-bottom-color: var(--border-medium);
   background: var(--bg-surface-elevated);
+}
+
+.arena-pack-card:hover .pack-title {
+  color: var(--link-color);
 }
 
 .arena-pack-card.arena-featured-card {
@@ -2389,10 +2572,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .pack-category {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--text-dim);
-  letter-spacing: 0.02em;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--link-color);
 }
 
 .pack-mode-pill {
@@ -2421,8 +2605,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-text-subtle:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--link-color);
+  background: rgba(120, 47, 59, 0.08);
 }
 
 .pack-card-header {
@@ -2452,17 +2636,18 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .pack-title {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 600;
   color: var(--text-main);
   margin-bottom: var(--space-2);
-  letter-spacing: 0.01em;
-  line-height: 1.35;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  transition: color var(--transition-fast);
 }
 
 .pack-title:hover {
-  color: var(--brass-300);
+  color: var(--link-color);
 }
 
 .pack-desc {
@@ -2530,6 +2715,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.8rem;
   color: var(--text-dim);
   flex-wrap: wrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .pack-specs-item {
@@ -2588,45 +2774,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Light Theme Arena, Catalog & Modal Contrast Refinements */
-[data-theme="light"] .arena-toolbar {
-  background: #FFFFFF;
-  border-color: rgba(110, 85, 40, 0.22);
-  box-shadow: 0 4px 16px -2px rgba(80, 50, 20, 0.04);
-}
-
-[data-theme="light"] .arena-search-input,
 [data-theme="light"] .arena-select {
   background-color: #FFFFFF;
   border-color: rgba(110, 85, 40, 0.28);
   color: var(--text-main);
 }
 
-[data-theme="light"] .arena-search-input:focus,
 [data-theme="light"] .arena-select:focus {
   border-color: var(--brass-600);
-}
-
-[data-theme="light"] .category-pill {
-  color: var(--text-muted);
-  border-color: rgba(110, 85, 40, 0.25);
-  background: transparent;
-}
-
-[data-theme="light"] .category-pill:hover {
-  color: var(--text-main);
-  border-color: var(--border-medium);
-  background: rgba(110, 85, 40, 0.06);
-}
-
-[data-theme="light"] .arena-pack-card {
-  background: #FFFFFF;
-  border-color: rgba(110, 85, 40, 0.18);
-  box-shadow: 0 2px 10px -2px rgba(80, 50, 20, 0.03);
-}
-
-[data-theme="light"] .arena-pack-card:hover {
-  background: #FAF7F2;
-  border-color: rgba(110, 85, 40, 0.35);
 }
 
 [data-theme="light"] .arena-pack-card.arena-featured-card {
@@ -2639,10 +2794,6 @@ h1, h2, h3, h4, h5, h6 {
   border-color: var(--brass-700);
 }
 
-[data-theme="light"] .pack-category {
-  color: #786551;
-}
-
 [data-theme="light"] .pack-mode-pill {
   color: var(--oxblood-800);
   background: rgba(128, 0, 32, 0.06);
@@ -2651,11 +2802,6 @@ h1, h2, h3, h4, h5, h6 {
 
 [data-theme="light"] .btn-text-subtle {
   color: #6B5E51;
-}
-
-[data-theme="light"] .btn-text-subtle:hover {
-  color: #1A1714;
-  background: rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="light"] .arena-pack-card.arena-staging-card {
@@ -2679,10 +2825,6 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-brass);
 }
 
-[data-theme="light"] .pack-title:hover {
-  color: var(--oxblood-800);
-}
-
 [data-theme="light"] .arena-leader-bar {
   background: #F8F5EE;
   border-color: rgba(110, 85, 40, 0.22);
@@ -2691,15 +2833,6 @@ h1, h2, h3, h4, h5, h6 {
 
 [data-theme="light"] .arena-leader-score {
   color: var(--text-brass);
-}
-
-[data-theme="light"] .pack-meta-row {
-  color: var(--brass-700);
-}
-
-[data-theme="light"] .arena-empty-state {
-  background: #FFFFFF;
-  border-color: rgba(110, 85, 40, 0.32);
 }
 
 [data-theme="light"] .codex-modal-container {
