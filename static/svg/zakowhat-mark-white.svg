@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" width="500" height="400" role="img" aria-label="ZakoWhat">
+  <!-- ZakoWhat brand mark "The Round". Same geometry in every variant; only the colour differs. -->
+  <mask id="spark" maskUnits="userSpaceOnUse" x="-50" y="-50" width="1100" height="900">
+    <rect x="-50" y="-50" width="1100" height="900" fill="#fff"/>
+    <path fill="#000" d="M790.5 187.4 Q511.2 397.0 581.5 511.4 Q493.7 409.7 209.5 612.6 Q488.8 403.0 418.5 288.6 Q506.3 390.3 790.5 187.4Z"/>
+  </mask>
+  <g mask="url(#spark)">
+    <polygon fill="#FFFFFF" stroke="#FFFFFF" stroke-width="52" stroke-linejoin="round"
+             transform="translate(26 26) scale(0.948 0.935)"
+             points="300,0 1000,0 850,250 440,550 850,550 700,800 0,800 150,550 560,250 150,250"/>
+  </g>
+</svg>

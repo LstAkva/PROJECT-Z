@@ -1,9 +1,10 @@
 <!-- ZakoWhat Global Masthead / Navigation Component -->
+{% from "components/brand_mark.html" import brand_mark %}
 <header class="masthead">
   <div class="masthead-inner">
     <!-- Brand Identity Link -->
     <a href="/" class="brand-link" aria-label="ZakoWhat bosh sahifa">
-      <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat Girih Nishoni" class="brand-logo-img">
+      {{ brand_mark("header") }}
       <span class="brand-title">ZakoWhat</span>
     </a>
 

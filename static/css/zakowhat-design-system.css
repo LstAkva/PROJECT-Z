@@ -10,31 +10,41 @@
    -------------------------------------------------------------------------- */
 :root {
   /* Brand Core Palettes */
-  --obsidian-950: #070509;
-  --obsidian-900: #0A080C;
-  --obsidian-850: #100D14;
-  --obsidian-800: #17131C;
-  --obsidian-700: #221D28;
-  --obsidian-600: #332B3B;
+  /* Brand identity "The Round": ink, charcoal, burgundy, brass, ivory */
+  --ink: #171417;
+  --charcoal: #30252B;
+  --burgundy: #782F3B;
+  --brass: #D8B779;
+  --ivory: #F1EBDD;
 
-  --oxblood-950: #1B0408;
-  --oxblood-900: #26060B;
-  --oxblood-800: #3B0A12;
-  --oxblood-700: #570F1C;
-  --oxblood-600: #7A1627;
-  --oxblood-500: #9E1F34;
+  /* Dark neutrals (ink -> charcoal) */
+  --obsidian-950: #100E10;
+  --obsidian-900: var(--ink);
+  --obsidian-850: #1D191D;
+  --obsidian-800: #252025;
+  --obsidian-700: var(--charcoal);
+  --obsidian-600: #43363D;
 
+  /* Burgundy scale (700 = brand burgundy) */
+  --oxblood-950: #2A0F16;
+  --oxblood-900: #3F1720;
+  --oxblood-800: #5E2230;
+  --oxblood-700: var(--burgundy);
+  --oxblood-600: #8C3A48;
+  --oxblood-500: #A64A5A;
+
+  /* Brass scale (400 = brand brass; used sparingly) */
   --brass-700: #7A602B;
   --brass-600: #997834;
   --brass-500: #C5A059;
-  --brass-400: #D8B772;
+  --brass-400: var(--brass);
   --brass-300: #E6D09C;
   --brass-200: #F3E7CA;
 
   --alabaster: #FAF7F2;
-  --cream-parchment: #F8F5EE;
-  --parchment-surface: #EFEAE0;
-  --parchment-border: #DCD4C4;
+  --cream-parchment: var(--ivory);
+  --parchment-surface: #E9E2D2;
+  --parchment-border: #D8CFBC;
 
   /* Typography Stacks */
   --font-display: 'Cinzel', 'Trajan Pro', Georgia, serif;
@@ -88,10 +98,12 @@
   --border-medium: rgba(197, 160, 89, 0.32);
   --border-prominent: var(--brass-500);
 
-  --accent-primary: var(--oxblood-800);
-  --accent-primary-hover: var(--oxblood-700);
-  --accent-brass: var(--brass-500);
-  --accent-brass-hover: var(--brass-400);
+  --accent-primary: var(--oxblood-700);
+  --accent-primary-hover: var(--oxblood-600);
+  --accent-brass: var(--brass-400);
+  --accent-brass-hover: var(--brass-300);
+  --brand-mark-color: var(--ivory);
+  --link-color: var(--brass-300);
 
   --shadow-card: 0 12px 32px -4px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-table: 0 24px 64px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(197, 160, 89, 0.2);
@@ -123,27 +135,29 @@
    High contrast, ink on parchment, oxblood lacquer accents
    -------------------------------------------------------------------------- */
 [data-theme="light"] {
-  --bg-app: var(--cream-parchment);
-  --bg-void: #F5F0E6;
-  --bg-surface: #F2EDE2;
-  --bg-surface-elevated: #FFFFFF;
-  --bg-card: #FFFFFF;
+  --bg-app: var(--ivory);
+  --bg-void: #EAE3D2;
+  --bg-surface: #ECE6D7;
+  --bg-surface-elevated: #FBF8F1;
+  --bg-card: #FBF8F1;
   --bg-table-felt: #2A070E; /* Cinematic table retains dark oxblood felt for dramatic contrast */
   --bg-table-rim: #1A0A0E;
 
-  --text-main: #1D181A;
-  --text-muted: #54494D;
-  --text-dim: #7A6F73;
+  --text-main: var(--ink);
+  --text-muted: #4E4348;
+  --text-dim: #74686D;
   --text-brass: #664E1D;
 
   --border-subtle: rgba(110, 85, 40, 0.2);
   --border-medium: rgba(110, 85, 40, 0.35);
   --border-prominent: var(--brass-700);
 
-  --accent-primary: var(--oxblood-800);
-  --accent-primary-hover: var(--oxblood-900);
+  --accent-primary: var(--oxblood-700);
+  --accent-primary-hover: var(--oxblood-800);
   --accent-brass: var(--brass-700);
   --accent-brass-hover: var(--brass-600);
+  --brand-mark-color: var(--burgundy);
+  --link-color: var(--burgundy);
 
   --shadow-card: 0 8px 24px -2px rgba(80, 50, 20, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
   --shadow-table: 0 20px 50px -10px rgba(40, 10, 15, 0.25), 0 0 0 1px rgba(110, 85, 40, 0.3);
@@ -261,9 +275,7 @@ html, body {
 body {
   min-height: 100vh;
   font-family: var(--font-sans);
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(59, 10, 18, 0.35) 0%, transparent 55%),
-    radial-gradient(circle at 100% 100%, rgba(197, 160, 89, 0.04) 0%, transparent 40%);
+  background-image: radial-gradient(circle at 50% 0%, rgba(120, 47, 59, 0.22) 0%, transparent 55%);
   background-repeat: no-repeat;
   background-attachment: fixed;
   overflow-x: hidden;
@@ -271,9 +283,7 @@ body {
 }
 
 [data-theme="light"] body {
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(122, 22, 39, 0.08) 0%, transparent 60%),
-    radial-gradient(circle at 100% 100%, rgba(197, 160, 89, 0.08) 0%, transparent 50%);
+  background-image: none;
 }
 
 /* Focus Visibility & Accessibility */
@@ -323,13 +333,12 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Solid Monumental Headline (Strictly NO clip-text gradients - avoid-ai-design C6) */
 .hero-headline {
-  font-family: var(--font-display);
-  font-size: clamp(2.5rem, 5.5vw, 4.5rem);
-  font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: 0.02em;
+  font-family: var(--font-serif);
+  font-size: clamp(2.6rem, 6vw, 4.9rem);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
   color: var(--text-main);
-  text-transform: uppercase;
   margin-bottom: var(--space-6);
 }
 
@@ -344,10 +353,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .section-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3vw, 2.5rem);
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-family: var(--font-serif);
+  font-size: clamp(1.9rem, 3.4vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
   margin-bottom: var(--space-3);
   text-align: center;
 }
@@ -406,7 +415,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary {
-  background-color: var(--oxblood-800);
+  background-color: var(--oxblood-700);
   color: var(--alabaster);
   border: 1px solid var(--oxblood-600);
   font-weight: 600;
@@ -414,7 +423,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary:hover {
-  background-color: var(--oxblood-700);
+  background-color: var(--oxblood-600);
   border-color: var(--oxblood-500);
   color: #FFFFFF;
 }
@@ -428,12 +437,12 @@ h1, h2, h3, h4, h5, h6 {
 [data-theme="light"] .btn-primary {
   background-color: var(--oxblood-700);
   color: #FFFFFF;
-  border-color: var(--oxblood-600);
+  border-color: var(--oxblood-700);
 }
 
 [data-theme="light"] .btn-primary:hover {
-  background-color: var(--oxblood-600);
-  border-color: var(--oxblood-500);
+  background-color: var(--oxblood-800);
+  border-color: var(--oxblood-800);
 }
 
 .btn-secondary {
@@ -450,14 +459,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-theme="light"] .btn-secondary {
-  background-color: #FFFFFF;
+  background-color: transparent;
   color: var(--text-main);
-  border: 1px solid var(--border-medium);
+  border: 1px solid rgba(23, 20, 23, 0.28);
 }
 [data-theme="light"] .btn-secondary:hover {
-  background-color: #F8F5EE;
-  border-color: var(--brass-600);
-  color: var(--text-main);
+  background-color: rgba(120, 47, 59, 0.06);
+  border-color: var(--burgundy);
+  color: var(--burgundy);
 }
 
 /* Dedicated TOPSHIRISH Submission Button */
@@ -559,14 +568,15 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 100;
   width: 100%;
   padding: var(--space-4) var(--space-6);
-  background-color: rgba(10, 8, 12, 0.82);
-  backdrop-filter: blur(16px);
+  background-color: rgba(23, 20, 23, 0.9);
+  backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
   transition: background-color var(--transition-base), border-color var(--transition-base);
 }
 
 [data-theme="light"] .masthead {
-  background-color: rgba(248, 245, 238, 0.88);
+  background-color: rgba(241, 235, 221, 0.94);
+  border-bottom-color: rgba(23, 20, 23, 0.12);
 }
 
 .masthead-inner {
@@ -591,13 +601,24 @@ h1, h2, h3, h4, h5, h6 {
   display: block;
 }
 
+/* Brand mark "The Round" (inline SVG from components/brand_mark.html, drawn in currentColor) */
+.brand-mark {
+  display: block;
+  flex-shrink: 0;
+  width: 40px;
+  height: 32px;   /* 5:4, the mark's own proportion */
+  color: var(--brand-mark-color);
+  transition: color var(--transition-base);
+}
+
+/* Wordmark: elegant serif, mixed case */
 .brand-title {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
+  font-family: var(--font-serif);
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
   color: var(--text-main);
-  text-transform: uppercase;
 }
 
 .brand-tag {
@@ -965,7 +986,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-theme="light"] .hero-girih-lighting {
-  background: radial-gradient(circle, rgba(158, 31, 52, 0.08) 0%, rgba(197, 160, 89, 0.06) 45%, transparent 70%);
+  background: radial-gradient(circle, rgba(120, 47, 59, 0.07) 0%, transparent 65%);
 }
 
 .hero-girih-svg {
@@ -980,8 +1001,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-theme="light"] .hero-girih-svg {
-  opacity: 0.22;
-  color: #7A602B; /* Faint architectural engraving ink on parchment */
+  opacity: 0.16;
+  color: var(--burgundy); /* Faint ornament engraving in brand burgundy on ivory */
 }
 
 .hero-content-wrapper {
@@ -1481,11 +1502,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .pillar-title {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  font-weight: 700;
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 600;
   margin-bottom: var(--space-3);
-  letter-spacing: 0.02em;
+  letter-spacing: -0.005em;
   color: var(--text-main);
 }
 
@@ -1604,11 +1625,16 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
 }
 
+.footer-brand .brand-mark {
+  width: 25px;
+  height: 20px;
+}
+
 .footer-brand-title {
-  font-family: var(--font-display);
-  font-size: 0.88rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text-main);
 }
 
@@ -1619,7 +1645,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .footer-brand-tag {
-  font-size: 0.78rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: var(--text-muted);
 }
 
@@ -1971,7 +2000,12 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .brand-title {
-    font-size: 1.15rem;
+    font-size: 1.3rem;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 27px;
   }
 
   .masthead {

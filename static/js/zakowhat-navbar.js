@@ -8,13 +8,13 @@
 
   // 1. Theme Management
   window.toggleZakoWhatTheme = function() {
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
     const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
     window.applyNavbarTheme(nextTheme);
   };
 
   window.applyNavbarTheme = function(theme) {
-    const validTheme = (theme === 'light') ? 'light' : 'dark';
+    const validTheme = (theme === 'dark') ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', validTheme);
     try {
       localStorage.setItem('zakowhat_theme', validTheme);
@@ -278,9 +278,9 @@
   // 6. Initialization on DOMContentLoaded
   document.addEventListener('DOMContentLoaded', function() {
     initPasswordToggles(document);
-    let savedTheme = 'dark';
+    let savedTheme = 'light';
     try {
-      savedTheme = localStorage.getItem('zakowhat_theme') || localStorage.getItem('zakowhat-theme') || 'dark';
+      savedTheme = localStorage.getItem('zakowhat_theme') || localStorage.getItem('zakowhat-theme') || 'light';
     } catch(e) {}
     window.applyNavbarTheme(savedTheme);
 

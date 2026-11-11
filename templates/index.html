@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uz" data-theme="dark" class="h-full">
+<html lang="uz" data-theme="light" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,7 @@
     <meta name="description" content="Zakovat (2×12) va Svoya Igra to‘plamlarini onlayn o‘ynang. Har bir savoldan so‘ng to‘g‘ri javob. Har kuni yangi «Kun savoli».">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-app-icon.svg">
 
     <!-- Architectural Google Fonts: Cinzel, Playfair Display, Plus Jakarta Sans, JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,7 +32,7 @@
 
     <script>
         (function() {
-            const savedTheme = localStorage.getItem('zakowhat-theme') || 'dark';
+            const savedTheme = localStorage.getItem('zakowhat-theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
     </script>
@@ -1388,13 +1388,13 @@
         }
 
         function initTheme() {
-            const savedTheme = localStorage.getItem('zakowhat-theme') || 'dark';
+            const savedTheme = localStorage.getItem('zakowhat-theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
             updateThemeIcons(savedTheme);
         }
 
         function toggleZakoWhatTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
             const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
             if (typeof window.applyNavbarTheme === 'function') {
                 window.applyNavbarTheme(nextTheme);

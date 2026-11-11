@@ -1,14 +1,15 @@
 <!-- ZakoWhat Unified Global Footer -->
+{% from "components/brand_mark.html" import brand_mark %}
 <footer class="site-footer">
   <div class="footer-container">
     <!-- Brand Info -->
     <div class="footer-brand">
       <a href="/" class="footer-brand-link" aria-label="ZakoWhat Bosh Sahifa">
-        <img src="/static/svg/zakowhat-insignia.svg" alt="ZakoWhat Girih Nishoni" class="footer-logo-img" width="22" height="22">
-        <span class="footer-brand-title">ZAKOWHAT</span>
+        {{ brand_mark("footer") }}
+        <span class="footer-brand-title">ZakoWhat</span>
       </a>
       <span class="footer-bullet" aria-hidden="true">•</span>
-      <span class="footer-brand-tag">Intellektual Maydon</span>
+      <span class="footer-brand-tag">Intelligence meets culture.</span>
     </div>
 
     <!-- Navigation & Legal Links -->

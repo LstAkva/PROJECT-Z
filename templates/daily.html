@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uz" data-theme="dark">
+<html lang="uz" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,7 @@
   <meta name="description" content="Har kuni bitta saralangan Zakovat savoli. O'z bilim va mantiqiy tafakkuringizni sinang.">
   
   <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-app-icon.svg">
 
   <!-- Architectural Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -257,7 +257,7 @@
   <script>
     (function() {
       try {
-        var t = localStorage.getItem('zakowhat_theme') || localStorage.getItem('zakowhat-theme') || 'dark';
+        var t = localStorage.getItem('zakowhat_theme') || localStorage.getItem('zakowhat-theme') || 'light';
         document.documentElement.setAttribute('data-theme', t);
       } catch(e) {}
     })();
