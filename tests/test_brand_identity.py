@@ -93,8 +93,15 @@ def test_arena_css_is_themed_by_tokens():
     assert re.search(r"\.pack-title \{[^}]*var\(--font-serif\)", css)
     assert re.search(r'\.arena-pack-card\[data-mode="classic_zakovat"\] \{\s*border-top-color: var\(--burgundy\);', css)
     assert re.search(r'\.arena-pack-card\[data-mode="svoyak"\] \{\s*border-top-color: var\(--accent-brass\);', css)
-    # Hero glow fades at the edges (no rectangular clipping) and the light theme keeps a soft glow.
-    assert re.search(r"\.hero-girih-canvas \{[^}]*mask-image: radial-gradient", css)
+    # Hero glow fades to fully transparent on every edge of the clipping box (regression: a single
+    # elliptical mask was still ~80% opaque at the right edge and left a visible rectangle).
+    canvas = re.search(r"\.hero-girih-canvas \{[^}]*\}", css).group(0)
+    assert "mask-composite: intersect" in canvas and "-webkit-mask-composite: source-in" in canvas
+    for axis, direction in (("x", "to right"), ("y", "to bottom")):
+        fade = re.search(rf"--hero-fade-{axis}: linear-gradient\({direction}, transparent 0%,.*transparent 100%\);", canvas)
+        assert fade, axis
+    assert "mask-image: var(--hero-fade-x), var(--hero-fade-y);" in canvas
+    assert "mask-image: radial-gradient" not in canvas
     light_body = re.search(r'\[data-theme="light"\] body \{[^}]*\}', css).group(0)
     assert "radial-gradient" in light_body
     for selector in ('[data-theme="light"] .arena-pack-card {', '[data-theme="light"] .arena-toolbar {'):

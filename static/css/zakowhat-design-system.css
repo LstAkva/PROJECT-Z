@@ -976,8 +976,15 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 1;
   overflow: hidden;
   /* Fade the glow and ornament out toward the edges so the section has no visible box edge. */
-  -webkit-mask-image: radial-gradient(ellipse 70% 78% at 62% 42%, #000 45%, transparent 100%);
-  mask-image: radial-gradient(ellipse 70% 78% at 62% 42%, #000 45%, transparent 100%);
+  /* The section clips this layer at its own box (max-width + overflow: hidden), so the layer must be
+     fully transparent on every edge of that box. Two eased linear fades, intersected, reach zero on
+     all four sides; a single ellipse cannot (it stayed ~80% opaque at the right edge). */
+  --hero-fade-x: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.55) 6%, #000 14%, #000 70%, rgba(0, 0, 0, 0.72) 80%, rgba(0, 0, 0, 0.34) 90%, rgba(0, 0, 0, 0.1) 96%, transparent 100%);
+  --hero-fade-y: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.6) 5%, #000 12%, #000 50%, rgba(0, 0, 0, 0.72) 66%, rgba(0, 0, 0, 0.34) 82%, rgba(0, 0, 0, 0.1) 93%, transparent 100%);
+  -webkit-mask-image: var(--hero-fade-x), var(--hero-fade-y);
+  mask-image: var(--hero-fade-x), var(--hero-fade-y);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
 
 .hero-girih-lighting {
