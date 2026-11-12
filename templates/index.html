@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZakoWhat — Zakovat va Svoya Igra onlayn</title>
     <meta name="description" content="Zakovat (2×12) va Svoya Igra to‘plamlarini onlayn o‘ynang. Har bir savoldan so‘ng to‘g‘ri javob. Har kuni yangi «Kun savoli».">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ZakoWhat">
+    <meta property="og:locale" content="uz_UZ">
+    <meta property="og:title" content="ZakoWhat — Zakovat va Svoya Igra to‘plamlari">
+    <meta property="og:description" content="Zakovat (2×12) va Svoya Igra to‘plamlarini onlayn o‘ynang. Har bir savoldan so‘ng to‘g‘ri javob. Har kuni yangi «Kun savoli».">
+    <meta name="twitter:card" content="summary">
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-app-icon.svg">
@@ -12,7 +18,7 @@
     <!-- Architectural Google Fonts: Cinzel, Playfair Display, Plus Jakarta Sans, JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS (for layout utilities) -->
     <script>
@@ -94,14 +100,12 @@
                 <div class="space-y-2">
                     <div class="arena-eyebrow">
                         <span>ZAKOWHAT ARENA</span>
-                        <span class="arena-eyebrow-sep" aria-hidden="true">/</span>
-                        <span>SARALANGAN TO‘PLAMLAR</span>
                     </div>
                     <h1 class="arena-catalog-title">
                         Zakovat Savollar To‘plamlari
                     </h1>
                     <p class="arena-catalog-desc">
-                        Zakovat anʼanalariga asoslangan 2×12 formatidagi saralangan intellektual to‘plamlar. O‘z bilimingizni sinab ko‘ring va yetakchilar safiga qo‘shiling.
+                        Klassik Zakovat (2×12) va Svoya Igra formatlaridagi saralangan intellektual to‘plamlar. Bilimingizni sinang va yetakchilar safiga qo‘shiling.
                     </p>
                 </div>
             </div>
@@ -213,182 +217,173 @@
         <!-- SCREEN 2: ACTIVE GAMEPLAY (DARK TABLE REAL EXPERIENCE) -->
         <!-- ================================================================= -->
         <section id="screen-gameplay" class="hidden animate-fade-in w-full">
-            <div class="table-outer-rim">
-                <div class="table-felt-surface">
-                    <div class="table-girih-bg"></div>
+            <div id="game-table" class="game-table" data-mode="classic_zakovat" data-view="question">
 
-                    <!-- Table Header HUD -->
-                    <div class="table-hud">
-                        <div class="flex items-center gap-3">
-                            <button type="button" onclick="confirmExitGameplay()" class="btn btn-secondary text-xs px-2.5 py-1 text-zinc-400 hover:text-white flex items-center gap-1.5" title="O'yindan chiqish va Arenaga qaytish">
-                                <span>&larr;</span>
-                                <span class="hidden sm:inline">Arenaga</span>
-                            </button>
-                            <button type="button" onclick="confirmRestartGameplay()" class="btn btn-secondary text-xs px-2.5 py-1 text-zinc-400 hover:text-amber-300 flex items-center gap-1.5" title="To'plamni qaytadan boshlash">
-                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-                                </svg>
-                                <span class="hidden sm:inline">Qaytadan boshlash</span>
-                            </button>
-                            <div class="table-hud-meta">
-                            <span id="gameplay-quiz-title" class="truncate max-w-[120px] md:max-w-[200px] table-hud-title font-semibold hidden sm:inline"></span>
-                            <span class="table-hud-divider hidden sm:inline">•</span>
-                            <span id="gameplay-round-badge" class="pack-badge whitespace-nowrap">1-TUR</span>
-                            <span class="table-hud-divider">•</span>
-                            <span id="gameplay-question-counter" class="table-hud-counter font-medium font-mono whitespace-nowrap">Savol 1 / 12</span>
-                            <span id="gameplay-ranked-badge" class="hidden pack-badge whitespace-nowrap"></span>
-                        </div>
-
-                        </div>
-                        <!-- Authentic Deliberation Clock (No tenths jitter) -->
-                        <div class="clock-display">
-                            <svg class="clock-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <circle cx="12" cy="12" r="10" stroke-width="2"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
+                <!-- Quiet header: navigation, round / position, clock -->
+                <header class="game-bar">
+                    <div class="game-bar-actions">
+                        <button type="button" onclick="confirmExitGameplay()" class="game-bar-btn" title="O'yindan chiqish va Arenaga qaytish" aria-label="O'yindan chiqish va Arenaga qaytish">
+                            <span aria-hidden="true">&larr;</span>
+                            <span class="game-bar-btn-label">Arenaga</span>
+                        </button>
+                        <button type="button" onclick="confirmRestartGameplay()" class="game-bar-btn" title="To'plamni qaytadan boshlash" aria-label="To'plamni qaytadan boshlash">
+                            <svg class="game-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
                             </svg>
-                            <span id="gameplay-timer-value">90</span><span id="gameplay-timer-unit">s</span>
-                        </div>
+                            <span class="game-bar-btn-label">Qaytadan boshlash</span>
+                        </button>
                     </div>
 
-                    <!-- Progress Bar inside Table -->
-                    <div class="w-full bg-white/[0.06] h-[2px] mb-4 overflow-hidden rounded-full">
-                        <div id="gameplay-progress-bar" class="h-full bg-[#7A1627] transition-all duration-300 rounded-full" style="width: 8%;"></div>
+                    <div class="game-bar-meta">
+                        <span id="gameplay-quiz-title" class="game-bar-title"></span>
+                        <span id="gameplay-round-badge" class="gameplay-round-badge">1-TUR</span>
+                        <span id="gameplay-question-counter" class="game-bar-counter">Savol 1 / 12</span>
+                        <span id="gameplay-ranked-badge" class="hidden game-rank-badge"></span>
+                        <!-- Svoya Igra: running score stays visible while a question is open -->
+                        <span id="gameplay-score-chip" class="game-score-chip">Ball: <strong id="gameplay-score-value">0</strong></span>
                     </div>
 
-                    <!-- Svoya Igra Interactive Board Grid -->
-                    <div id="svoyak-board-container" class="hidden w-full space-y-4">
-                        <div class="flex items-center justify-between gap-3 px-2 pb-2 border-b border-white/10">
-                            <div class="min-w-0">
-                                <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                                    <span>Svoya Igra — Savol Tanlang</span>
-                                </h3>
-                                <p class="text-[11px] text-zinc-400">Istalgan mavzu va ball katagini tanlab o'ynang</p>
-                            </div>
-                            <!-- Restart lives in the table HUD; progress lives in the HUD counter. Score stays here. -->
-                            <span id="svoyak-board-score-pill" class="shrink-0 whitespace-nowrap px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                                Ball: 0
-                            </span>
-                        </div>
+                    <!-- Deliberation clock (whole seconds, no tenths jitter) -->
+                    <div id="gameplay-clock" class="game-clock" role="timer" aria-label="Savol taymeri">
+                        <span id="gameplay-timer-value">90</span><span id="gameplay-timer-unit">s</span>
+                    </div>
+                    <span id="gameplay-clock-announce" class="zw-visually-hidden" aria-live="polite"></span>
+                </header>
 
-                        <!-- 5x5 Grid Table (mobile: category above its five values; sm+: matrix rows) -->
-                        <div class="overflow-x-auto rounded-xl border border-white/10 bg-black/40 backdrop-blur-md p-2.5 sm:p-4">
-                            <div id="svoyak-grid-rows" class="space-y-3 sm:space-y-2.5 sm:min-w-[500px]">
-                                <!-- Dynamically generated 5 rows x 5 columns -->
-                            </div>
+                <div class="game-progress" aria-hidden="true">
+                    <div id="gameplay-progress-bar" class="game-progress-fill" style="width: 8%;"></div>
+                </div>
+
+                <!-- Svoya Igra board -->
+                <div id="svoyak-board-container" class="hidden game-board">
+                    <div class="game-board-head">
+                        <div class="game-board-heading">
+                            <h3 class="game-board-title">Svoya Igra — Savol Tanlang</h3>
+                            <p class="game-board-hint">Istalgan mavzu va ball katagini tanlab o'ynang</p>
                         </div>
+                        <!-- Restart lives in the header bar; progress lives in the header counter. Score stays here. -->
+                        <span id="svoyak-board-score-pill" class="game-board-score">
+                            Ball: 0
+                        </span>
                     </div>
 
-                    <!-- Flat Legible Question Card -->
-                    <div class="question-stage-card">
-                        <!-- Media Display (if any) -->
-                        <div id="question-media-container" class="hidden overflow-hidden rounded border border-white/10 max-h-72 mb-4">
-                            <img id="question-media-img" src="" alt="Savol surati" class="w-full h-full object-contain bg-black">
-                        </div>
-
-                        <div class="question-stage-tag">
-                            <span id="gameplay-card-tag" class="text-[11px] font-mono text-zinc-500 uppercase tracking-wide">SAVOL</span>
-                            <span id="gameplay-card-subtag" class="text-zinc-600 font-mono text-[11px]">ZAKOVAT 2×12</span>
-                        </div>
-
-                        <h2 id="gameplay-question-text" class="question-text">
-                            Yuklanmoqda...
-                        </h2>
-
-                        <!-- Answer Form Area -->
-                        <div id="answer-form-wrapper" class="pt-5 border-t border-white/[0.06]">
-                            <form id="text-answer-form" onsubmit="handleTextAnswerSubmit(event)">
-                                <div class="submission-bar">
-                                    <input
-                                        type="text"
-                                        id="answer-text-input"
-                                        class="input-answer"
-                                        autocomplete="off"
-                                        placeholder="Javobingizni kiriting..."
-                                    />
-                                    <!-- <=960px (bar stacks): pass + submit share one row under the input; wider: inline in the bar -->
-                                    <div class="flex gap-2 min-[961px]:contents">
-                                        <!-- Svoyak-only pass action (hidden for Zakovat) -->
-                                        <button
-                                            type="button"
-                                            id="answer-pass-btn"
-                                            onclick="handleSvoyakPass()"
-                                            class="hidden btn btn-secondary shrink-0 px-4 min-h-[44px] text-sm whitespace-nowrap"
-                                            title="Savolni o‘tkazib yuborish (0 ball)"
-                                        >
-                                            O‘tkazish
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            id="answer-submit-btn"
-                                            class="btn-submit flex-1 min-w-0 min-[961px]:flex-none min-[961px]:min-w-max"
-                                        >
-                                            Javobni yuborish
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-
-                            <!-- Svoyak penalty explanation (shown only in Svoya Igra) -->
-                            <p id="svoyak-penalty-note" class="hidden mt-2 text-xs text-zinc-400 leading-relaxed">
-                                Noto‘g‘ri javob: −10 ball · O‘tkazish: 0 ball
-                            </p>
-
-                            <!-- True/False Quick Choice Buttons (Toggled for true_false rounds) -->
-                            <div id="true-false-actions" class="hidden grid grid-cols-2 gap-4 pt-2">
-                                <button
-                                    type="button"
-                                    onclick="handleTrueFalseSubmit('rost')"
-                                    class="btn btn-secondary tf-btn-true py-3 font-medium rounded-[4px]"
-                                >
-                                    ✓ To‘g‘ri (Rost)
-                                </button>
-                                <button
-                                    type="button"
-                                    onclick="handleTrueFalseSubmit('yolg\'on')"
-                                    class="btn btn-secondary tf-btn-false py-3 font-medium rounded-[4px]"
-                                >
-                                    ✕ Noto‘g‘ri (Yolg‘on)
-                                </button>
-                            </div>
-
-                            <!-- Instant Feedback Banner -->
-                            <div id="gameplay-feedback-banner" class="hidden feedback-banner">
-                            </div>
-
-                            <!-- Per-question answer reveal (Zakovat & Svoya Igra). Explanation is optional. -->
-                            <div id="answer-reveal-panel" class="hidden mt-4 space-y-3" aria-live="polite">
-                                <div class="rounded-md border border-white/10 bg-white/[0.03] p-4 space-y-3 text-left">
-                                    <div>
-                                        <div class="text-[11px] uppercase tracking-wide text-zinc-500">Sizning javobingiz</div>
-                                        <div id="reveal-submitted-answer" class="text-sm text-zinc-200 break-words"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-[11px] uppercase tracking-wide text-zinc-500">To‘g‘ri javob</div>
-                                        <div id="reveal-correct-answer" class="text-base font-bold text-amber-300 break-words"></div>
-                                    </div>
-                                    <div id="reveal-explanation-wrap" class="hidden pt-3 border-t border-white/[0.06]">
-                                        <div class="text-[11px] uppercase tracking-wide text-zinc-500">Izoh</div>
-                                        <p id="reveal-explanation" class="text-sm text-zinc-300 leading-relaxed break-words whitespace-pre-line"></p>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    id="reveal-continue-btn"
-                                    onclick="handleRevealContinue()"
-                                    class="btn btn-primary w-full min-h-[48px] text-base font-bold"
-                                >
-                                    Davom etish &rarr;
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Table Footer Format Info -->
-                    <div class="table-format-info">
-                        <span id="gameplay-format-label">Zakovat 2×12 formati</span>
-                        <span class="text-xs opacity-75">Javobni kiritib, Enter tugmasini bosing</span>
+                    <!-- 5x5 board (mobile: theme above its five values; wider: matrix rows). No forced min-width. -->
+                    <div id="svoyak-grid-rows" class="game-board-rows">
+                        <!-- Dynamically generated 5 rows x 5 columns -->
                     </div>
                 </div>
+
+                <!-- Question stage -->
+                <div id="gameplay-question-stage" class="game-stage">
+                    <!-- Media Display (if any) -->
+                    <div id="question-media-container" class="hidden game-media">
+                        <img id="question-media-img" src="" alt="Savol surati" class="game-media-img" onerror="this.parentElement.classList.add('hidden')">
+                    </div>
+
+                    <div class="game-stage-tags">
+                        <span id="gameplay-card-tag" class="game-tag">SAVOL</span>
+                        <span id="gameplay-card-subtag" class="game-subtag">ZAKOVAT 2×12</span>
+                    </div>
+
+                    <h2 id="gameplay-question-text" class="game-question">
+                        Yuklanmoqda...
+                    </h2>
+
+                    <!-- Answer Form Area -->
+                    <div id="answer-form-wrapper" class="game-answer">
+                        <form id="text-answer-form" onsubmit="handleTextAnswerSubmit(event)">
+                            <div class="game-answer-bar">
+                                <input
+                                    type="text"
+                                    id="answer-text-input"
+                                    class="game-input"
+                                    autocomplete="off"
+                                    aria-label="Javobingiz"
+                                    placeholder="Javobingizni kiriting..."
+                                />
+                                <!-- Narrow screens: pass + submit share one row under the input; wider: inline in the bar -->
+                                <div class="game-answer-actions">
+                                    <!-- Svoyak-only pass action (hidden for Zakovat) -->
+                                    <button
+                                        type="button"
+                                        id="answer-pass-btn"
+                                        onclick="handleSvoyakPass()"
+                                        class="hidden btn btn-secondary game-pass-btn"
+                                        title="Savolni o‘tkazib yuborish (0 ball)"
+                                    >
+                                        O‘tkazish
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        id="answer-submit-btn"
+                                        class="btn btn-primary game-submit-btn"
+                                    >
+                                        Javobni yuborish
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Svoyak penalty explanation (shown only in Svoya Igra) -->
+                        <p id="svoyak-penalty-note" class="hidden game-penalty-note">
+                            Noto‘g‘ri javob: −10 ball · O‘tkazish: 0 ball
+                        </p>
+
+                        <!-- True/False Quick Choice Buttons (Toggled for true_false rounds) -->
+                        <div id="true-false-actions" class="hidden game-tf">
+                            <button
+                                type="button"
+                                onclick="handleTrueFalseSubmit('rost')"
+                                class="btn btn-secondary game-tf-btn is-true"
+                            >
+                                ✓ To‘g‘ri (Rost)
+                            </button>
+                            <button
+                                type="button"
+                                onclick="handleTrueFalseSubmit('yolg\'on')"
+                                class="btn btn-secondary game-tf-btn is-false"
+                            >
+                                ✕ Noto‘g‘ri (Yolg‘on)
+                            </button>
+                        </div>
+
+                        <!-- Instant Feedback Banner -->
+                        <div id="gameplay-feedback-banner" class="hidden feedback-banner" role="status">
+                        </div>
+
+                        <!-- Per-question answer reveal (Zakovat & Svoya Igra). Explanation is optional. -->
+                        <div id="answer-reveal-panel" class="hidden game-reveal" aria-live="polite">
+                            <dl class="game-reveal-list">
+                                <div class="game-reveal-row">
+                                    <dt>Sizning javobingiz</dt>
+                                    <dd id="reveal-submitted-answer"></dd>
+                                </div>
+                                <div class="game-reveal-row is-correct">
+                                    <dt>To‘g‘ri javob</dt>
+                                    <dd id="reveal-correct-answer"></dd>
+                                </div>
+                                <div id="reveal-explanation-wrap" class="hidden game-reveal-row is-note">
+                                    <dt>Izoh</dt>
+                                    <dd><p id="reveal-explanation"></p></dd>
+                                </div>
+                            </dl>
+                            <button
+                                type="button"
+                                id="reveal-continue-btn"
+                                onclick="handleRevealContinue()"
+                                class="btn btn-primary game-continue-btn"
+                            >
+                                Davom etish &rarr;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer: format and keyboard hint -->
+                <footer class="game-foot">
+                    <span id="gameplay-format-label">Zakovat 2×12 formati</span>
+                    <span class="game-foot-hint">Javobni kiritib, Enter tugmasini bosing</span>
+                </footer>
             </div>
         </section>
 
@@ -396,50 +391,41 @@
         <!-- SCREEN 2.5: INTERMEDIATE BREAK (12-SAVOLLIK DAVRA TANAFFUSI) -->
         <!-- ================================================================= -->
         <section id="screen-intermediate" class="hidden animate-fade-in w-full py-8">
-            <div class="intermission-card">
-                <div class="intermission-icon-box">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <circle cx="12" cy="12" r="9" stroke-width="1.75"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 7v5l3 2"/>
-                    </svg>
-                </div>
-                <div class="pack-badge inline-block mb-3">O‘yin oralig‘i</div>
-                <h2 id="intermediate-break-title" class="intermission-title">
+            <div class="game-sheet game-break">
+                <div class="game-sheet-eyebrow">O‘yin oralig‘i</div>
+                <h2 id="intermediate-break-title" class="game-sheet-title game-break-title">
                     1-TUR YAKUNLANDI
                 </h2>
-                <p id="intermediate-break-message" class="intermission-desc">
+                <p id="intermediate-break-message" class="game-sheet-lede">
                     Birinchi tur (12 ta savol) yakunlandi. Nafasingizni rostlang va 2-turga o‘tish uchun tayyor bo‘lganingizda tugmani bosing.
                 </p>
 
-                <div class="intermission-scores-grid">
-                    <div class="score-box score-correct">
-                        <div class="score-box-label">To‘g‘ri</div>
-                        <div id="intermediate-correct-count" class="score-box-value">0</div>
+                <dl class="game-figures">
+                    <div class="game-figure is-correct">
+                        <dt>To‘g‘ri</dt>
+                        <dd id="intermediate-correct-count">0</dd>
                     </div>
-                    <div class="score-box score-incorrect" style="border-left: 1px solid var(--border-subtle); border-right: 1px solid var(--border-subtle);">
-                        <div class="score-box-label">Noto‘g‘ri</div>
-                        <div id="intermediate-incorrect-count" class="score-box-value">0</div>
+                    <div class="game-figure is-incorrect">
+                        <dt>Noto‘g‘ri</dt>
+                        <dd id="intermediate-incorrect-count">0</dd>
                     </div>
-                    <div class="score-box score-unanswered">
-                        <div class="score-box-label">Javobsiz</div>
-                        <div id="intermediate-unanswered-count" class="score-box-value">0</div>
+                    <div class="game-figure is-unanswered">
+                        <dt>Javobsiz</dt>
+                        <dd id="intermediate-unanswered-count">0</dd>
                     </div>
-                </div>
+                </dl>
 
                 <!-- Break Countdown -->
-                <div class="clock-display mx-auto justify-center mb-6 max-w-[200px]">
-                    <svg class="clock-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <circle cx="12" cy="12" r="10" stroke-width="2"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
-                    </svg>
-                    <span id="intermediate-timer-display">03:00</span>
+                <div class="game-break-clock" role="timer" aria-label="Tanaffus vaqti">
+                    <span class="game-break-clock-label">Tanaffus</span>
+                    <span id="intermediate-timer-display" class="game-break-clock-value">03:00</span>
                 </div>
 
                 <button
                     type="button"
                     id="intermediate-continue-btn"
                     onclick="handleIntermediateContinue()"
-                    class="btn btn-primary w-full py-4 text-base"
+                    class="btn btn-primary game-sheet-cta"
                 >
                     <span>2-turni boshlash</span>
                     <span>&rarr;</span>
@@ -450,42 +436,36 @@
         <!-- ================================================================= -->
         <!-- SCREEN 3: ROUND REVEAL -->
         <!-- ================================================================= -->
-        <section id="screen-reveal" class="hidden space-y-6 animate-fade-in w-full max-w-3xl mx-auto py-8">
-            <div class="results-codex-card space-y-6">
-                <div class="text-center space-y-2">
-                    <div class="pack-badge inline-block">
-                        <span id="reveal-heading-badge">Tur Natijalari</span>
-                    </div>
-                    <h2 id="reveal-heading-title" class="results-hero-title">Tur Yakunlandi!</h2>
-                    <p id="reveal-round-score-text" class="text-sm sm:text-base" style="color: var(--text-muted);">
-                    </p>
+        <section id="screen-reveal" class="hidden animate-fade-in w-full py-8">
+            <div class="game-sheet game-roundup">
+                <div class="game-sheet-eyebrow">
+                    <span id="reveal-heading-badge">Tur Natijalari</span>
                 </div>
+                <h2 id="reveal-heading-title" class="game-sheet-title">Tur Yakunlandi!</h2>
+                <p id="reveal-round-score-text" class="game-sheet-lede">
+                </p>
 
                 <!-- Hidden Rule Card if present -->
-                <div id="reveal-hidden-rule-card" class="hidden p-5 rounded-lg border space-y-1" style="background: rgba(197, 160, 89, 0.08); border-color: var(--border-medium);">
-                    <div class="text-xs uppercase tracking-wider font-bold flex items-center gap-1.5" style="color: var(--accent-brass);">
-                        <span>Mantiqiy Bog‘liqlik:</span>
-                    </div>
-                    <p id="reveal-hidden-rule-content" class="text-base font-semibold" style="color: var(--text-main);">
+                <div id="reveal-hidden-rule-card" class="hidden game-note">
+                    <div class="game-note-title">Mantiqiy Bog‘liqlik:</div>
+                    <p id="reveal-hidden-rule-content" class="game-note-strong">
                         ...
                     </p>
                 </div>
 
                 <!-- Questions & Answers Summary List -->
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold uppercase tracking-wider" style="color: var(--accent-brass);">Savollar va javoblar tahlili:</h3>
-                    <div id="reveal-questions-list" class="space-y-3">
-                        <!-- Dynamic items generated by JS -->
-                    </div>
+                <h3 class="game-section-label">Savollar va javoblar tahlili</h3>
+                <div id="reveal-questions-list" class="review-list">
+                    <!-- Dynamic items generated by JS -->
                 </div>
 
                 <!-- Continue Action Button -->
-                <div class="pt-4 border-t flex justify-end" style="border-color: var(--border-subtle);">
+                <div class="game-sheet-foot">
                     <button
                         type="button"
-                        id="reveal-continue-btn"
+                        id="round-review-continue-btn"
                         onclick="handleContinueToNextRound()"
-                        class="btn btn-primary w-full sm:w-auto px-8 py-3.5"
+                        class="btn btn-primary game-sheet-cta"
                     >
                         <span id="reveal-continue-label">Keyingi Bosqichga O‘tish</span>
                         <span>&rarr;</span>
@@ -497,90 +477,82 @@
         <!-- ================================================================= -->
         <!-- SCREEN 4: FINAL RESULTS -->
         <!-- ================================================================= -->
-        <section id="screen-results" class="hidden animate-fade-in w-full py-8 text-center">
-            <div class="results-codex-card">
-                <div class="results-score-hero">
-                    <div class="results-hero-insignia">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                        </svg>
-                    </div>
-                    <h2 class="results-hero-title">
-                        Viktorina Yakunlandi!
-                    </h2>
-                    <p class="results-hero-desc">Yakuniy natijalar hisob-kitobi tayyor.</p>
+        <section id="screen-results" class="hidden animate-fade-in w-full py-8">
+            <div class="game-sheet game-results">
+                <div class="game-sheet-eyebrow">Yakuniy natija</div>
+                <h2 class="game-sheet-title">
+                    Viktorina Yakunlandi!
+                </h2>
+                <p class="game-sheet-lede">Yakuniy natijalar hisob-kitobi tayyor.</p>
+
+                <!-- Svoya Igra: the final score is the headline figure (hidden for Zakovat) -->
+                <div id="results-score-wrap" class="hidden game-total">
+                    <span class="game-total-label">Jami ball</span>
+                    <span id="results-total-score" class="game-total-value">0</span>
                 </div>
 
-                <div class="results-stats-ledger mb-6">
-                    <div class="results-stat-box stat-correct">
-                        <div class="stat-label">To‘g‘ri</div>
-                        <div id="results-correct-count" class="stat-value">0</div>
-                        <div class="stat-sub">To‘g‘ri javoblar</div>
+                <dl class="game-figures game-figures-4">
+                    <div class="game-figure is-correct">
+                        <dt>To‘g‘ri</dt>
+                        <dd id="results-correct-count">0</dd>
+                        <dd class="game-figure-sub">To‘g‘ri javoblar</dd>
                     </div>
-                    <div class="results-stat-box stat-incorrect">
-                        <div class="stat-label">Noto‘g‘ri</div>
-                        <div id="results-incorrect-count" class="stat-value">0</div>
-                        <div class="stat-sub">Xato javoblar</div>
+                    <div class="game-figure is-incorrect">
+                        <dt>Noto‘g‘ri</dt>
+                        <dd id="results-incorrect-count">0</dd>
+                        <dd class="game-figure-sub">Xato javoblar</dd>
                     </div>
-                    <div class="results-stat-box stat-unanswered">
-                        <div class="stat-label">Javobsiz</div>
-                        <div id="results-unanswered-count" class="stat-value">0</div>
-                        <div class="stat-sub">O‘tkazib yuborilgan</div>
+                    <div class="game-figure is-unanswered">
+                        <dt>Javobsiz</dt>
+                        <dd id="results-unanswered-count">0</dd>
+                        <dd class="game-figure-sub">O‘tkazib yuborilgan</dd>
                     </div>
-                    <div class="results-stat-box stat-time">
-                        <div class="stat-label">O‘yin Vaqti</div>
-                        <div id="results-active-time" class="stat-value">00:00</div>
-                        <div class="stat-sub">Sof javob berish</div>
+                    <div class="game-figure is-time">
+                        <dt>O‘yin vaqti</dt>
+                        <dd id="results-active-time">00:00</dd>
+                        <dd class="game-figure-sub">Sof javob berish</dd>
                     </div>
+                </dl>
+
+                <div class="game-meta-strip">
+                    <span id="results-status-badge">Holat: Yakunlandi</span>
+                    <span id="results-total-questions-text">
+                        Jami savollar: <strong id="results-total-questions">24</strong>
+                    </span>
                 </div>
 
-                <div class="results-meta-strip mb-6">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span id="results-status-badge" class="font-bold" style="color: var(--text-muted);">Holat: Yakunlandi</span>
-                    </div>
-                    <div id="results-total-questions-text" class="font-mono" style="color: var(--text-dim);">
-                        Jami savollar: <span id="results-total-questions" class="font-bold" style="color: var(--text-main);">24</span>
-                    </div>
-                </div>
-
-                <div class="space-y-3 text-left mb-6">
-                    <h4 class="text-xs uppercase tracking-wider font-bold" style="color: var(--accent-brass);">Turlar bo‘yicha taqsimot:</h4>
-                    <div id="results-rounds-breakdown" class="space-y-2 text-sm"></div>
-                </div>
+                <h4 id="results-breakdown-title" class="game-section-label">Turlar bo‘yicha taqsimot</h4>
+                <div id="results-rounds-breakdown" class="game-breakdown-list"></div>
 
                 <!-- Anonymous First Attempt Registration Conversion Banner -->
-                <div id="results-anon-banner" class="hidden p-5 rounded-lg border text-left space-y-3 mb-6" style="background: rgba(197, 160, 89, 0.08); border-color: var(--border-medium);">
-                    <div class="text-sm font-bold flex items-center gap-2" style="color: var(--accent-brass);">
-                        <span>Tabriklaymiz! Siz bepul urinishingizni muvaffaqiyatli yakunladingiz.</span>
-                    </div>
-                    <p class="text-xs leading-relaxed" style="color: var(--text-muted);">
+                <div id="results-anon-banner" class="hidden game-note">
+                    <div class="game-note-title">Tabriklaymiz! Siz bepul urinishingizni muvaffaqiyatli yakunladingiz.</div>
+                    <p class="game-note-text">
                         Natijangizni saqlab qolish, rasmiy liderlar jadvaliga kiritish va keyingi barcha viktorinalarni o‘ynash uchun ro‘yxatdan o‘ting. Ushbu natija avtomatik ravishda yangi akkauntingizga biriktiriladi!
                     </p>
                     <button
                         type="button"
                         onclick="openAuthModal('register')"
-                        class="btn btn-primary"
-                        style="padding: 0.5rem 1.25rem; font-size: 0.82rem;"
+                        class="btn btn-primary game-note-btn"
                     >
                         <span>Akkaunt Yaratish va Natijani Saqlash &rarr;</span>
                     </button>
                 </div>
 
                 <!-- Action Buttons: Review Answers & Leaderboard & Play Again -->
-                <div class="space-y-3 pt-2">
-                    <div class="grid sm:grid-cols-2 gap-3">
+                <div class="game-actions">
+                    <div class="game-actions-row">
                         <button
                             type="button"
                             onclick="openReviewModal()"
-                            class="btn btn-secondary py-3 text-sm font-bold"
+                            class="btn btn-secondary game-action-btn"
                         >
                             <span id="results-review-btn-label">Javoblarni Ko‘rish (24 savol)</span>
                         </button>
                         <button
                             type="button"
                             onclick="openLeaderboardModal(state.currentQuizId)"
-                            class="btn btn-secondary py-3 text-sm font-bold text-brass-300 border-brass-500/40"
+                            class="btn btn-secondary game-action-btn"
                         >
                             <span>Liderlar Jadvali</span>
                         </button>
@@ -590,19 +562,19 @@
                         type="button"
                         id="results-restart-btn"
                         onclick="confirmRestartGameplay()"
-                        class="btn btn-secondary w-full py-3 text-sm font-bold flex items-center justify-center gap-2"
+                        class="btn btn-secondary game-action-btn"
                         title="To'plamni qaytadan boshlash"
                     >
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-                        </svg>
+                        <svg class="game-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                            </svg>
                         <span>Qaytadan boshlash</span>
                     </button>
 
                     <button
                         type="button"
                         onclick="goToQuizSelection()"
-                        class="btn btn-primary w-full py-3.5 text-base font-bold"
+                        class="btn btn-primary game-action-btn game-action-primary"
                     >
                         <span id="results-exit-btn-label">Arenaga Qaytish</span>
                         <span>&rarr;</span>
@@ -977,245 +949,259 @@
     <!-- ================================================================= -->
     <!-- MODAL 2: ANSWER REVIEW (JAVOBLARNI KO‘RISH - 24 SAVOL) -->
     <!-- ================================================================= -->
-    <div id="modal-review" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden" onclick="if (event.target === this) closeReviewModal()">
-        <div class="review-modal-container animate-fade-in">
-            <div class="review-modal-header">
-                <div class="flex items-center gap-2.5">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#7A1627]"></span>
-                    <h3 class="font-display font-bold text-base sm:text-lg" style="color: var(--text-main);">Javoblar Tahlili va To‘g‘ri Javoblar (24 savol)</h3>
+    <div id="modal-review" class="pack-detail-overlay fixed inset-0 z-[10000] flex items-center justify-center p-4 hidden" onclick="if (event.target === this) closeReviewModal()">
+        <article class="pack-detail review-sheet" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
+            <header class="pack-detail-top">
+                <div class="pack-detail-crumbs">
+                    <span class="pack-detail-crumb-current">Javoblar tahlili</span>
                 </div>
-                <button onclick="closeReviewModal()" class="font-mono text-xl cursor-pointer p-1" style="color: var(--text-muted);">&times;</button>
-            </div>
+                <button type="button" onclick="closeReviewModal()" class="pack-detail-close" aria-label="Yopish">✕</button>
+            </header>
 
-            <div class="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5">
-                <!-- Review Summary Bar -->
-                <div id="review-summary-bar" class="p-3 sm:p-4 rounded-lg border grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-between gap-2.5 sm:gap-4 text-xs" style="background: var(--bg-card); border-color: var(--border-subtle);">
-                    <div>
-                        <span style="color: var(--text-muted);">To‘g‘ri:</span>
-                        <strong id="review-correct-count" class="font-mono text-xs sm:text-sm text-emerald-400 ml-1">0</strong>
-                    </div>
-                    <div>
-                        <span style="color: var(--text-muted);">Noto‘g‘ri:</span>
-                        <strong id="review-incorrect-count" class="font-mono text-xs sm:text-sm text-rose-400 ml-1">0</strong>
-                    </div>
-                    <div>
-                        <span style="color: var(--text-muted);">Javobsiz:</span>
-                        <strong id="review-unanswered-count" class="font-mono text-xs sm:text-sm ml-1" style="color: var(--text-dim);">0</strong>
-                    </div>
-                    <div>
-                        <span style="color: var(--text-muted);">Faol vaqt:</span>
-                        <strong id="review-active-time" class="font-mono text-xs sm:text-sm text-brass-300 ml-1">00:00</strong>
-                    </div>
+            <div class="pack-detail-body">
+                <div class="pack-detail-intro">
+                    <h3 id="review-modal-title" class="pack-detail-title review-sheet-title">Javoblar tahlili va to‘g‘ri javoblar</h3>
                 </div>
+
+                <!-- Svoya Igra: final score (hidden for Zakovat) -->
+                <div id="review-score-wrap" class="hidden game-total">
+                    <span class="game-total-label">Jami ball</span>
+                    <span id="review-total-score" class="game-total-value">0</span>
+                </div>
+
+                <!-- Review Summary Bar -->
+                <dl id="review-summary-bar" class="game-figures game-figures-4 review-summary">
+                    <div class="game-figure is-correct">
+                        <dt>To‘g‘ri</dt>
+                        <dd id="review-correct-count">0</dd>
+                    </div>
+                    <div class="game-figure is-incorrect">
+                        <dt>Noto‘g‘ri</dt>
+                        <dd id="review-incorrect-count">0</dd>
+                    </div>
+                    <div class="game-figure is-unanswered">
+                        <dt>Javobsiz</dt>
+                        <dd id="review-unanswered-count">0</dd>
+                    </div>
+                    <div class="game-figure is-time">
+                        <dt>Faol vaqt</dt>
+                        <dd id="review-active-time">00:00</dd>
+                    </div>
+                </dl>
 
                 <!-- Hidden Rule if present -->
-                <div id="review-hidden-rule-box" class="hidden p-4 rounded-lg border text-xs space-y-1" style="background: rgba(197, 160, 89, 0.08); border-color: var(--border-medium);">
-                    <div class="font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]" style="color: var(--accent-brass);">
-                        <span>Mantiqiy Bog‘liqlik (Yashirin Qoida)</span>
-                    </div>
-                    <p id="review-hidden-rule-text" class="text-sm font-semibold" style="color: var(--text-main);"></p>
+                <div id="review-hidden-rule-box" class="hidden game-note">
+                    <div class="game-note-title">Mantiqiy Bog‘liqlik (Yashirin Qoida)</div>
+                    <p id="review-hidden-rule-text" class="game-note-strong"></p>
                 </div>
 
                 <!-- List of Questions -->
-                <div id="review-questions-list" class="space-y-4">
+                <div id="review-questions-list" class="review-list review-sheet-list">
                     <!-- Dynamically rendered -->
                 </div>
             </div>
 
-            <div class="border-t p-4 flex justify-end" style="border-color: var(--border-subtle); background: var(--bg-surface);">
-                <button onclick="closeReviewModal()" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">
+            <footer class="pack-detail-footer leaderboard-footer">
+                <button type="button" onclick="closeReviewModal()" class="btn btn-secondary pack-detail-back">
                     Yopish
                 </button>
-            </div>
-        </div>
+            </footer>
+        </article>
     </div>
 
     <!-- ================================================================= -->
     <!-- MODAL 3: LEADERBOARD (RASMIY LIDERLAR JADVALI) -->
     <!-- ================================================================= -->
-    <div id="modal-leaderboard" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
-        <div class="codex-modal-container w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-fade-in">
-            <div class="codex-modal-header">
-                <div class="space-y-0.5">
-                    <div class="flex items-center gap-2">
-                        <h3 id="leaderboard-quiz-title" class="font-display font-bold text-base sm:text-lg text-[var(--text-main)]">Liderlar Jadvali</h3>
-                        <span id="leaderboard-version-badge" class="pack-version font-mono text-xs font-bold">v1</span>
-                    </div>
-                    <p class="text-[11px] text-[var(--text-dim)]">Har bir ro‘yxatdan o‘tgan o‘yinchining eng yaxshi natijasi (To‘g‘ri javoblar va eng kam faol vaqt bo‘yicha).</p>
+    <div id="modal-leaderboard" class="pack-detail-overlay fixed inset-0 z-[10000] flex items-center justify-center p-4 hidden">
+        <article class="pack-detail leaderboard-sheet" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="leaderboard-quiz-title">
+            <header class="pack-detail-top">
+                <div class="pack-detail-crumbs">
+                    <span class="pack-detail-crumb-current">Liderlar jadvali</span>
+                    <span id="leaderboard-version-badge" class="pack-detail-version">v1</span>
                 </div>
-                <button onclick="closeLeaderboardModal()" class="text-[var(--text-dim)] hover:text-[var(--text-main)] font-mono text-xl cursor-pointer p-1 transition-colors">✕</button>
-            </div>
+                <button type="button" onclick="closeLeaderboardModal()" class="pack-detail-close" aria-label="Yopish">✕</button>
+            </header>
 
-            <div class="p-6 overflow-y-auto space-y-4">
-                <div id="leaderboard-loading" class="p-8 text-center space-y-3">
-                    <div class="w-8 h-8 border-2 border-[var(--oxblood-600)] border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p class="text-xs text-[var(--text-dim)]">Reyting hisoblanmoqda...</p>
+            <div class="pack-detail-body">
+                <div class="pack-detail-intro">
+                    <h3 id="leaderboard-quiz-title" class="pack-detail-title">Liderlar Jadvali</h3>
+                    <p id="leaderboard-subtitle" class="pack-detail-desc leaderboard-subtitle">Har bir ro‘yxatdan o‘tgan o‘yinchining eng yaxshi natijasi (to‘g‘ri javoblar va eng kam faol vaqt bo‘yicha).</p>
                 </div>
 
-                <div id="leaderboard-empty" class="hidden p-8 text-center border border-dashed border-[var(--border-medium)] rounded-md space-y-2 bg-[var(--bg-card)]">
-                    <p class="text-sm font-semibold text-[var(--text-main)]">Hozircha natijalar mavjud emas</p>
-                    <p class="text-xs text-[var(--text-muted)]">Birinchi bo‘lib ushbu to‘plamni o‘ynang va jadval peshqadamiga aylaning!</p>
+                <div id="leaderboard-loading" class="sheet-loading" role="status" aria-live="polite">
+                    <div class="arena-loading-spinner" aria-hidden="true"></div>
+                    <p class="arena-loading-text">Reyting hisoblanmoqda...</p>
                 </div>
 
-                <div id="leaderboard-table-container" class="hidden overflow-hidden rounded-md border border-[var(--border-subtle)]">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-[var(--bg-card)] text-[var(--text-dim)] font-semibold border-b border-[var(--border-subtle)]">
+                <div id="leaderboard-empty" class="hidden pack-detail-empty leaderboard-empty">
+                    <p class="pack-detail-empty-title">Hozircha natijalar mavjud emas</p>
+                    <p class="pack-detail-empty-text">Birinchi bo‘lib ushbu to‘plamni o‘ynang va jadval peshqadamiga aylaning!</p>
+                </div>
+
+                <p id="leaderboard-error" class="hidden leaderboard-error" role="alert"></p>
+
+                <div id="leaderboard-table-container" class="hidden leaderboard-table-wrap">
+                    <table class="pack-detail-table leaderboard-table">
+                        <thead>
                             <tr>
-                                <th class="py-3 px-4 w-12 text-center">#</th>
-                                <th class="py-3 px-4">O‘yinchi</th>
-                                <th class="py-3 px-4 text-center">Natija</th>
-                                <th class="py-3 px-4 text-center">Faol Vaqt</th>
-                                <th class="py-3 px-4 text-right">Sana</th>
+                                <th class="is-rank">#</th>
+                                <th>O‘yinchi</th>
+                                <th class="is-score">Natija</th>
+                                <th class="is-time">Faol vaqt</th>
+                                <th class="is-date">Sana</th>
                             </tr>
                         </thead>
-                        <tbody id="leaderboard-rows" class="divide-y divide-[var(--border-subtle)] font-medium">
+                        <tbody id="leaderboard-rows">
                             <!-- Rows -->
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <div class="codex-modal-footer flex justify-end">
-                <button onclick="closeLeaderboardModal()" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">
+            <footer class="pack-detail-footer leaderboard-footer">
+                <button type="button" onclick="closeLeaderboardModal()" class="btn btn-secondary pack-detail-back">
                     Yopish
                 </button>
-            </div>
-        </div>
+            </footer>
+        </article>
     </div>
 
     <!-- ================================================================= -->
     <!-- MODAL 4: QUIZ DETAIL (O‘YIN TAFSILOTLARI VA KIRISH) -->
     <!-- ================================================================= -->
-    <div id="modal-quiz-detail" onclick="if (event.target === this) closeQuizDetailModal()" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
-        <div class="codex-modal-container w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-fade-in">
-            <!-- Detail Header -->
-            <div class="codex-modal-header">
-                <div class="space-y-1">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span id="detail-category-badge" class="pack-badge">Umumiy</span>
-                        <span id="detail-mode-badge" class="pack-badge pack-badge-burgundy">Format</span>
-                        <span id="detail-version-badge" class="pack-version font-mono text-xs font-bold">v1</span>
-                    </div>
-                    <h3 id="detail-title" class="font-display font-bold text-lg sm:text-xl text-[var(--text-main)] leading-snug">Turnir Nomi</h3>
-                </div>
-                <button onclick="closeQuizDetailModal()" class="text-[var(--text-dim)] hover:text-[var(--text-main)] font-mono text-xl cursor-pointer p-1 transition-colors">✕</button>
-            </div>
+    <div id="modal-quiz-detail" onclick="if (event.target === this) closeQuizDetailModal()" class="pack-detail-overlay fixed inset-0 z-[10000] flex items-center justify-center p-4 hidden">
+        <article id="pack-detail-sheet" class="pack-detail" data-mode="other" data-state="ready" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+            <!-- Breadcrumb -->
+            <header class="pack-detail-top">
+                <nav class="pack-detail-crumbs" aria-label="Navigatsiya">
+                    <button type="button" onclick="closeQuizDetailModal()" class="pack-detail-crumb-link">To‘plamlar</button>
+                    <span class="pack-detail-crumb-sep" aria-hidden="true">/</span>
+                    <span id="detail-mode-badge" class="pack-detail-crumb-current">Format</span>
+                </nav>
+                <button type="button" onclick="closeQuizDetailModal()" class="pack-detail-close" aria-label="Yopish">✕</button>
+            </header>
 
-            <!-- Detail Body -->
-            <div class="p-6 overflow-y-auto space-y-6">
-                <!-- Description -->
-                <p id="detail-description" class="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed"></p>
-
-                <!-- Metric Strip -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div class="codex-modal-box space-y-0.5">
-                        <div class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider font-semibold">Raundlar</div>
-                        <div id="detail-metric-rounds" class="text-sm font-bold text-[var(--text-main)] font-mono">2 ta</div>
-                    </div>
-                    <div class="codex-modal-box space-y-0.5">
-                        <div class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider font-semibold">Savollar</div>
-                        <div id="detail-metric-questions" class="text-sm font-bold text-[var(--text-main)] font-mono">24 ta</div>
-                    </div>
-                    <div class="codex-modal-box space-y-0.5">
-                        <div class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider font-semibold">Taxminiy Vaqt</div>
-                        <div id="detail-metric-duration" class="text-sm font-bold text-[var(--text-brass)] font-mono">~24 daq</div>
-                    </div>
-                    <div class="codex-modal-box space-y-0.5">
-                        <div class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider font-semibold">Format</div>
-                        <div class="text-[11px] font-bold text-[var(--text-main)]">Zakovat 2×12</div>
-                    </div>
+            <div class="pack-detail-body">
+                <!-- Loading state -->
+                <div id="detail-loading" class="pack-detail-loading" role="status" aria-live="polite">
+                    <div class="arena-loading-spinner" aria-hidden="true"></div>
+                    <p class="arena-loading-text">To‘plam maʼlumotlari yuklanmoqda...</p>
                 </div>
 
-                <!-- Rounds Structure Breakdown -->
-                <div class="space-y-2.5">
-                    <div class="text-xs font-bold text-[var(--text-dim)] uppercase tracking-wider">
-                        Raundlar Tuzilishi
-                    </div>
-                    <div id="detail-rounds-list" class="space-y-2">
-                        <!-- Round items rendered dynamically -->
-                    </div>
-                </div>
-
-                <!-- Leaderboard Preview Section -->
-                <div class="space-y-3 pt-2 border-t border-[var(--border-subtle)]">
-                    <div class="flex items-center justify-between">
-                        <div class="text-xs font-bold text-[var(--text-dim)] uppercase tracking-wider">
-                            Ushbu Versiya Peshqadamlari
+                <div class="pack-detail-content">
+                    <!-- Title and introduction -->
+                    <div class="pack-detail-intro">
+                        <div class="pack-detail-kicker">
+                            <span id="detail-category-badge" class="pack-category">Umumiy</span>
+                            <span id="detail-version-badge" class="pack-detail-version">v1</span>
                         </div>
-                        <button id="detail-btn-view-full-leaderboard" class="text-xs text-[var(--text-brass)] hover:underline font-semibold cursor-pointer flex items-center gap-1 transition-colors">
-                            <span>To‘liq reyting</span>
-                            <span>&rarr;</span>
-                        </button>
+                        <h2 id="detail-title" class="pack-detail-title">Turnir Nomi</h2>
+                        <p id="detail-description" class="pack-detail-desc"></p>
                     </div>
 
-                    <!-- Top Player Highlight (if exists) -->
-                    <div id="detail-top-player-chip" class="hidden p-3 rounded-md bg-[var(--oxblood-950)] border border-[var(--oxblood-800)] flex items-center justify-between text-xs text-[var(--alabaster)]">
-                        <!-- Dynamically filled -->
-                    </div>
+                    <!-- Facts strip -->
+                    <dl class="pack-detail-facts">
+                        <div class="pack-detail-fact">
+                            <dt id="detail-metric-rounds-label">Turlar</dt>
+                            <dd id="detail-metric-rounds">2 ta</dd>
+                        </div>
+                        <div class="pack-detail-fact">
+                            <dt>Savollar</dt>
+                            <dd id="detail-metric-questions">24 ta</dd>
+                        </div>
+                        <div class="pack-detail-fact">
+                            <dt>Taxminiy vaqt</dt>
+                            <dd id="detail-metric-duration">~24 daq</dd>
+                        </div>
+                        <div class="pack-detail-fact">
+                            <dt>Format</dt>
+                            <dd id="detail-metric-format">Zakovat 2×12</dd>
+                        </div>
+                    </dl>
 
-                    <!-- Leaderboard Preview Table or Empty State -->
-                    <div id="detail-lb-preview-table-container" class="hidden overflow-hidden rounded-md border border-[var(--border-subtle)]">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-[var(--bg-card)] text-[var(--text-dim)] font-semibold border-b border-[var(--border-subtle)]">
-                                <tr>
-                                    <th class="py-2.5 px-3 w-10 text-center">#</th>
-                                    <th class="py-2.5 px-3">O‘yinchi</th>
-                                    <th class="py-2.5 px-3 text-center">Natija</th>
-                                    <th class="py-2.5 px-3 text-right">Vaqt</th>
-                                </tr>
-                            </thead>
-                            <tbody id="detail-lb-preview-rows" class="divide-y divide-[var(--border-subtle)] font-medium">
-                                <!-- Preview rows -->
-                            </tbody>
-                        </table>
-                    </div>
+                    <!-- Rounds structure -->
+                    <section class="pack-detail-section">
+                        <h3 id="detail-rounds-heading" class="pack-detail-section-title">Turlar tuzilishi</h3>
+                        <ol id="detail-rounds-list" class="pack-detail-rounds">
+                            <!-- Round items rendered dynamically -->
+                        </ol>
+                    </section>
 
-                    <!-- Empty Leaderboard State -->
-                    <div id="detail-lb-preview-empty" class="p-4 rounded-md border border-dashed border-[var(--border-medium)] bg-[var(--bg-card)] text-center space-y-1">
-                        <p class="text-xs font-semibold text-[var(--text-main)]">Hozircha hech kim natija qayd etmagan</p>
-                        <p class="text-[11px] text-[var(--text-muted)]">Siz ushbu to‘plamni o‘ynab, birinchi bo‘lib peshqadamlik jadvaliga kirishingiz mumkin!</p>
-                    </div>
+                    <!-- Leaderboard preview -->
+                    <section class="pack-detail-section">
+                        <div class="pack-detail-section-head">
+                            <h3 class="pack-detail-section-title">Ushbu versiya peshqadamlari</h3>
+                            <button type="button" id="detail-btn-view-full-leaderboard" class="pack-detail-link">
+                                <span>To‘liq reyting</span>
+                                <span aria-hidden="true">&rarr;</span>
+                            </button>
+                        </div>
+
+                        <!-- Top Player Highlight (if exists) -->
+                        <div id="detail-top-player-chip" class="pack-detail-leader hidden">
+                            <!-- Dynamically filled -->
+                        </div>
+
+                        <!-- Leaderboard Preview Table or Empty State -->
+                        <div id="detail-lb-preview-table-container" class="hidden">
+                            <table class="pack-detail-table">
+                                <thead>
+                                    <tr>
+                                        <th class="is-rank">#</th>
+                                        <th>O‘yinchi</th>
+                                        <th class="is-score">Natija</th>
+                                        <th class="is-time">Vaqt</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detail-lb-preview-rows">
+                                    <!-- Preview rows -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Empty Leaderboard State -->
+                        <div id="detail-lb-preview-empty" class="pack-detail-empty">
+                            <p class="pack-detail-empty-title">Hozircha hech kim natija qayd etmagan</p>
+                            <p class="pack-detail-empty-text">Siz ushbu to‘plamni o‘ynab, birinchi bo‘lib peshqadamlik jadvaliga kirishingiz mumkin!</p>
+                        </div>
+                    </section>
                 </div>
             </div>
 
-            <!-- Detail Footer with Prominent Play Action -->
-            <div class="codex-modal-footer">
-                <button onclick="closeQuizDetailModal()" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">
+            <!-- Actions -->
+            <footer class="pack-detail-footer">
+                <button type="button" onclick="closeQuizDetailModal()" class="btn btn-secondary pack-detail-back">
                     Orqaga
                 </button>
-                <button id="detail-btn-play-now" class="btn btn-primary" style="padding: 0.6rem 1.75rem; font-size: 0.95rem;">
+                <button type="button" id="detail-btn-play-now" class="btn btn-primary pack-detail-play">
                     <span>O‘yinni boshlash</span>
                     <span>&rarr;</span>
                 </button>
-            </div>
-        </div>
+            </footer>
+        </article>
     </div>
 
     <!-- ================================================================= -->
     <!-- MODAL: GAMEPLAY RESTART CONFIRMATION -->
     <!-- ================================================================= -->
-    <div id="modal-gameplay-restart" onclick="if (event.target === this) closeRestartModal();" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
-        <div class="relative w-full max-w-md rounded-md border border-[var(--border-subtle)] p-6 sm:p-8 shadow-2xl space-y-6 animate-scale-up" style="background-color: var(--bg-surface);">
-            <div class="text-center space-y-3">
-                <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-300">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-                    </svg>
-                </div>
-                <h3 class="font-display text-xl font-bold text-white">Qaytadan boshlaysizmi?</h3>
-                <p class="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+    <div id="modal-gameplay-restart" onclick="if (event.target === this) closeRestartModal();" class="pack-detail-overlay fixed inset-0 z-[10000] flex items-center justify-center p-4 hidden">
+        <article class="pack-detail game-confirm" tabindex="-1" role="alertdialog" aria-modal="true" aria-labelledby="restart-modal-title">
+            <div class="pack-detail-body">
+                <div class="game-sheet-eyebrow">Qaytadan boshlash</div>
+                <h3 id="restart-modal-title" class="pack-detail-title game-setup-title game-confirm-title">Qaytadan boshlaysizmi?</h3>
+                <p class="pack-detail-desc game-confirm-text">
                     Joriy o'yindagi barcha natijalar va progress yo'qoladi. Shu to'plamni boshidan boshlashni xohlaysizmi?
                 </p>
-                <p id="restart-practice-note" class="text-[11px] sm:text-xs text-amber-300/90 leading-relaxed">
+                <p id="restart-practice-note" class="game-setup-note">
                     Qayta boshlangan o‘yin mashq hisoblanadi va liderlar jadvaliga kirmaydi.
                 </p>
             </div>
 
-            <div class="flex items-center gap-3 pt-2">
+            <footer class="pack-detail-footer">
                 <button
                     type="button"
                     onclick="closeRestartModal()"
-                    class="btn btn-secondary flex-1 py-2.5 text-xs sm:text-sm text-zinc-300 hover:text-white"
+                    class="btn btn-secondary pack-detail-back"
                 >
                     Bekor qilish
                 </button>
@@ -1223,120 +1209,119 @@
                     type="button"
                     id="btn-confirm-restart-action"
                     onclick="executeRestartGameplay()"
-                    class="btn btn-primary flex-1 py-2.5 text-xs sm:text-sm font-semibold"
+                    class="btn btn-primary pack-detail-play"
                 >
                     Ha, qaytadan boshlash
                 </button>
-            </div>
-        </div>
+            </footer>
+        </article>
     </div>
 
     <!-- ================================================================= -->
     <!-- MODAL 5: ZAKOVAT GAMEPLAY SETTINGS (VAQT REJIMI) -->
     <!-- ================================================================= -->
-    <div id="modal-zakovat-settings" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden">
-        <div class="relative w-full max-w-md rounded-md border border-zinc-800 p-6 sm:p-8 shadow-2xl space-y-6 animate-scale-up" style="background-color: var(--bg-surface);">
-            <button
-                type="button"
-                onclick="closeZakovatSettingsModal()"
-                class="absolute top-5 right-5 w-8 h-8 rounded-md bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-            >
-                ✕
-            </button>
-
-            <div class="text-center space-y-2">
-                <div class="w-12 h-12 rounded-md bg-[var(--oxblood-950)] border border-[var(--oxblood-700)] flex items-center justify-center mx-auto text-zinc-200">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <circle cx="12" cy="12" r="10" stroke-width="2"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
-                    </svg>
+    <div id="modal-zakovat-settings" class="pack-detail-overlay fixed inset-0 z-[10000] flex items-center justify-center p-4 hidden">
+        <article id="game-setup-sheet" class="pack-detail game-setup" data-mode="classic_zakovat" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+            <header class="pack-detail-top">
+                <div class="pack-detail-crumbs">
+                    <span id="settings-modal-format" class="pack-detail-crumb-current">Klassik Zakovat</span>
+                    <span class="pack-detail-crumb-sep" aria-hidden="true">/</span>
+                    <span class="game-setup-step">O‘yinga tayyorgarlik</span>
                 </div>
-                <h3 id="settings-modal-title" class="font-display text-xl font-bold text-white">O‘yin Rejimini Tanlang</h3>
-                <p id="settings-modal-subtitle" class="text-xs text-zinc-400">2 tur • 24 savol</p>
-            </div>
+                <button type="button" onclick="closeZakovatSettingsModal()" class="pack-detail-close" aria-label="Yopish">✕</button>
+            </header>
 
-            <!-- Zakovat Timer Options -->
-            <div id="settings-zakovat-options" class="space-y-3">
-                <!-- Option 1: Vaqt bilan (Default) -->
-                <label id="opt-label-with-timer" class="flex items-start gap-4 p-4 rounded-md border-2 border-[var(--oxblood-600)] bg-[var(--oxblood-950)] cursor-pointer transition-all">
-                    <input type="radio" name="timer_mode" value="with_timer" checked onchange="updateTimerModeSelection()" class="mt-1 accent-[var(--oxblood-600)] w-4 h-4 cursor-pointer">
-                    <div class="space-y-1">
-                        <div class="text-sm font-bold text-white flex items-center gap-2">
-                            <span>Vaqt bilan (Standart)</span>
-                            <span class="pack-badge pack-badge-burgundy">Tavsiya</span>
-                        </div>
-                        <p class="text-xs text-zinc-300 leading-relaxed">
-                            Har bir savol uchun adolatli vaqt: 90s bazaviy + savol uzunligiga qarab o‘qish vaqti (90–180s).
-                        </p>
+            <div class="pack-detail-body">
+                <div class="pack-detail-intro">
+                    <h3 id="settings-modal-title" class="pack-detail-title game-setup-title">O‘yin Rejimini Tanlang</h3>
+                    <p id="settings-modal-subtitle" class="game-setup-subtitle">2 tur • 24 savol</p>
+                </div>
+
+                <!-- Zakovat Timer Options -->
+                <div id="settings-zakovat-options" class="game-setup-group" role="radiogroup" aria-labelledby="settings-zakovat-legend">
+                    <div id="settings-zakovat-legend" class="pack-detail-section-title">Vaqt rejimi</div>
+
+                    <!-- Option 1: Vaqt bilan (Default) -->
+                    <label id="opt-label-with-timer" class="game-setup-option is-selected">
+                        <input type="radio" name="timer_mode" value="with_timer" checked onchange="updateTimerModeSelection()" class="game-setup-radio">
+                        <span class="game-setup-option-body">
+                            <span class="game-setup-option-title">
+                                <span>Vaqt bilan (Standart)</span>
+                                <span class="game-setup-tag">Tavsiya</span>
+                            </span>
+                            <span class="game-setup-option-text">
+                                Har bir savol uchun adolatli vaqt: 90s bazaviy + savol uzunligiga qarab o‘qish vaqti (90–180s).
+                            </span>
+                        </span>
+                    </label>
+
+                    <!-- Option 2: Vaqtsiz -->
+                    <label id="opt-label-no-timer" class="game-setup-option">
+                        <input type="radio" name="timer_mode" value="no_timer" onchange="updateTimerModeSelection()" class="game-setup-radio">
+                        <span class="game-setup-option-body">
+                            <span class="game-setup-option-title">
+                                <span>Vaqtsiz (Mashg‘ulot)</span>
+                            </span>
+                            <span class="game-setup-option-text">
+                                Hech qanday vaqt cheklovisiz. O‘z surʼatingizda bemalol o‘ylang va javob bering.
+                                <span id="no-timer-practice-note" class="game-setup-note">Mashq rejimi: liderlar jadvaliga kirmaydi va to‘plamni avval vaqt bilan boshlaganingizdan so‘ng ochiladi.</span>
+                            </span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Svoyak Gameplay Mode Options -->
+                <div id="settings-svoyak-options" class="game-setup-group hidden" role="radiogroup" aria-labelledby="settings-svoyak-legend">
+                    <div id="settings-svoyak-legend" class="pack-detail-section-title">O‘yin tartibi</div>
+
+                    <!-- Mode A: Free Choice Svoyak -->
+                    <label id="opt-label-svoyak-free" class="game-setup-option is-selected">
+                        <input type="radio" name="svoyak_mode" value="free_choice" checked onchange="updateSvoyakModeSelection()" class="game-setup-radio">
+                        <span class="game-setup-option-body">
+                            <span class="game-setup-option-title">
+                                <span>Erkin tanlov</span>
+                                <span class="game-setup-tag">Doska</span>
+                            </span>
+                            <span class="game-setup-option-text">
+                                Istalgan mavzu va 10 dan 50 ballgacha istalgan savolni erkin tanlab o‘ynang.
+                            </span>
+                        </span>
+                    </label>
+
+                    <!-- Mode B: Classic Svoyak -->
+                    <label id="opt-label-svoyak-classic" class="game-setup-option">
+                        <input type="radio" name="svoyak_mode" value="classic" onchange="updateSvoyakModeSelection()" class="game-setup-radio">
+                        <span class="game-setup-option-body">
+                            <span class="game-setup-option-title">
+                                <span>Klassik tartib</span>
+                                <span class="game-setup-tag">Ketma-ket</span>
+                            </span>
+                            <span class="game-setup-option-text">
+                                Mavzularni 1-mavzudan boshlab 10 dan 50 ballgacha qatʼiy tartibda o‘ynang.
+                            </span>
+                        </span>
+                    </label>
+
+                    <!-- Svoyak scoring rules (shared by both modes) -->
+                    <div id="svoyak-scoring-rules" class="game-setup-rules">
+                        <div class="game-setup-rules-title">Ball qanday hisoblanadi</div>
+                        <div>✓ To‘g‘ri javob: savol qiymati qo‘shiladi (+10…+50).</div>
+                        <div>✕ Noto‘g‘ri javob: savol qiymati ayiriladi (−10…−50).</div>
+                        <div>O‘tkazish yoki vaqt tugashi: 0 ball. Ishonchingiz komil bo‘lmasa, «O‘tkazish» tugmasini bosing.</div>
                     </div>
-                </label>
-
-                <!-- Option 2: Vaqtsiz -->
-                <label id="opt-label-no-timer" class="flex items-start gap-4 p-4 rounded-md border-2 border-zinc-800 bg-black/40 hover:border-zinc-700 cursor-pointer transition-all">
-                    <input type="radio" name="timer_mode" value="no_timer" onchange="updateTimerModeSelection()" class="mt-1 accent-[var(--oxblood-600)] w-4 h-4 cursor-pointer">
-                    <div class="space-y-1">
-                        <div class="text-sm font-bold text-white flex items-center gap-2">
-                            <span>Vaqtsiz (Mashg‘ulot)</span>
-                        </div>
-                        <p class="text-xs text-zinc-400 leading-relaxed">
-                            Hech qanday vaqt cheklovisiz. O‘z surʼatingizda bemalol o‘ylang va javob bering.
-                            <span id="no-timer-practice-note" class="block mt-1 text-amber-300/90">Mashq rejimi: liderlar jadvaliga kirmaydi va to‘plamni avval vaqt bilan boshlaganingizdan so‘ng ochiladi.</span>
-                        </p>
-                    </div>
-                </label>
-            </div>
-
-            <!-- Svoyak Gameplay Mode Options -->
-            <div id="settings-svoyak-options" class="space-y-3 hidden">
-                <!-- Mode A: Free Choice Svoyak -->
-                <label id="opt-label-svoyak-free" class="flex items-start gap-4 p-4 rounded-md border-2 border-[var(--oxblood-600)] bg-[var(--oxblood-950)] cursor-pointer transition-all">
-                    <input type="radio" name="svoyak_mode" value="free_choice" checked onchange="updateSvoyakModeSelection()" class="mt-1 accent-[var(--oxblood-600)] w-4 h-4 cursor-pointer">
-                    <div class="space-y-1">
-                        <div class="text-sm font-bold text-white flex items-center gap-2">
-                            <span>Erkin tanlov</span>
-                            <span class="pack-badge pack-badge-brass">Doska</span>
-                        </div>
-                        <p class="text-xs text-zinc-300 leading-relaxed">
-                            Istalgan mavzu va 10 dan 50 ballgacha istalgan savolni erkin tanlab o‘ynang.
-                        </p>
-                    </div>
-                </label>
-
-                <!-- Mode B: Classic Svoyak -->
-                <label id="opt-label-svoyak-classic" class="flex items-start gap-4 p-4 rounded-md border-2 border-zinc-800 bg-black/40 hover:border-zinc-700 cursor-pointer transition-all">
-                    <input type="radio" name="svoyak_mode" value="classic" onchange="updateSvoyakModeSelection()" class="mt-1 accent-[var(--oxblood-600)] w-4 h-4 cursor-pointer">
-                    <div class="space-y-1">
-                        <div class="text-sm font-bold text-white flex items-center gap-2">
-                            <span>Klassik tartib</span>
-                            <span class="pack-badge pack-badge-burgundy">Ketma-ket</span>
-                        </div>
-                        <p class="text-xs text-zinc-400 leading-relaxed">
-                            Mavzularni 1-mavzudan boshlab 10 dan 50 ballgacha qatʼiy tartibda o‘ynang.
-                        </p>
-                    </div>
-                </label>
-
-                <!-- Svoyak scoring rules (shared by both modes) -->
-                <div id="svoyak-scoring-rules" class="p-3 rounded-md border border-amber-500/30 bg-amber-500/5 text-xs text-zinc-300 leading-relaxed space-y-1">
-                    <div class="font-bold text-amber-300">Ball qanday hisoblanadi</div>
-                    <div>✓ To‘g‘ri javob: savol qiymati qo‘shiladi (+10…+50).</div>
-                    <div>✕ Noto‘g‘ri javob: savol qiymati ayiriladi (−10…−50).</div>
-                    <div>O‘tkazish yoki vaqt tugashi: 0 ball. Ishonchingiz komil bo‘lmasa, «O‘tkazish» tugmasini bosing.</div>
                 </div>
             </div>
 
-            <div class="pt-2">
-                <button
-                    type="button"
-                    id="start-game-confirm-btn"
-                    onclick="confirmStartGameWithSettings()"
-                    class="btn btn-primary w-full py-3.5 text-base"
-                >
+            <footer class="pack-detail-footer">
+                <button type="button" onclick="closeZakovatSettingsModal()" class="btn btn-secondary pack-detail-back">
+                    Orqaga
+                </button>
+                <button type="button" id="start-game-confirm-btn" onclick="confirmStartGameWithSettings()" class="btn btn-primary pack-detail-play">
                     <span>O‘yinni Boshlash</span>
                     <span>&rarr;</span>
                 </button>
-            </div>
-        </div>
+            </footer>
+        </article>
     </div>
 
 
@@ -1575,7 +1560,7 @@
 
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    throw new Error(err.detail || 'Kirishda xatolik yuz berdi');
+                    throw new Error(apiDetail(err) || 'Kirishda xatolik yuz berdi');
                 }
 
                 await checkAuth();
@@ -1653,7 +1638,7 @@
 
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    throw new Error(err.detail || 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
+                    throw new Error(apiDetail(err) || 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
                 }
 
                 const data = await res.json();
@@ -1772,7 +1757,7 @@
                 const avBox = document.getElementById('profile-avatar-container');
                 if (avBox) {
                     if (user.avatar_url) {
-                        avBox.innerHTML = `<img src="${user.avatar_url}" class="w-full h-full object-cover">`;
+                        avBox.innerHTML = `<img src="${escapeHtml(user.avatar_url)}" alt="" class="w-full h-full object-cover">`;
                     } else {
                         const initial = (user.display_name || 'U')[0].toUpperCase();
                         avBox.innerHTML = `<span class="text-xl font-bold font-mono text-[var(--brass-300)]">${initial}</span>`;
@@ -1797,7 +1782,7 @@
                 const btnDelAv = document.getElementById('btn-delete-avatar');
                 if (setAvBox) {
                     if (user.avatar_url) {
-                        setAvBox.innerHTML = `<img src="${user.avatar_url}" class="w-full h-full object-cover">`;
+                        setAvBox.innerHTML = `<img src="${escapeHtml(user.avatar_url)}" alt="" class="w-full h-full object-cover">`;
                         if (btnDelAv) btnDelAv.classList.remove('hidden');
                     } else {
                         const initial = (user.display_name || 'U')[0].toUpperCase();
@@ -1954,8 +1939,8 @@
                 });
 
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'Google orqali kirishda xatolik yuz berdi');
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(apiDetail(err) || 'Google orqali kirishda xatolik yuz berdi');
                 }
 
                 await checkAuth();
@@ -1979,10 +1964,6 @@
             const target = document.getElementById(screenId);
             if (target) target.classList.remove('hidden');
 
-            const scoreBadge = document.getElementById('header-score-badge');
-            if (scoreBadge) {
-                scoreBadge.classList.add('hidden');
-            }
         }
 
         // =====================================================================
@@ -2244,7 +2225,7 @@
                                     <span>•</span>
                                     <span class="pack-specs-item">${q.total_questions} savol</span>
                                     <span>•</span>
-                                    <span class="pack-specs-item">~${q.total_questions} daq</span>
+                                    <span class="pack-specs-item">~${q.estimated_duration_minutes || q.total_questions} daq</span>
                                 </div>
                                 <div class="pack-actions">
                                     <button
@@ -2298,7 +2279,7 @@
         const GENERIC_CATEGORY_LABELS = ['umumiy', 'zakovat', 'svoya igra', 'viktorina', 'klassik zakovat'];
         function packCategoryLabelHtml(category) {
             const c = (category || '').trim();
-            if (!c || GENERIC_CATEGORY_LABELS.includes(c.toLowerCase())) return '';
+            if (!c || GENERIC_CATEGORY_LABELS.includes(c.toLowerCase())) return '<div class="pack-card-header" aria-hidden="true"></div>';
             return `<div class="pack-card-header"><span class="pack-category">${escapeHtml(c)}</span></div>`;
         }
 
@@ -2385,11 +2366,14 @@
                     const isClassic = (q.game_mode === 'classic_zakovat' || q.game_mode === 'zakovat_classic');
                     const isSvoyak = (q.game_mode === 'svoyak');
 
-                    const specsText = isClassic
-                        ? `<span>24 savol</span><span>·</span><span>2 tur</span><span>·</span><span>~24 daq</span>`
-                        : (isSvoyak
-                            ? `<span>25 savol</span><span>·</span><span>5 mavzu</span><span>·</span><span>~25 daq</span>`
-                            : `<span>${q.total_questions} savol</span><span>·</span><span>~${q.estimated_duration_minutes || q.total_questions} daq</span>`);
+                    // Counts and duration are the backend's own values (estimated_duration_minutes), exactly what
+                    // Pack Details shows, so the card and the details can never disagree.
+                    const specQuestions = q.total_questions ?? (isClassic ? 24 : 25);
+                    const specDuration = q.estimated_duration_minutes || specQuestions;
+                    const specUnits = (isClassic || isSvoyak)
+                        ? `<span>${q.total_rounds ?? (isClassic ? 2 : 5)} ${isSvoyak ? 'mavzu' : 'tur'}</span><span>·</span>`
+                        : '';
+                    const specsText = `<span>${specQuestions} savol</span><span>·</span>${specUnits}<span>~${specDuration} daq</span>`;
 
                     return `
                         <div class="arena-pack-card" data-quiz-id="${q.quiz_id}" data-mode="${isClassic ? 'classic_zakovat' : (isSvoyak ? 'svoyak' : 'other')}">
@@ -2514,18 +2498,22 @@
             if (!modal) return;
 
             const isStagingMode = Boolean(isStaging || state.isStaging);
+            const sheet = document.getElementById('pack-detail-sheet');
+
+            // Show the sheet straight away with a loading state instead of a silent wait.
+            if (sheet) sheet.dataset.state = 'loading';
+            modal.classList.remove('hidden');
 
             try {
                 const url = isStagingMode ? `${API_BASE}/play/staging/quizzes/${quizId}` : `${API_BASE}/quizzes/${quizId}`;
                 const res = await fetch(url);
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    const errorMsg = typeof err.detail === 'string'
-                        ? err.detail
-                        : (Array.isArray(err.detail) ? err.detail.map(d => d.msg).join(', ') : 'Viktorina tafsilotlarini yuklab bo\'lmadi');
+                    const errorMsg = apiDetail(err) || 'Viktorina tafsilotlarini yuklab bo\'lmadi';
                     throw new Error(errorMsg);
                 }
                 const data = await res.json();
+                if (state.detailQuizId !== quizId) return;  // a newer pack was opened meanwhile
 
                 // Sync URL to /quiz/{id}
                 if (!window.location.pathname.startsWith('/play/')) {
@@ -2533,31 +2521,50 @@
                 }
 
                 // Populate Header & Meta
+                const isClassicPack = (data.game_mode === 'classic_zakovat' || data.game_mode === 'zakovat_classic');
+                const isSvoyakPack = (data.game_mode === 'svoyak');
+                const modeLabel = isClassicPack ? 'Klassik Zakovat' : (isSvoyakPack ? 'Svoya Igra' : (data.game_mode || 'Standart'));
+                const unitWord = isSvoyakPack ? 'mavzu' : 'tur';
+                if (sheet) sheet.dataset.mode = isClassicPack ? 'classic_zakovat' : (isSvoyakPack ? 'svoyak' : 'other');
+
                 document.getElementById('detail-title').innerText = formatPlayerFacingTitle(data.title);
-                document.getElementById('detail-category-badge').innerText = data.category || 'Umumiy';
-                document.getElementById('detail-mode-badge').innerText = (data.game_mode === 'classic_zakovat' || data.game_mode === 'zakovat_classic') ? 'Zakovat (2 tur • 24 savol)' : (data.game_mode || 'Standart');
+                // Same rule as the Arena cards: a generic category ("Umumiy") is not shown as a label.
+                const categoryEl = document.getElementById('detail-category-badge');
+                const categoryText = (data.category || '').trim();
+                const hasCategory = Boolean(categoryText) && !GENERIC_CATEGORY_LABELS.includes(categoryText.toLowerCase());
+                categoryEl.innerText = hasCategory ? categoryText : '';
+                categoryEl.classList.toggle('hidden', !hasCategory);
+                document.getElementById('detail-mode-badge').innerText = modeLabel;
                 document.getElementById('detail-version-badge').innerText = isStagingMode ? 'Staging' : ('v' + data.version_number);
                 document.getElementById('detail-description').innerText = data.description || 'Turnir haqida ma\'lumot kiritilmagan.';
 
                 // Metrics
-                document.getElementById('detail-metric-rounds').innerText = `${data.total_rounds} ta tur`;
+                document.getElementById('detail-metric-rounds-label').innerText = isSvoyakPack ? 'Mavzular' : 'Turlar';
+                document.getElementById('detail-metric-rounds').innerText = `${data.total_rounds} ta ${unitWord}`;
                 document.getElementById('detail-metric-questions').innerText = `${data.total_questions} ta savol`;
                 document.getElementById('detail-metric-duration').innerText = `~${data.estimated_duration_minutes} daq`;
+                document.getElementById('detail-metric-format').innerText = isClassicPack ? 'Zakovat 2×12' : modeLabel;
+                document.getElementById('detail-rounds-heading').innerText = isSvoyakPack ? 'Mavzular tuzilishi' : 'Turlar tuzilishi';
 
-                // Rounds Breakdown List
+                // Rounds Breakdown List (structure only: the API returns no question text here)
                 const roundsListEl = document.getElementById('detail-rounds-list');
                 if (roundsListEl) {
-                    roundsListEl.innerHTML = (data.rounds || []).map(r => `
-                        <div class="p-3 rounded-md bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-between text-xs">
-                            <div class="flex items-center gap-2.5">
-                                <span class="w-6 h-6 rounded bg-[var(--oxblood-950)] text-[var(--brass-300)] border border-[var(--oxblood-800)] font-mono font-bold flex items-center justify-center text-[11px]">
-                                    ${r.sequence}
-                                </span>
-                                <span class="font-semibold text-[var(--text-main)]">${escapeHtml(r.name || r.round_type)}</span>
-                            </div>
-                            <span class="text-[var(--text-dim)] font-mono text-[11px]">${(r.questions || []).length} ta savol</span>
-                        </div>
-                    `).join('');
+                    const GENERIC_ROUND_NAME = /^(klassik zakovat|zakovat_classic|svo.{1,2}k mavzusi|svoyak_theme)$/i;
+                    roundsListEl.innerHTML = (data.rounds || []).map(r => {
+                        const rawName = String(r.name || r.round_type || '').trim();
+                        const roundName = (!rawName || GENERIC_ROUND_NAME.test(rawName)) ? `${r.sequence}-${unitWord}` : rawName;
+                        const questions = r.questions || [];
+                        const points = questions.map(q => Number(q.points)).filter(p => Number.isFinite(p) && p > 0);
+                        const pointsText = (isSvoyakPack && points.length > 0)
+                            ? ` · ${Math.min(...points)}–${Math.max(...points)} ball`
+                            : '';
+                        return `
+                        <li class="pack-detail-round">
+                            <span class="pack-detail-round-no">${r.sequence}</span>
+                            <span class="pack-detail-round-name">${escapeHtml(roundName)}</span>
+                            <span class="pack-detail-round-meta">${questions.length} ta savol${pointsText}</span>
+                        </li>`;
+                    }).join('');
                 }
 
                 // Leaderboard Preview
@@ -2577,14 +2584,14 @@
                     if (data.top_player && topPlayerChip) {
                         topPlayerChip.classList.remove('hidden');
                         topPlayerChip.innerHTML = `
-                            <div class="flex items-center gap-2">
-                                <span class="font-mono text-[var(--brass-400)] font-bold text-xs">#1</span>
-                                <span class="text-zinc-300 font-medium">Peshqadam:</span>
-                                <strong class="text-white font-bold">${escapeHtml(data.top_player.display_name)}</strong>
+                            <div class="pack-detail-leader-who">
+                                <span class="pack-detail-leader-rank">#1</span>
+                                <span class="pack-detail-leader-label">Peshqadam</span>
+                                <strong class="pack-detail-leader-name">${escapeHtml(data.top_player.display_name)}</strong>
                             </div>
-                            <div class="flex items-center gap-2 font-mono text-xs">
-                                <span class="text-white font-bold">${formatLeaderboardResult(data.top_player, data.game_mode === 'svoyak')}</span>
-                                <span class="opacity-60">• ${data.top_player.formatted_time}</span>
+                            <div class="pack-detail-leader-result">
+                                <span class="pack-detail-leader-score">${formatLeaderboardResult(data.top_player, data.game_mode === 'svoyak')}</span>
+                                <span class="pack-detail-leader-time">${data.top_player.formatted_time}</span>
                             </div>
                         `;
                     } else if (topPlayerChip) {
@@ -2597,24 +2604,20 @@
 
                         if (lbRows) {
                             lbRows.innerHTML = data.leaderboard_preview.map(item => {
-                                const rankDisplay = `<span class="font-mono font-bold text-xs ${item.rank <= 3 ? 'text-[var(--text-brass)]' : 'text-[var(--text-dim)]'}">#${item.rank}</span>`;
-
                                 const isMe = state.currentUser && (state.currentUser.id === item.user_id);
                                 return `
-                                    <tr class="${isMe ? 'bg-[var(--oxblood-950)]/60 text-[var(--text-main)]' : 'hover:bg-[var(--bg-card)] text-[var(--text-muted)]'}">
-                                        <td class="py-2.5 px-3 text-center">${rankDisplay}</td>
-                                        <td class="py-2.5 px-3 font-semibold text-[var(--text-main)] flex items-center gap-2">
+                                    <tr class="${isMe ? 'is-me' : ''}">
+                                        <td class="is-rank${item.rank <= 3 ? ' is-top' : ''}">${item.rank}</td>
+                                        <td class="is-player">
                                             <span>${escapeHtml(item.display_name)}</span>
-                                            ${isMe ? `<span class="text-[9px] px-1 py-0.5 rounded bg-[var(--oxblood-800)] text-white font-bold uppercase tracking-wider font-mono">Siz</span>` : ''}
+                                            ${isMe ? `<span class="pack-detail-me">Siz</span>` : ''}
                                         </td>
-                                        <td class="py-2.5 px-3 text-center font-mono font-bold text-[var(--text-main)]">
+                                        <td class="is-score">
                                             ${data.game_mode === 'svoyak'
-                                                ? `${item.total_score ?? 0} <span class="text-[var(--text-dim)] text-[10px] font-normal">ball</span>`
-                                                : `${item.correct_count} <span class="text-[var(--text-dim)] text-[10px] font-normal">/ ${item.total_questions}</span>`}
+                                                ? `${item.total_score ?? 0} <span class="is-unit">ball</span>`
+                                                : `${item.correct_count} <span class="is-unit">/ ${item.total_questions}</span>`}
                                         </td>
-                                        <td class="py-2.5 px-3 text-right font-mono font-semibold text-[var(--text-dim)]">
-                                            ${item.formatted_time}
-                                        </td>
+                                        <td class="is-time">${item.formatted_time}</td>
                                     </tr>
                                 `;
                             }).join('');
@@ -2650,8 +2653,12 @@
                     };
                 }
 
+                if (sheet) sheet.dataset.state = 'ready';
                 modal.classList.remove('hidden');
             } catch (err) {
+                if (state.detailQuizId !== quizId) return;
+                modal.classList.add('hidden');
+                if (sheet) sheet.dataset.state = 'ready';
                 await zwAlert(err.message);
             }
         }
@@ -2683,6 +2690,12 @@
             const svoyakOptions = document.getElementById('settings-svoyak-options');
 
             const isSvoyak = (gameMode === 'svoyak');
+            const isClassicMode = (gameMode === 'classic_zakovat' || gameMode === 'zakovat_classic');
+
+            const setupSheet = document.getElementById('game-setup-sheet');
+            if (setupSheet) setupSheet.dataset.mode = isSvoyak ? 'svoyak' : (isClassicMode ? 'classic_zakovat' : 'other');
+            const formatEl = document.getElementById('settings-modal-format');
+            if (formatEl) formatEl.innerText = isSvoyak ? 'Svoya Igra' : 'Klassik Zakovat';
 
             if (title && titleEl) {
                 titleEl.innerText = formatPlayerFacingTitle(title);
@@ -2722,22 +2735,8 @@
 
             const lblWith = document.getElementById('opt-label-with-timer');
             const lblNo = document.getElementById('opt-label-no-timer');
-
-            if (val === 'with_timer') {
-                if (lblWith) {
-                    lblWith.className = 'flex items-start gap-4 p-4 rounded-md border-2 border-[var(--oxblood-600)] bg-[var(--oxblood-950)] cursor-pointer transition-all';
-                }
-                if (lblNo) {
-                    lblNo.className = 'flex items-start gap-4 p-4 rounded-md border-2 border-zinc-800 bg-black/40 hover:border-zinc-700 cursor-pointer transition-all';
-                }
-            } else {
-                if (lblWith) {
-                    lblWith.className = 'flex items-start gap-4 p-4 rounded-md border-2 border-zinc-800 bg-black/40 hover:border-zinc-700 cursor-pointer transition-all';
-                }
-                if (lblNo) {
-                    lblNo.className = 'flex items-start gap-4 p-4 rounded-md border-2 border-[var(--oxblood-600)] bg-[var(--oxblood-950)] cursor-pointer transition-all';
-                }
-            }
+            if (lblWith) lblWith.classList.toggle('is-selected', val === 'with_timer');
+            if (lblNo) lblNo.classList.toggle('is-selected', val !== 'with_timer');
         }
 
         function updateSvoyakModeSelection() {
@@ -2747,22 +2746,8 @@
 
             const lblFree = document.getElementById('opt-label-svoyak-free');
             const lblClassic = document.getElementById('opt-label-svoyak-classic');
-
-            if (val === 'free_choice') {
-                if (lblFree) {
-                    lblFree.className = 'flex items-start gap-4 p-4 rounded-md border-2 border-[var(--oxblood-600)] bg-[var(--oxblood-950)] cursor-pointer transition-all';
-                }
-                if (lblClassic) {
-                    lblClassic.className = 'flex items-start gap-4 p-4 rounded-md border-2 border-zinc-800 bg-black/40 hover:border-zinc-700 cursor-pointer transition-all';
-                }
-            } else {
-                if (lblFree) {
-                    lblFree.className = 'flex items-start gap-4 p-4 rounded-md border-2 border-zinc-800 bg-black/40 hover:border-zinc-700 cursor-pointer transition-all';
-                }
-                if (lblClassic) {
-                    lblClassic.className = 'flex items-start gap-4 p-4 rounded-md border-2 border-[var(--oxblood-600)] bg-[var(--oxblood-950)] cursor-pointer transition-all';
-                }
-            }
+            if (lblFree) lblFree.classList.toggle('is-selected', val === 'free_choice');
+            if (lblClassic) lblClassic.classList.toggle('is-selected', val !== 'free_choice');
         }
 
         async function confirmStartGameWithSettings() {
@@ -2861,14 +2846,14 @@
                             return;
                         }
                     }
-                    const err = await res.json();
-                    await zwAlert(err.detail || "Siz bir martalik bepul sinov urinishingizdan foydalandingiz. Barcha viktorinalarni cheksiz o'ynash va reytingda qatnashish uchun ro'yxatdan o'ting!");
+                    const err = await res.json().catch(() => ({}));
+                    await zwAlert(apiDetail(err) || "Siz bir martalik bepul sinov urinishingizdan foydalandingiz. Barcha viktorinalarni cheksiz o'ynash va reytingda qatnashish uchun ro'yxatdan o'ting!");
                     openAuthModal('register');
                     return;
                 }
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || "O'yinni boshlab bo'lmadi");
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(apiDetail(err) || "O'yinni boshlab bo'lmadi");
                 }
                 const data = await res.json();
                 state.sessionToken = data.session_token;
@@ -2914,7 +2899,7 @@
                     renderQuestionState(data.current_state);
                 }
             } catch (err) {
-                await zwAlert('Xatolik: ' + err.message);
+                await zwAlert('Xatolik: ' + describeError(err));
             }
         }
 
@@ -2933,26 +2918,36 @@
 
             // If Svoyak, hide board and show question card
             const boardContainer = document.getElementById('svoyak-board-container');
-            const questionCard = document.querySelector('.question-stage-card');
+            const questionCard = document.getElementById('gameplay-question-stage');
             if (boardContainer) boardContainer.classList.add('hidden');
             if (questionCard) questionCard.classList.remove('hidden');
-            const clockDisplay = document.querySelector('.clock-display');
+            const clockDisplay = document.getElementById('gameplay-clock');
             if (clockDisplay) clockDisplay.classList.remove('hidden');
 
             const isSvoyak = (round.round_type === 'svoyak_theme' || state.gameMode === 'svoyak');
 
+            // Presentation flags only: the stylesheet reads the format and the current view from the table.
+            const gameTable = document.getElementById('game-table');
+            if (gameTable) {
+                gameTable.dataset.mode = isSvoyak ? 'svoyak' : 'classic_zakovat';
+                gameTable.dataset.view = 'question';
+            }
+            const scoreValueEl = document.getElementById('gameplay-score-value');
+            if (scoreValueEl && isSvoyak) {
+                const boardScore = state.svoyakBoard ? state.svoyakBoard.total_score : null;
+                scoreValueEl.innerText = (boardScore ?? state.totalScore ?? 0);
+            }
+
             // Round Badge Theme
             const badgeEl = document.getElementById('gameplay-round-badge');
             if (badgeEl) {
-                const roundTypesMap = {
-                    'standard': { name: 'Standart', color: 'bg-zinc-800 text-zinc-300 border-zinc-700' },
-                    'true_false': { name: "To'g'ri / Noto'g'ri", color: 'bg-emerald-950/40 text-emerald-300 border-emerald-800/40' },
-                    'mantiqasqon': { name: 'Mantiqasqon', color: 'bg-amber-950/40 text-amber-300 border-amber-800/40' },
-                    'zanjir': { name: 'Zanjir', color: 'bg-purple-950/40 text-purple-300 border-purple-800/40' },
-                    'zakovat_classic': { name: roundTitle, color: 'bg-[#7A1627]/25 text-[#E6B3BA] border-[#7A1627]/40' },
-                    'classic_zakovat': { name: roundTitle, color: 'bg-[#7A1627]/25 text-[#E6B3BA] border-[#7A1627]/40' },
+                const roundTypeNames = {
+                    'standard': 'Standart',
+                    'true_false': "To'g'ri / Noto'g'ri",
+                    'mantiqasqon': 'Mantiqasqon',
+                    'zanjir': 'Zanjir',
                 };
-                const meta = roundTypesMap[round.round_type] || { name: roundTitle, color: 'bg-zinc-800 text-zinc-300 border-zinc-700' };
+                const meta = { name: roundTypeNames[round.round_type] || roundTitle };
                 badgeEl.className = 'gameplay-round-badge';
                 badgeEl.innerText = (round.round_type === 'zakovat_classic' || round.round_type === 'classic_zakovat') ? roundTitle.toUpperCase() : meta.name;
             }
@@ -3071,8 +3066,8 @@
                 ? 'Reyting o‘yini: natijangiz liderlar jadvaliga yoziladi'
                 : 'Mashq o‘yini: natija liderlar jadvaliga kirmaydi';
             badge.className = state.isRanked
-                ? 'pack-badge pack-badge-brass whitespace-nowrap'
-                : 'pack-badge whitespace-nowrap';
+                ? 'game-rank-badge is-ranked'
+                : 'game-rank-badge';
         }
 
         // Timer
@@ -3080,21 +3075,35 @@
             clearInterval(state.timerInterval);
             const timerEl = document.getElementById('gameplay-timer-value');
             const unitEl = document.getElementById('gameplay-timer-unit');
+            const clockEl = document.getElementById('gameplay-clock');
+            const announceEl = document.getElementById('gameplay-clock-announce');
+            if (announceEl) announceEl.innerText = '';
+            const paintClock = (untimed) => {
+                if (!clockEl) return;
+                clockEl.classList.toggle('is-untimed', untimed);
+                clockEl.classList.toggle('is-low', !untimed && state.timeLeft <= 10);
+                if (announceEl && !untimed && state.timeLeft === 10) {
+                    announceEl.innerText = '10 soniya qoldi';
+                }
+            };
 
             if (seconds === 0 || state.timerMode === 'no_timer') {
                 state.timeLeft = 0;
                 if (timerEl) timerEl.innerText = '∞';
                 if (unitEl) unitEl.innerText = '';
+                paintClock(true);
                 return;
             }
 
             state.timeLeft = seconds;
             if (timerEl) timerEl.innerText = state.timeLeft;
             if (unitEl) unitEl.innerText = 's';
+            paintClock(false);
 
             state.timerInterval = setInterval(() => {
                 state.timeLeft--;
                 if (timerEl) timerEl.innerText = state.timeLeft;
+                paintClock(false);
                 if (state.timeLeft <= 0) {
                     clearInterval(state.timerInterval);
                     handleTimeOut();
@@ -3162,7 +3171,7 @@
             const submitted = (result.submitted_answer || '').trim();
             if (submittedEl) {
                 submittedEl.innerText = submitted || (state.lastSubmitWasPass ? 'O‘tkazildi' : 'Javob berilmadi');
-                submittedEl.classList.toggle('text-zinc-500', !submitted);
+                submittedEl.classList.toggle('is-empty', !submitted);
             }
             if (correctEl) correctEl.innerText = (result.correct_answer || '').trim() || '—';
 
@@ -3206,7 +3215,7 @@
                 hideAnswerReveal();
                 state.isSubmitting = false;
             } catch (err) {
-                await zwAlert('Xatolik: ' + (err && err.message ? err.message : err));
+                await zwAlert('Xatolik: ' + describeError(err));
                 if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = 'Davom etish &rarr;';
@@ -3219,7 +3228,7 @@
             const res = await fetch(`${API_BASE}/play/${state.sessionToken}/continue`, { method: 'POST' });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                throw new Error(err.detail || "Keyingi savolni ochib bo'lmadi");
+                throw new Error(apiDetail(err) || "Keyingi savolni ochib bo'lmadi");
             }
             const data = await res.json();
             if (data.board) state.svoyakBoard = data.board;
@@ -3269,14 +3278,14 @@
                 });
 
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'Javobni qabul qilib bo\'lmadi');
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(apiDetail(err) || 'Javobni qabul qilib bo\'lmadi');
                 }
 
                 const result = await res.json();
                 state.totalScore = result.total_score;
-                const scoreEl = document.getElementById('header-score-value');
-                if (scoreEl) scoreEl.innerText = state.totalScore;
+                const runningScoreEl = document.getElementById('gameplay-score-value');
+                if (runningScoreEl) runningScoreEl.innerText = (state.totalScore ?? 0);
 
                 // Visual Feedback (tri-state, no ball increments)
                 const feedbackEl = document.getElementById('gameplay-feedback-banner');
@@ -3321,12 +3330,15 @@
                 }, 1100);
 
             } catch (err) {
-                await zwAlert('Xatolik: ' + err.message);
+                await zwAlert('Xatolik: ' + describeError(err));
                 state.isSubmitting = false;
                 state.lastSubmitWasPass = false;
                 if (input) input.disabled = false;
                 if (submitBtn) submitBtn.disabled = false;
                 if (passBtnEl) passBtnEl.disabled = false;
+                if (state.timerMode !== 'no_timer' && state.timeLeft > 0) {
+                    startTimer(state.timeLeft);
+                }
             }
         }
 
@@ -3379,7 +3391,10 @@
                 if (timerEl) timerEl.innerText = formatBreakTime(Math.max(0, state.breakTimeLeft));
                 if (state.breakTimeLeft <= 0) {
                     clearInterval(state.breakInterval);
-                    handleIntermediateContinue();
+                    const breakScreen = document.getElementById('screen-intermediate');
+                    if (breakScreen && !breakScreen.classList.contains('hidden')) {
+                        handleIntermediateContinue();
+                    }
                 }
             }, 1000);
 
@@ -3399,8 +3414,8 @@
             try {
                 const res = await fetch(`${API_BASE}/play/${state.sessionToken}/continue`, { method: 'POST' });
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || '2-turga o\'tib bo\'lmadi');
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(apiDetail(err) || '2-turga o\'tib bo\'lmadi');
                 }
                 const data = await res.json();
                 if (data.current_state) {
@@ -3408,12 +3423,12 @@
                     showScreen('screen-gameplay');
                 }
             } catch (err) {
-                await zwAlert('Xatolik: ' + err.message);
+                await zwAlert('Xatolik: ' + describeError(err));
             } finally {
                 isContinuingFromBreak = false;
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = `<span>2-turga o'tish</span><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>`;
+                    btn.innerHTML = '<span>2-turni boshlash</span><span>&rarr;</span>';
                 }
             }
         }
@@ -3422,70 +3437,75 @@
         // =====================================================================
         // REVIEW RENDERING HELPER (SHARED BY SCREEN-REVEAL & MODAL-REVIEW)
         // =====================================================================
+        // Player-facing name of a round: the theme for Svoya Igra, "N-tur" otherwise.
+        function roundDisplayName(r, index) {
+            const seq = r.round_sequence || (index + 1);
+            if (r.round_type === 'svoyak_theme') {
+                const fromConfig = r.config && r.config.theme_title;
+                const fromBoard = state.svoyakBoard && state.svoyakBoard.themes && state.svoyakBoard.themes[seq - 1]
+                    ? state.svoyakBoard.themes[seq - 1].theme_title
+                    : null;
+                return fromConfig || fromBoard || `${seq}-mavzu`;
+            }
+            return r.round_title || `${seq}-tur`;
+        }
+
         function buildReviewQuestionsHtml(rounds) {
             if (!rounds || rounds.length === 0) return '';
             let questionsHtml = '';
             let globalIndex = 0;
 
             rounds.forEach((r, rIdx) => {
-                const turNum = r.round_sequence || (rIdx + 1);
-                const defaultTurName = turNum === 1 ? '1-tur' : (turNum === 2 ? '2-tur' : `${turNum}-tur`);
-                const roundTitle = r.round_title || defaultTurName;
+                const isSvoyakRound = r.round_type === 'svoyak_theme';
+                const roundTitle = roundDisplayName(r, rIdx);
                 const qCount = (r.questions || []).length;
                 const startQ = globalIndex + 1;
                 const endQ = globalIndex + qCount;
                 const rangeLabel = qCount > 0 ? ` (${startQ}–${endQ}-savollar)` : '';
 
                 questionsHtml += `
-                    <div class="p-3.5 rounded-lg text-brass-300 font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-between ${rIdx > 0 ? 'mt-6' : 'mt-2'} mb-3" style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-[#7A1627]"></span>
-                            <span>${escapeHtml(roundTitle)}${rangeLabel}</span>
-                        </div>
-                        <span class="text-xs font-mono font-medium text-brass-400/80">${qCount} ta savol</span>
+                    <div class="review-round-head">
+                        <span class="review-round-title">${escapeHtml(roundTitle)}${rangeLabel}</span>
+                        <span class="review-round-count">${qCount} ta savol</span>
                     </div>
                 `;
 
                 r.questions.forEach(q => {
                     globalIndex++;
                     const isUnans = q.is_unanswered !== undefined ? q.is_unanswered : !q.submitted_answer;
-                    const badgeClass = q.is_correct
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : (isUnans ? 'bg-zinc-800 text-zinc-400 border border-zinc-700' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30');
+                    const stateClass = q.is_correct ? 'correct' : (isUnans ? 'unanswered' : 'incorrect');
                     const badgeLabel = q.is_correct
                         ? "To‘g‘ri"
                         : (isUnans ? "Javobsiz" : "Noto‘g‘ri");
                     const userAns = isUnans ? "Javob berilmadi" : escapeHtml(q.submitted_answer || "Javob berilmadi");
-                    const userAnsColor = q.is_correct ? 'text-emerald-300' : (isUnans ? 'text-zinc-400' : 'text-rose-300');
+                    // Svoya Igra: what this question actually added to or took from the score
+                    const awarded = Number(q.points_awarded);
+                    const pointsLabel = (isSvoyakRound && Number.isFinite(awarded))
+                        ? ` · ${awarded > 0 ? '+' : (awarded < 0 ? '−' : '')}${Math.abs(awarded)} ball`
+                        : '';
 
                     questionsHtml += `
-                        <div class="review-question-item ${q.is_correct ? 'correct' : (isUnans ? 'unanswered' : 'incorrect')} space-y-2.5">
-                            <div class="flex items-center justify-between gap-2">
-                                <div class="flex items-center gap-2">
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono" style="background: rgba(197, 160, 89, 0.1); color: var(--accent-brass); border: 1px solid var(--border-subtle);">Savol #${globalIndex}</span>
-                                    <span class="text-xs font-semibold" style="color: var(--text-dim);">${escapeHtml(roundTitle)}</span>
-                                </div>
-                                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}">
-                                    ${badgeLabel}
-                                </span>
+                        <article class="review-question-item ${stateClass}">
+                            <div class="review-item-head">
+                                <span class="review-item-no">Savol #${globalIndex}</span>
+                                <span class="review-item-round">${escapeHtml(roundTitle)}</span>
+                                <span class="review-item-status">${badgeLabel}${pointsLabel}</span>
                             </div>
-                            <div class="text-sm font-semibold leading-relaxed" style="color: var(--text-main);">${escapeHtml(q.text)}</div>
-                            <div class="grid sm:grid-cols-2 gap-2 text-xs pt-1">
-                                <div class="p-2.5 rounded-lg" style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-                                    <div class="text-[11px] mb-0.5" style="color: var(--text-dim);">Sizning javobingiz:</div>
-                                    <div class="font-bold ${userAnsColor}">${userAns}</div>
+                            <p class="review-item-text">${escapeHtml(q.text)}</p>
+                            <dl class="review-item-answers">
+                                <div>
+                                    <dt>Sizning javobingiz</dt>
+                                    <dd class="review-item-yours">${userAns}</dd>
                                 </div>
-                                <div class="p-2.5 rounded-lg" style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-                                    <div class="text-[11px] mb-0.5" style="color: var(--text-dim);">To‘g‘ri javob:</div>
-                                    <div class="font-bold text-brass-300">${escapeHtml((q.correct_answers || []).join(' / '))}</div>
+                                <div>
+                                    <dt>To‘g‘ri javob</dt>
+                                    <dd class="review-item-correct">${escapeHtml((q.correct_answers || []).join(' / '))}</dd>
                                 </div>
-                            </div>
+                            </dl>
                             ${q.explanation ? `
-                                <div class="p-2.5 rounded-lg text-[11px] border" style="background: rgba(197, 160, 89, 0.08); border-color: var(--border-medium); color: var(--text-muted);">
-                                    <strong style="color: var(--accent-brass);">Izoh:</strong> ${escapeHtml(q.explanation)}
-                                </div>
+                                <p class="review-item-note"><strong>Izoh:</strong> ${escapeHtml(q.explanation)}</p>
                             ` : ''}
-                        </div>
+                        </article>
                     `;
                 });
             });
@@ -3520,7 +3540,7 @@
                 const scoreTextEl = document.getElementById('reveal-round-score-text');
                 if (scoreTextEl) {
                     scoreTextEl.innerHTML = `
-                        To'g'ri javoblar: <span class="font-bold text-emerald-400 font-mono text-lg">${correctCount}</span> / ${totalQ}
+                        To'g'ri javoblar: <strong class="game-inline-score">${correctCount}</strong> / ${totalQ}
                     `;
                 }
 
@@ -3547,7 +3567,7 @@
                     listEl.innerHTML = buildReviewQuestionsHtml(pseudoRound);
                 }
 
-                const btn = document.getElementById('reveal-continue-btn');
+                const btn = document.getElementById('round-review-continue-btn');
                 const btnLabel = document.getElementById('reveal-continue-label');
                 if (data.has_next_round) {
                     btnLabel.innerText = "Keyingi turga o'tish";
@@ -3567,7 +3587,7 @@
         async function handleContinueToNextRound() {
             if (isContinuingRound) return;
             isContinuingRound = true;
-            const btn = document.getElementById('reveal-continue-btn');
+            const btn = document.getElementById('round-review-continue-btn');
             if (btn) btn.disabled = true;
 
             try {
@@ -3582,7 +3602,7 @@
                     showScreen('screen-gameplay');
                 }
             } catch (err) {
-                await zwAlert('Xatolik: ' + err.message);
+                await zwAlert('Xatolik: ' + describeError(err));
                 if (btn) btn.disabled = false;
             } finally {
                 isContinuingRound = false;
@@ -3600,7 +3620,7 @@
                 feedbackEl.innerHTML = `O‘yin yakunlandi. Natijalar hisoblanmoqda...`;
             }
 
-            const btn = document.getElementById('reveal-continue-btn');
+            const btn = document.getElementById('round-review-continue-btn');
             const btnLabel = document.getElementById('reveal-continue-label');
             if (btn) btn.disabled = true;
             if (btnLabel) btnLabel.innerText = "Natijalar hisoblanmoqda...";
@@ -3635,7 +3655,7 @@
                 const res = await fetch(`${API_BASE}/play/${state.sessionToken}/results`);
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    throw new Error(err.detail || 'Natijalarni yuklab bo\'lmadi');
+                    throw new Error(apiDetail(err) || 'Natijalarni yuklab bo\'lmadi');
                 }
                 const data = await res.json();
 
@@ -3653,6 +3673,12 @@
 
                 const scoreEl = document.getElementById('results-total-score');
                 if (scoreEl) scoreEl.innerText = data.total_score ?? 0;
+                // The points total is the result in Svoya Igra; Zakovat is scored by correct answers only.
+                const scoreWrap = document.getElementById('results-score-wrap');
+                if (scoreWrap) {
+                    const isSvoyakResult = (data.game_mode || state.gameMode) === 'svoyak';
+                    scoreWrap.classList.toggle('hidden', !isSvoyakResult);
+                }
 
                 const reviewBtnLabel = document.getElementById('results-review-btn-label');
                 if (reviewBtnLabel) {
@@ -3661,19 +3687,25 @@
                 }
 
                 const breakdownEl = document.getElementById('results-rounds-breakdown');
-                breakdownEl.innerHTML = data.rounds.map(r => {
-                    const roundName = r.round_title || (r.round_sequence === 2 ? "2-tur" : (r.round_sequence === 1 ? "1-tur" : `${r.round_sequence}-tur`));
+                const isSvoyakBreakdown = (data.rounds || []).some(r => r.round_type === 'svoyak_theme');
+                const breakdownTitleEl = document.getElementById('results-breakdown-title');
+                if (breakdownTitleEl) {
+                    breakdownTitleEl.innerText = isSvoyakBreakdown ? 'Mavzular bo‘yicha taqsimot' : 'Turlar bo‘yicha taqsimot';
+                }
+                breakdownEl.innerHTML = data.rounds.map((r, rIdx) => {
+                    const roundName = roundDisplayName(r, rIdx);
+                    const roundScore = (r.round_type === 'svoyak_theme' && typeof r.round_score === 'number')
+                        ? `<span class="is-score">${r.round_score} ball</span>`
+                        : '';
                     return `
-                    <div class="results-round-row">
-                        <div class="flex items-center gap-2.5">
-                            <span class="results-round-dot"></span>
-                            <span class="font-semibold text-sm capitalize" style="color: var(--text-main);">${escapeHtml(roundName)}</span>
-                        </div>
-                        <div class="flex items-center gap-3 font-mono text-xs">
-                            <span class="text-emerald-400 font-bold">✓ ${r.correct_count}</span>
-                            <span class="text-rose-400 font-bold">✕ ${r.incorrect_count}</span>
-                            <span class="font-medium" style="color: var(--text-dim);">${r.unanswered_count || 0} javobsiz</span>
-                        </div>
+                    <div class="game-breakdown-row">
+                        <span class="game-breakdown-name">${escapeHtml(roundName)}</span>
+                        <span class="game-breakdown-tally">
+                            <span class="is-correct">✓ ${r.correct_count}</span>
+                            <span class="is-incorrect">✕ ${r.incorrect_count}</span>
+                            <span class="is-unanswered">${r.unanswered_count || 0} javobsiz</span>
+                            ${roundScore}
+                        </span>
                     </div>
                 `}).join('');
 
@@ -3719,8 +3751,8 @@
             try {
                 const res = await fetch(`${API_BASE}/play/${token}/review`);
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'Javoblarni yuklab bo\'lmadi');
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(apiDetail(err) || 'Javoblarni yuklab bo\'lmadi');
                 }
                 const data = await res.json();
 
@@ -3736,6 +3768,11 @@
 
                 const scoreEl = document.getElementById('review-total-score');
                 if (scoreEl) scoreEl.innerText = data.total_score ?? 0;
+                const reviewScoreWrap = document.getElementById('review-score-wrap');
+                if (reviewScoreWrap) {
+                    const isSvoyakReview = (data.game_mode || state.gameMode) === 'svoyak';
+                    reviewScoreWrap.classList.toggle('hidden', !isSvoyakReview);
+                }
 
                 const hiddenRuleBox = document.getElementById('review-hidden-rule-box');
                 const hiddenRuleText = document.getElementById('review-hidden-rule-text');
@@ -3788,10 +3825,13 @@
             const tableContainer = document.getElementById('leaderboard-table-container');
             const rowsEl = document.getElementById('leaderboard-rows');
 
+            const errorEl = document.getElementById('leaderboard-error');
+
             modal.classList.remove('hidden');
             loading.classList.remove('hidden');
             empty.classList.add('hidden');
             tableContainer.classList.add('hidden');
+            if (errorEl) errorEl.classList.add('hidden');
 
             document.getElementById('leaderboard-quiz-title').innerText = title ? formatPlayerFacingTitle(title) : 'Liderlar Jadvali';
 
@@ -3807,6 +3847,13 @@
 
                 document.getElementById('leaderboard-quiz-title').innerText = (data.quiz_title || title) ? formatPlayerFacingTitle(data.quiz_title || title) : 'Liderlar Jadvali';
                 document.getElementById('leaderboard-version-badge').innerText = 'v' + data.version_number;
+                // The subtitle names the metric this board is actually ranked by.
+                const subtitleEl = document.getElementById('leaderboard-subtitle');
+                if (subtitleEl) {
+                    subtitleEl.innerText = data.ranking_metric === 'score'
+                        ? 'Har bir ro‘yxatdan o‘tgan o‘yinchining eng yaxshi natijasi (ball va eng kam faol vaqt bo‘yicha).'
+                        : 'Har bir ro‘yxatdan o‘tgan o‘yinchining eng yaxshi natijasi (to‘g‘ri javoblar va eng kam faol vaqt bo‘yicha).';
+                }
 
                 loading.classList.add('hidden');
 
@@ -3820,51 +3867,51 @@
                 empty.classList.add('hidden');
 
                 rowsEl.innerHTML = data.leaderboard.map(item => {
-                    const rankDisplay = `<span class="font-mono font-bold text-xs ${item.rank <= 3 ? 'text-[var(--text-brass)]' : 'text-[var(--text-dim)]'}">#${item.rank}</span>`;
-
                     const isMe = state.currentUser && (state.currentUser.id === item.user_id);
-                    const rowClass = isMe ? 'bg-[var(--oxblood-950)]/60 text-[var(--text-main)]' : 'hover:bg-[var(--bg-card)] text-[var(--text-muted)]';
 
                     let dateStr = '—';
                     if (item.completed_at) {
                         try {
                             const d = new Date(item.completed_at);
-                            dateStr = d.toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            const two = (n) => String(n).padStart(2, '0');
+                            if (!isNaN(d.getTime())) {
+                                dateStr = `${two(d.getDate())}.${two(d.getMonth() + 1)}.${d.getFullYear()} ${two(d.getHours())}:${two(d.getMinutes())}`;
+                            }
                         } catch (e) {}
                     }
 
                     return `
-                        <tr class="${rowClass} transition-colors">
-                            <td class="py-3 px-4 text-center">${rankDisplay}</td>
-                            <td class="py-3 px-4 font-semibold text-[var(--text-main)]">
-                                <div class="flex items-center gap-2">
-                                    <button type="button" onclick="openPublicProfileModal(${item.user_id})" class="flex items-center gap-2 hover:text-[var(--accent-brass)] transition-colors text-left cursor-pointer bg-transparent border-0 p-0" title="O'yinchi profilini ko'rish">
-                                        ${item.avatar_url ? `<img src="${item.avatar_url}" class="w-5 h-5 rounded-full object-cover">` : `<span class="w-5 h-5 rounded-full bg-[var(--oxblood-900)] text-[10px] flex items-center justify-center text-[var(--brass-300)] font-mono font-bold">${(item.display_name||'U')[0].toUpperCase()}</span>`}
-                                        <span class="hover:underline">${escapeHtml(item.display_name)}</span>
-                                        ${item.username ? `<span class="text-[10px] text-[var(--text-dim)] font-mono">@${escapeHtml(item.username)}</span>` : ''}
-                                    </button>
-                                    ${isMe ? `<span class="text-[9px] px-1 py-0.5 rounded bg-[var(--oxblood-800)] text-white font-bold uppercase tracking-wider font-mono">Siz</span>` : ''}
-                                </div>
+                        <tr class="${isMe ? 'is-me' : ''}">
+                            <td class="is-rank${item.rank <= 3 ? ' is-top' : ''}">${item.rank}</td>
+                            <td class="is-player">
+                                <button type="button" onclick="openPublicProfileModal(${item.user_id})" class="leaderboard-player" title="O'yinchi profilini ko'rish">
+                                    ${item.avatar_url ? `<img src="${escapeHtml(item.avatar_url)}" alt="" class="leaderboard-avatar">` : `<span class="leaderboard-avatar leaderboard-avatar-initial" aria-hidden="true">${escapeHtml((item.display_name||'U')[0].toUpperCase())}</span>`}
+                                    <span class="leaderboard-player-name">${escapeHtml(item.display_name)}</span>
+                                    ${item.username ? `<span class="leaderboard-player-handle">@${escapeHtml(item.username)}</span>` : ''}
+                                </button>
+                                ${isMe ? `<span class="pack-detail-me">Siz</span>` : ''}
                             </td>
-                            <td class="py-3 px-4 text-center font-mono font-bold text-[var(--text-main)]">
+                            <td class="is-score">
                                 ${data.ranking_metric === 'score'
-                                    ? `${item.total_score ?? 0} <span class="text-[var(--text-dim)] text-[10px] font-normal">ball</span>`
-                                    : `${item.correct_count} <span class="text-[var(--text-dim)] text-[10px] font-normal">/ ${item.total_questions}</span>`}
+                                    ? `${item.total_score ?? 0} <span class="is-unit">ball</span>`
+                                    : `${item.correct_count} <span class="is-unit">/ ${item.total_questions}</span>`}
                             </td>
-                            <td class="py-3 px-4 text-center font-mono font-semibold text-[var(--text-dim)]">
+                            <td class="is-time">
                                 ${item.formatted_time}
+                                <span class="leaderboard-date-inline">${dateStr}</span>
                             </td>
-                            <td class="py-3 px-4 text-right text-[var(--text-dim)] text-[11px] font-mono">
-                                ${dateStr}
-                            </td>
+                            <td class="is-date">${dateStr}</td>
                         </tr>
                     `;
                 }).join('');
 
             } catch (err) {
+                // Shown in its own element: the empty-state text is no longer overwritten by an error.
                 loading.classList.add('hidden');
-                empty.classList.remove('hidden');
-                empty.innerHTML = `<p class="text-xs text-rose-400 font-semibold">${escapeHtml(err.message)}</p>`;
+                if (errorEl) {
+                    errorEl.innerText = err.message;
+                    errorEl.classList.remove('hidden');
+                }
             }
         }
 
@@ -3943,7 +3990,7 @@
                     }
                     const last = data.last_reveal || {};
                     const boardContainer = document.getElementById('svoyak-board-container');
-                    const questionCard = document.querySelector('.question-stage-card');
+                    const questionCard = document.getElementById('gameplay-question-stage');
                     if (boardContainer) boardContainer.classList.add('hidden');
                     if (questionCard) questionCard.classList.remove('hidden');
                     const qTextEl = document.getElementById('gameplay-question-text');
@@ -4002,6 +4049,33 @@
             return false;
         }
 
+        // `detail` is a string for application errors and a list of field errors for validation (422).
+        function apiDetail(body) {
+            const detail = body && body.detail;
+            if (typeof detail === 'string') return detail;
+            if (Array.isArray(detail)) {
+                const fieldMessages = {
+                    password: 'Parol kamida 6 ta belgidan iborat bo‘lishi kerak.',
+                    email: 'Email manzilini to‘g‘ri kiriting.',
+                    display_name: 'Ismingizni kiriting.',
+                };
+                const messages = detail.map((item) => {
+                    const field = Array.isArray(item && item.loc) ? item.loc[item.loc.length - 1] : null;
+                    return fieldMessages[field] || (item && item.msg) || '';
+                }).filter(Boolean);
+                return [...new Set(messages)].join(' ');
+            }
+            return '';
+        }
+
+        // A failed fetch() rejects with a TypeError whose text is browser-specific English; say it plainly.
+        function describeError(err) {
+            if (err instanceof TypeError) {
+                return 'Server bilan aloqa uzildi. Internet aloqasini tekshirib, qayta urinib ko‘ring.';
+            }
+            return (err && err.message) ? err.message : String(err);
+        }
+
         function escapeHtml(text) {
             if (!text) return '';
             return String(text)
@@ -4048,14 +4122,43 @@
             return "Intellektual zakovat viktorinasi.";
         }
 
-        // Global Keyboard Listeners (Escape to close review modal, True/False shortcuts)
+        // Sheets in the order Escape should close them (topmost first).
+        const SHEET_CLOSERS = [
+            ['modal-gameplay-restart', () => closeRestartModal()],
+            ['modal-zakovat-settings', () => closeZakovatSettingsModal()],
+            ['modal-leaderboard', () => closeLeaderboardModal()],
+            ['modal-review', () => closeReviewModal()],
+            ['modal-public-profile', () => closePublicProfileModal()],
+            ['modal-quiz-detail', () => closeQuizDetailModal()],
+        ];
+
+        function isAnySheetOpen() {
+            return SHEET_CLOSERS.some(([id]) => {
+                const el = document.getElementById(id);
+                return el && !el.classList.contains('hidden');
+            });
+        }
+
+        // Global Keyboard Listeners (Escape closes the topmost sheet, True/False shortcuts)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                const reviewModal = document.getElementById('modal-review');
-                if (reviewModal && !reviewModal.classList.contains('hidden')) {
-                    closeReviewModal();
+                if (document.querySelector('dialog[open]')) return;   // a zwAlert/zwConfirm handles its own Escape
+                for (const [id, close] of SHEET_CLOSERS) {
+                    const el = document.getElementById(id);
+                    if (el && !el.classList.contains('hidden')) {
+                        close();
+                        break;
+                    }
                 }
+                return;
             }
+            // Letter shortcuts must never fire while the player is typing or a sheet / dialog is open.
+            const typingTarget = e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '');
+            if (typingTarget || e.ctrlKey || e.metaKey || e.altKey || isAnySheetOpen() || document.querySelector('dialog[open]')) {
+                return;
+            }
+            const authModal = document.getElementById('modal-auth');
+            if (authModal && !authModal.classList.contains('hidden')) return;
             const gameplayScreen = document.getElementById('screen-gameplay');
             if (gameplayScreen && !gameplayScreen.classList.contains('hidden') && state.currentRoundType === 'true_false') {
                 if (e.key === '1' || e.key.toLowerCase() === 'h') {
@@ -4065,6 +4168,34 @@
                 }
             }
         });
+
+        (function manageSheetFocus() {
+            const returnFocus = new Map();
+            const observer = new MutationObserver((records) => {
+                records.forEach((rec) => {
+                    const overlay = rec.target;
+                    const wasHidden = (rec.oldValue || '').split(/\s+/).includes('hidden');
+                    const isHidden = overlay.classList.contains('hidden');
+                    if (wasHidden && !isHidden) {
+                        returnFocus.set(overlay.id, document.activeElement);
+                        const sheet = overlay.querySelector('[role="dialog"], [role="alertdialog"]');
+                        if (sheet && !sheet.contains(document.activeElement)) {
+                            sheet.focus({ preventScroll: true });
+                        }
+                    } else if (!wasHidden && isHidden) {
+                        const previous = returnFocus.get(overlay.id);
+                        returnFocus.delete(overlay.id);
+                        if (previous && document.contains(previous) && overlay.contains(document.activeElement)) {
+                            previous.focus({ preventScroll: true });
+                        }
+                    }
+                });
+            });
+            SHEET_CLOSERS.forEach(([id]) => {
+                const overlay = document.getElementById(id);
+                if (overlay) observer.observe(overlay, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+            });
+        })();
 
         // Popstate handler (Browser Back / Forward navigation)
         window.addEventListener('popstate', async () => {
@@ -4115,8 +4246,17 @@
             state.isSubmitting = false;
             clearInterval(state.timerInterval);
 
+            // Presentation flags only (format + current view) and the running score in the header
+            const gameTable = document.getElementById('game-table');
+            if (gameTable) {
+                gameTable.dataset.mode = 'svoyak';
+                gameTable.dataset.view = 'board';
+            }
+            const runningScoreEl = document.getElementById('gameplay-score-value');
+            if (runningScoreEl) runningScoreEl.innerText = (boardData.total_score ?? 0);
+
             // Hide question card, show board container
-            const questionCard = document.querySelector('.question-stage-card');
+            const questionCard = document.getElementById('gameplay-question-stage');
             const boardContainer = document.getElementById('svoyak-board-container');
             if (questionCard) questionCard.classList.add('hidden');
             if (boardContainer) boardContainer.classList.remove('hidden');
@@ -4133,7 +4273,7 @@
             }
             renderRankedBadge();
             // Remove duplicate score: hide clock-display in header while on the board
-            const clockDisplay = document.querySelector('.clock-display');
+            const clockDisplay = document.getElementById('gameplay-clock');
             if (clockDisplay) clockDisplay.classList.add('hidden');
 
             // Game info section score pill: Single clear source of truth for the score
@@ -4157,21 +4297,22 @@
                         const awarded = (typeof cell.points_awarded === 'number') ? cell.points_awarded : null;
                         if (awarded !== null ? awarded > 0 : cell.is_correct === true) {
                             const shown = awarded !== null ? awarded : cell.points;
-                            return `<div class="bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 font-mono text-xs sm:text-sm py-3 sm:py-2.5 rounded-lg flex items-center justify-center font-bold" title="To'g'ri: +${shown} ball">+${shown}</div>`;
+                            return `<div class="game-cell is-played is-won" title="To'g'ri: +${shown} ball">+${shown}</div>`;
                         } else if (awarded !== null ? awarded < 0 : (cell.is_correct === false && !cell.is_passed)) {
                             const shown = awarded !== null ? Math.abs(awarded) : cell.points;
-                            return `<div class="bg-rose-950/60 border border-rose-500/50 text-rose-300 font-mono text-xs sm:text-sm py-3 sm:py-2.5 rounded-lg flex items-center justify-center font-bold" title="Noto'g'ri: −${shown} ball">−${shown}</div>`;
+                            return `<div class="game-cell is-played is-lost" title="Noto'g'ri: −${shown} ball">−${shown}</div>`;
                         } else {
                             const label = cell.is_passed ? "O'tkazildi: 0 ball" : "Javob berilmadi: 0 ball";
-                            return `<div class="bg-zinc-900 border border-zinc-700/50 text-zinc-500 font-mono text-xs sm:text-sm py-3 sm:py-2.5 rounded-lg flex items-center justify-center font-medium" title="${label}">0</div>`;
+                            return `<div class="game-cell is-played is-zero" title="${label}">0</div>`;
                         }
                     } else {
                         return `
                             <button
                                 type="button"
                                 onclick="selectSvoyakQuestion(${rIdx}, ${qIdx})"
-                                class="bg-[#1e1b18] hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 hover:border-amber-400 font-bold font-mono text-xs sm:text-sm py-3 sm:py-2.5 rounded-lg shadow transition-all active:scale-95 cursor-pointer flex items-center justify-center"
+                                class="game-cell"
                                 title="${escapeHtml(theme.theme_title)}: ${cell.points} ball"
+                                aria-label="${escapeHtml(theme.theme_title)}: ${cell.points} ball"
                             >
                                 ${cell.points}
                             </button>
@@ -4180,11 +4321,11 @@
                 }).join('');
 
                 return `
-                    <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-                        <div class="w-full sm:w-44 px-3 py-2 sm:py-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-bold text-white leading-snug break-words sm:truncate shrink-0" title="${escapeHtml(theme.theme_title)}">
+                    <div class="game-board-row">
+                        <div class="game-board-theme" title="${escapeHtml(theme.theme_title)}">
                             ${escapeHtml(theme.theme_title)}
                         </div>
-                        <div class="grid grid-cols-5 gap-1.5 sm:gap-2 flex-1 min-w-0">
+                        <div class="game-board-cells">
                             ${cellsHtml}
                         </div>
                     </div>
@@ -4203,8 +4344,8 @@
                     body: JSON.stringify({ round_index: roundIndex, question_index: questionIndex })
                 });
                 if (!res.ok) {
-                    const err = await res.json();
-                    await zwAlert(err.detail || "Savolni ochib bo'lmadi");
+                    const err = await res.json().catch(() => ({}));
+                    await zwAlert(apiDetail(err) || "Savolni ochib bo'lmadi");
                     state.isSubmitting = false;
                     return;
                 }
@@ -4213,14 +4354,14 @@
                 state.isSubmitting = false;
 
                 const boardContainer = document.getElementById('svoyak-board-container');
-                const questionCard = document.querySelector('.question-stage-card');
+                const questionCard = document.getElementById('gameplay-question-stage');
                 if (boardContainer) boardContainer.classList.add('hidden');
                 if (questionCard) questionCard.classList.remove('hidden');
 
                 renderQuestionState(data);
             } catch(err) {
                 state.isSubmitting = false;
-                await zwAlert("Xatolik: " + err.message);
+                await zwAlert("Xatolik: " + describeError(err));
             }
         }
 
@@ -4256,7 +4397,7 @@
                     });
                     const data = await res.json();
                     if (!res.ok) {
-                        await zwAlert(data.detail || "Avatarni yuklashda xatolik yuz berdi");
+                        await zwAlert(apiDetail(data) || "Avatarni yuklashda xatolik yuz berdi");
                         return;
                     }
                     await loadPlayerProfile();
@@ -4308,7 +4449,7 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    feedback.innerText = data.detail || "Xatolik yuz berdi";
+                    feedback.innerText = apiDetail(data) || "Xatolik yuz berdi";
                     feedback.className = "text-xs text-rose-400 font-semibold";
                     btn.disabled = false;
                     return;
@@ -4351,7 +4492,7 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    fb.innerText = data.detail || "Parolni o'zgartirishda xatolik";
+                    fb.innerText = apiDetail(data) || "Parolni o'zgartirishda xatolik";
                     fb.className = "text-xs text-rose-400";
                     return;
                 }
@@ -4377,7 +4518,7 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    await zwAlert(data.detail || "Akkauntni o'chirishda xatolik");
+                    await zwAlert(apiDetail(data) || "Akkauntni o'chirishda xatolik");
                     return;
                 }
                 await zwAlert(data.message);
@@ -4421,7 +4562,7 @@
 
                 const av = document.getElementById('pub-profile-avatar');
                 if (data.avatar_url) {
-                    av.innerHTML = `<img src="${data.avatar_url}" class="w-full h-full object-cover">`;
+                    av.innerHTML = `<img src="${escapeHtml(data.avatar_url)}" alt="" class="w-full h-full object-cover">`;
                 } else {
                     const initial = (data.display_name || 'U')[0].toUpperCase();
                     av.innerHTML = initial;
@@ -4513,7 +4654,7 @@
 
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    throw new Error(err.detail || "To'plamni qaytadan boshlashda xatolik yuz berdi");
+                    throw new Error(apiDetail(err) || "To'plamni qaytadan boshlashda xatolik yuz berdi");
                 }
 
                 const data = await res.json();

@@ -1,3 +1,4 @@
+import re
 import pytest
 from fastapi import status
 from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAnswer, SoloAttempt, User
@@ -1172,13 +1173,20 @@ def _gameplay_section(html):
 def test_svoyak_board_mobile_layout_has_no_forced_min_width():
     """Mobile: no forced 500px grid (horizontal scroll); category stacks above its five values; desktop matrix kept."""
     html = _read("templates/index.html")
-    assert 'id="svoyak-grid-rows" class="space-y-3 sm:space-y-2.5 sm:min-w-[500px]"' in html
-    assert 'class="space-y-2.5 min-w-[500px]"' not in html
-    # Row stacks on mobile, matrix row from sm upward
-    assert '<div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">' in html
-    # Full category name wraps on mobile, truncates only on desktop matrix
-    assert "break-words sm:truncate" in html
-    assert '<div class="grid grid-cols-5 gap-1.5 sm:gap-2 flex-1 min-w-0">' in html
+    css = _read("static/css/zakowhat-design-system.css")
+    assert 'id="svoyak-grid-rows" class="game-board-rows"' in html
+    assert "min-w-[500px]" not in html
+    board_css = css[css.index("/* ---- Svoya Igra board"):css.index("/* ---- Break, round review and results sheets")]
+    assert "min-width: 500px" not in board_css and "overflow-x" not in board_css   # nothing forces sideways scroll
+    # Desktop: matrix row (theme column + five values)
+    assert re.search(r"\.game-board-row \{[^}]*grid-template-columns: minmax\(0, 15rem\) minmax\(0, 1fr\);", css)
+    assert re.search(r"\.game-board-cells \{[^}]*grid-template-columns: repeat\(5, minmax\(0, 1fr\)\);", css)
+    # Phone: the theme stacks above its five values
+    phone = css[css.index("@media (max-width: 639px) {\n  .game-board-rows"):]
+    assert re.search(r"\.game-board-row \{\s*grid-template-columns: minmax\(0, 1fr\);", phone)
+    # Full theme name wraps instead of being cut off
+    assert re.search(r"\.game-board-theme \{[^}]*overflow-wrap: anywhere;", css)
+    assert '<div class="game-board-row">' in html and '<div class="game-board-cells">' in html
 
 
 def test_svoyak_board_header_has_single_restart_and_no_duplicate_progress():
@@ -1206,10 +1214,18 @@ def test_answer_controls_mobile_row_and_desktop_inline():
     html = _read("templates/index.html")
     form_start = html.index('id="text-answer-form"')
     form = html[form_start:html.index("</form>", form_start)]
-    assert 'class="flex gap-2 min-[961px]:contents"' in form
+    css = _read("static/css/zakowhat-design-system.css")
+    assert 'class="game-answer-actions"' in form
     assert 'id="answer-pass-btn"' in form  # pass sits next to submit, not in a separate row
-    assert "min-h-[44px]" in form
-    assert 'class="btn-submit flex-1 min-w-0 min-[961px]:flex-none min-[961px]:min-w-max"' in form
+    assert form.index('id="answer-pass-btn"') < form.index('id="answer-submit-btn"')
+    # Touch target of at least 44px for both actions
+    target = re.search(r"\.game-submit-btn,\s*\.game-pass-btn \{[^}]*min-height: (\d+)px;", css)
+    assert target and int(target.group(1)) >= 44
+    # Desktop: input and actions inline; narrow: the bar stacks and the actions share one full-width row
+    assert re.search(r"\.game-answer-bar \{[^}]*display: flex;", css)
+    narrow = css[css.index("@media (max-width: 720px) {\n  .game-bar {"):]
+    assert re.search(r"\.game-answer-bar \{\s*flex-direction: column;", narrow)
+    assert re.search(r"\.game-answer-actions \{\s*width: 100%;", narrow)
     assert "svoyak-pass-row" not in html
     # True/False quick choice form is untouched and separate
     assert 'id="true-false-actions"' in html

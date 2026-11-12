@@ -9,6 +9,8 @@ Release-audit fixes:
 """
 from datetime import datetime, timezone, timedelta
 
+import re
+
 import pytest
 from fastapi import status
 
@@ -113,10 +115,15 @@ def test_public_arena_listing_exposes_no_question_content(client, db_session):
 
 
 def test_detail_modal_only_uses_question_counts():
-    """Frontend dependency check: the quiz detail modal only needs the per-round question COUNT."""
+    """Frontend dependency check: the quiz detail modal only needs the per-round question COUNT
+    (plus the point values, which the public stub already carries) -- never question text."""
     with open("templates/index.html", "r", encoding="utf-8") as f:
         html = f.read()
-    assert "${(r.questions || []).length} ta savol" in html
+    fn = html[html.index("async function openQuizDetail("):html.index("function closeQuizDetailModal()")]
+    assert "const questions = r.questions || [];" in fn
+    assert "${questions.length} ta savol" in fn
+    used = set(re.findall(r"\bq\.(\w+)", fn[fn.index("const questions = r.questions"):fn.index("pack-detail-round-meta")]))
+    assert used == {"points"}
 
 
 # ---------------------------------------------------------------------------
