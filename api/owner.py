@@ -155,6 +155,18 @@ def get_owner_system_status(
     }
 
 
+@router.get("/daily-bank", status_code=status.HTTP_200_OK)
+def get_daily_bank_status(
+    db: Session = Depends(get_db),
+    current_owner: User = Depends(verify_owner_access),
+):
+    """Read-only: how many Daily Questions the bank can still serve, counted with the scheduler's own
+    pool, eligibility rule and uniqueness key. Never schedules, marks or edits anything."""
+    from services.daily_question import get_verified_pool, is_candidate_eligible, get_tashkent_today
+    from services.daily_engagement import compute_bank_status
+    return compute_bank_status(db, get_verified_pool(), get_tashkent_today(), is_candidate_eligible)
+
+
 @router.get("/quizzes", status_code=status.HTTP_200_OK)
 def list_owner_quizzes(
     status_filter: Optional[str] = Query("all", alias="status"),

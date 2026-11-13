@@ -43,6 +43,7 @@ OWNER_ONLY_ROUTES = {
     ("GET", "/api/questions/{question_id}"),
     # Owner Panel API
     ("GET", "/api/owner/status"),
+    ("GET", "/api/owner/daily-bank"),  # read-only Daily bank monitoring
     ("GET", "/api/owner/quizzes"),
     ("POST", "/api/owner/quizzes"),
     ("GET", "/api/owner/quizzes/{quiz_id}"),
@@ -98,6 +99,7 @@ AUTHENTICATED_PLAYER_ROUTES = {
     ("POST", "/api/auth/consent"),
     ("DELETE", "/api/auth/account"),
     ("GET", "/api/daily/history"),
+    ("GET", "/api/daily/stats"),  # the signed-in player's own streak
     ("POST", "/api/play/start/{quiz_id}"),
     ("GET", "/api/play/{session_token}"),
     ("GET", "/api/play/{session_token}/board"),

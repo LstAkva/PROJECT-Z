@@ -79,6 +79,25 @@ The play surface is `#game-table`. The controller sets `data-mode` (`classic_zak
 `data-view` (`question` / `board`) on it; the stylesheet does the rest. Do not branch on format in CSS
 any other way.
 
+## 3a. Daily Question
+
+- One question per Asia/Tashkent date (`daily_questions`), scheduled lazily on the first visit of the day from
+  `data/daily/daily_questions_bank.json`, never repeated (key: `message_id`). Selection lives in
+  `services/daily_question.py` and must not be changed casually.
+- One submission row per player per day (`daily_submissions`), created only by `/api/daily/submit` after a
+  non-empty, evaluated attempt. Three attempts; a repeated answer costs nothing.
+- **Streaks** (`services/daily_engagement.py`) are derived from those rows — no extra columns. A participation
+  day is the `schedule_date` of a question the player has a submission for (participation, not correctness).
+  Calendar days with no scheduled question are neutral. The current streak stays alive until a scheduled day
+  passes unanswered. Exposed by `/api/daily/stats` and in `/api/daily/today` (`streak`).
+- **Sharing**: `/api/daily/today` returns `share_text` once the player has finished. It is built server-side
+  from the date, outcome, attempt count and streak only — never the question, answer, name or ids.
+  `PUBLIC_SITE_URL` (optional env var, default `https://zakowhat.uz`) sets the link.
+- **Bank monitoring**: `/api/owner/daily-bank` (owner only, read-only) counts what the scheduler can still
+  serve with its own pool, eligibility rule and uniqueness key. Levels: normal > 30, warning ≤ 30,
+  critical ≤ 10, empty 0. Shown on the owner dashboard.
+- Answers are revealed only after the player finishes (or, in `/api/daily/history`, once the day is over).
+
 ## 4. The Round: tokens and components
 
 - Brand tokens: `--ink`, `--charcoal`, `--burgundy`, `--brass`, `--ivory`. Semantic tokens built on them:
@@ -114,7 +133,8 @@ venv/Scripts/python.exe scripts/qa_server.py     # http://127.0.0.1:8011
 
 This runs the unmodified app against a throwaway SQLite file in `scratch/` (git-ignored), seeded with one
 Classic Zakovat pack (round 1 has a 20-second limit so timeouts can be observed) and one Svoya Igra pack.
-Register a player through the normal sign-up form; nothing is bypassed. Delete
+Register a player through the normal sign-up form; nothing is bypassed. Signing up as
+`qa-owner@zakowhat.test` gives owner access in this throwaway database only. Delete
 `scratch/qa_playthrough.db` to reset. The server refuses to start on anything but SQLite.
 
 Manual acceptance checklist: start → correct answer → wrong answer → let the timer run out → reload the

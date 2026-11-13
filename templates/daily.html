@@ -58,7 +58,7 @@
     }
     .daily-card {
       background: var(--bg-card);
-      border: 1px solid var(--border-card);
+      border: 1px solid var(--border-subtle);
       border-radius: 12px;
       padding: 2.5rem;
       margin-bottom: 2rem;
@@ -86,7 +86,7 @@
     .daily-input {
       flex: 1;
       min-width: 240px;
-      background: var(--bg-main);
+      background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
       padding: 0.85rem 1.15rem;
@@ -115,14 +115,18 @@
       gap: 0.75rem;
     }
     .daily-result-correct {
-      background: rgba(34, 197, 94, 0.12);
-      border: 1px solid rgba(34, 197, 94, 0.35);
-      color: #4ade80;
+      background: transparent;
+      border: 0;
+      border-left: 3px solid var(--state-correct);
+      border-radius: 0;
+      color: var(--state-correct);
     }
     .daily-result-incorrect {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.35);
-      color: #f87171;
+      background: transparent;
+      border: 0;
+      border-left: 3px solid var(--state-incorrect);
+      border-radius: 0;
+      color: var(--state-incorrect);
     }
         .daily-attempts-header {
       display: flex;
@@ -157,14 +161,12 @@
       transition: all 0.25s ease;
     }
     .daily-pip.pip-used {
-      background: #f87171;
-      border-color: #f87171;
-      box-shadow: 0 0 6px rgba(248, 113, 113, 0.4);
+      background: var(--state-incorrect);
+      border-color: var(--state-incorrect);
     }
     .daily-pip.pip-correct {
-      background: #4ade80;
-      border-color: #4ade80;
-      box-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
+      background: var(--state-correct);
+      border-color: var(--state-correct);
     }
     .daily-pip.pip-current {
       border-color: var(--accent-brass);
@@ -177,8 +179,8 @@
       flex-wrap: wrap;
       margin-bottom: 0.85rem;
       padding: 0.65rem 0.95rem;
-      background: rgba(239, 68, 68, 0.07);
-      border: 1px solid rgba(239, 68, 68, 0.2);
+      background: transparent;
+      border: 1px dashed var(--border-subtle);
       border-radius: 8px;
     }
     .daily-guess-history-label {
@@ -189,9 +191,9 @@
       font-family: 'JetBrains Mono', monospace;
     }
     .daily-guess-tag {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      color: #f87171;
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--state-incorrect);
       padding: 0.2rem 0.6rem;
       border-radius: 4px;
       font-size: 0.84rem;
@@ -199,16 +201,16 @@
       text-decoration: line-through;
     }
     .daily-guess-tag-correct {
-      background: rgba(34, 197, 94, 0.12);
-      border: 1px solid rgba(34, 197, 94, 0.25);
-      color: #4ade80;
+      background: transparent;
+      border: 1px solid var(--state-correct);
+      color: var(--state-correct);
       padding: 0.2rem 0.6rem;
       border-radius: 4px;
       font-size: 0.84rem;
       font-family: 'JetBrains Mono', monospace;
     }
     .daily-revealed-section {
-      background: var(--bg-main);
+      background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
       padding: 1.5rem;
@@ -222,9 +224,10 @@
       margin-bottom: 0.5rem;
     }
     .daily-revealed-answer {
-      font-family: 'Cinzel', serif;
-      font-size: 1.35rem;
-      color: var(--accent-brass);
+      font-family: var(--font-serif);
+      font-size: 1.45rem;
+      font-weight: 600;
+      color: var(--link-color);
       margin-bottom: 1rem;
     }
     .daily-revealed-explanation {
@@ -236,7 +239,7 @@
     }
     .daily-auth-prompt {
       padding: 1.5rem;
-      background: var(--bg-main);
+      background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
       text-align: center;
@@ -250,6 +253,142 @@
       margin-bottom: 1.25rem;
       color: var(--accent-brass);
       opacity: 0.8;
+    }
+    /* Streak strip: one quiet ruled line above the question */
+    .daily-streak {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem 1.5rem;
+      padding: 0.85rem 0;
+      margin-bottom: 1.5rem;
+      border-top: 2px solid var(--text-main);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .daily-streak-main {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .daily-streak-flame {
+      width: 26px;
+      height: 26px;
+      flex-shrink: 0;
+      color: var(--border-medium);
+    }
+    .daily-streak.is-live .daily-streak-flame {
+      color: var(--burgundy);
+    }
+    [data-theme="dark"] .daily-streak.is-live .daily-streak-flame {
+      color: var(--link-color);
+    }
+    .daily-streak-count {
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+      font-weight: 600;
+      line-height: 1;
+      color: var(--text-main);
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    .daily-streak-label {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+    }
+    .daily-streak-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem 1.25rem;
+      margin-left: auto;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    .daily-streak-meta strong {
+      color: var(--text-main);
+      font-variant-numeric: tabular-nums;
+    }
+    .daily-streak-today.is-done {
+      color: var(--state-correct);
+      font-weight: 600;
+    }
+    .daily-streak-today.is-pending {
+      color: var(--link-color);
+      font-weight: 600;
+    }
+    .daily-intro {
+      margin: -0.5rem 0 1.5rem;
+      max-width: 60ch;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+    /* Completed state: next question time and sharing */
+    .daily-after {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem 1rem;
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .daily-next {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+    .daily-share-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .daily-share-actions .btn {
+      min-height: 44px;
+      padding: 0.6rem 1.15rem;
+      font-size: 0.9rem;
+    }
+    .daily-share-status {
+      flex-basis: 100%;
+      min-height: 1.2em;
+      font-size: 0.86rem;
+      color: var(--text-muted);
+    }
+    .daily-share-status.is-ok {
+      color: var(--state-correct);
+    }
+    .daily-share-status.is-error {
+      color: var(--state-incorrect);
+    }
+    .daily-form-error {
+      color: var(--state-incorrect);
+      font-size: 0.88rem;
+    }
+    .daily-form-notice {
+      color: var(--text-brass);
+      font-size: 0.88rem;
+    }
+    h1.daily-pill {
+      margin: 0;
+    }
+    @media (max-width: 640px) {
+      .daily-streak-meta {
+        margin-left: 0;
+        flex-basis: 100%;
+      }
+      .daily-after {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .daily-share-actions .btn {
+        flex: 1;
+      }
+      .daily-input {
+        min-width: 0;
+        flex-basis: 100%;
+      }
+      .daily-submit-btn {
+        flex: 1;
+        min-height: 48px;
+      }
     }
     @media (max-width: 640px) {
       .daily-card {
@@ -278,15 +417,20 @@
 
   <main id="main-content" class="daily-container">
     <div class="daily-badge-row">
-      <div class="daily-pill">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <h1 class="daily-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="10"></circle>
           <polyline points="12 6 12 12 16 14"></polyline>
         </svg>
         <span>Kun Savoli</span>
-      </div>
+      </h1>
       <div id="dailyDateDisplay" class="daily-date-pill"></div>
     </div>
+
+    <p class="daily-intro">Har kuni bitta saralangan savol, hammaga bir xil. Uch urinish bor, javob esa urinishlar tugagach ochiladi. Har kuni qatnashib, seriyangizni uzmang.</p>
+
+    <!-- Streak (signed-in players) -->
+    <div id="dailyStreak" class="daily-streak hidden" aria-live="polite"></div>
 
     <!-- Daily Question Content Container -->
     <div id="dailyContentWrapper">
@@ -311,8 +455,9 @@
         const data = await res.json();
 
         if (data.date) {
-          dateDisplay.textContent = data.date;
+          dateDisplay.textContent = formatDailyDate(data.date);
         }
+        renderDailyStreak(data.streak || null, Boolean(data.has_submitted));
 
         if (data.status === 'unavailable' || !data.question) {
           container.innerHTML = `
@@ -321,7 +466,7 @@
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="8" y1="12" x2="16" y2="12"></line>
               </svg>
-              <h2 style="font-family: 'Cinzel', serif; margin-bottom: 0.75rem; color: var(--text-main);">
+              <h2 style="font-family: var(--font-serif); margin-bottom: 0.75rem; color: var(--text-main);">
                 Hozircha yangi savollar mavjud emas
               </h2>
               <p style="color: var(--text-muted); max-width: 480px; margin: 0 auto 1.5rem;">
@@ -373,11 +518,21 @@
                 </div>
               ` : ''}
             </div>
+            <div class="daily-after">
+              <p class="daily-next">Keyingi savol ertaga, Toshkent vaqti bilan 00:00 da.</p>
+              ${data.share_text ? `
+                <div class="daily-share-actions">
+                  <button type="button" id="dailyShareCopyBtn" class="btn btn-primary">Natijani ulashish</button>
+                  <button type="button" id="dailyShareNativeBtn" class="btn btn-secondary hidden">Yuborish…</button>
+                </div>
+                <p id="dailyShareStatus" class="daily-share-status" role="status" aria-live="polite"></p>
+              ` : ''}
+            </div>
           `;
         } else if (!isAuth) {
           actionHtml = `
             <div class="daily-auth-prompt">
-              <p style="margin-bottom: 1rem;">Kun savoliga javob berish (3 ta urinish) va natijangizni saqlash uchun tizimga kiring.</p>
+              <p style="margin-bottom: 1rem;">Kun savoliga javob berish (3 ta urinish), natijangizni saqlash va kunlik seriya to‘plash uchun tizimga kiring.</p>
               <button type="button" onclick="handleNavbarAuth('login')" class="btn btn-primary" style="padding: 0.65rem 1.5rem; cursor: pointer;">Tizimga kirish / Ro'yxatdan o'tish</button>
             </div>
           `;
@@ -430,15 +585,17 @@
                   id="dailyAnswerInput" 
                   class="daily-input" 
                   placeholder="${attemptsUsed > 0 ? 'Boshqa variant kiriting...' : 'Javobingizni kiriting...'}" 
-                  autocomplete="off" 
+                  autocomplete="off"
+                  aria-label="Javobingiz"
+                  maxlength="500"
                   required
                 />
                 <button type="submit" id="dailySubmitBtn" class="btn btn-primary daily-submit-btn">
                   Javob berish
                 </button>
               </div>
-              <div id="dailyFormError" style="color: #f87171; font-size: 0.88rem; display: none;"></div>
-              <div id="dailyFormNotice" style="color: #fbbf24; font-size: 0.88rem; display: none;"></div>
+              <div id="dailyFormError" class="daily-form-error" role="alert" style="display: none;"></div>
+              <div id="dailyFormNotice" class="daily-form-notice" role="status" style="display: none;"></div>
             </form>
           `;
         }
@@ -452,6 +609,10 @@
           </div>
         `;
 
+        if (data.share_text) {
+          wireDailyShare(data.share_text);
+        }
+
         const form = document.getElementById('dailyAnswerForm');
         if (form) {
           form.addEventListener('submit', handleDailySubmit);
@@ -463,8 +624,9 @@
 
       } catch (err) {
         container.innerHTML = `
-          <div class="daily-card" style="text-align: center; color: #f87171;">
-            Savolni yuklashda xatolik yuz berdi. Iltimos, sahifani yangilang.
+          <div class="daily-card" style="text-align: center;">
+            <p class="daily-form-error" style="margin-bottom: 1rem;">Savolni yuklashda xatolik yuz berdi.</p>
+            <button type="button" class="btn btn-secondary" onclick="loadDailyQuestion()">Qayta urinish</button>
           </div>
         `;
       }
@@ -499,8 +661,10 @@
         }
 
         if (!res.ok) {
-          const errData = await res.json();
-          const detail = typeof errData.detail === 'string' ? errData.detail : (errData.detail?.message || 'Xatolik yuz berdi');
+          const errData = await res.json().catch(() => ({}));
+          const detail = typeof errData.detail === 'string'
+            ? errData.detail
+            : (Array.isArray(errData.detail) ? 'Javob 1–500 belgidan iborat bo‘lishi kerak.' : (errData.detail?.message || 'Xatolik yuz berdi'));
           errBox.textContent = detail;
           errBox.style.display = 'block';
           submitBtn.disabled = false;
@@ -531,6 +695,121 @@
         }
         submitBtn.disabled = false;
         submitBtn.textContent = 'Javob berish';
+      }
+    }
+
+    // 2026-11-13 -> 13.11.2026 (the server's Tashkent date, never the device clock)
+    function formatDailyDate(iso) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+      return m ? `${m[3]}.${m[2]}.${m[1]}` : String(iso || '');
+    }
+
+    const FLAME_SVG = '<svg class="daily-streak-flame" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
+      + '<path d="M12 2c.6 3.1-1 5.2-2.6 7C7.8 10.8 6 12.7 6 15.6 6 19.1 8.7 22 12 22s6-2.9 6-6.4c0-2.4-1.1-4.3-2.3-5.8-.3 1.5-1 2.6-2.1 3.2.4-3.6-.6-7.6-1.6-11z"/>'
+      + '</svg>';
+
+    function renderDailyStreak(streak, todayDone) {
+      const el = document.getElementById('dailyStreak');
+      if (!el) return;
+      if (!streak) {                         // signed out: the sign-in prompt mentions streaks instead
+        el.classList.add('hidden');
+        el.innerHTML = '';
+        return;
+      }
+      const current = Number(streak.current) || 0;
+      const best = Number(streak.best) || 0;
+      const total = Number(streak.total_days) || 0;
+      const counted = Boolean(streak.today_done);      // a valid attempt today: the day counts for the streak
+      const finished = Boolean(todayDone);              // the question itself is over (solved or 3 tries)
+
+      let mainText;
+      if (current > 0) {
+        mainText = `<span class="daily-streak-count">${current}</span>`
+          + `<span class="daily-streak-label">kun ketma-ket</span>`;
+      } else if (total > 0) {
+        mainText = `<span class="daily-streak-label">Seriya uzildi. Bugun yangisini boshlang.</span>`;
+      } else {
+        mainText = `<span class="daily-streak-label">Birinchi kuningiz: bugungi savol seriyangizni boshlaydi.</span>`;
+      }
+      const today = finished
+        ? '<span class="daily-streak-today is-done">✓ Bugungi savol bajarildi</span>'
+        : counted
+        ? '<span class="daily-streak-today is-done">✓ Bugungi kun seriyaga qo‘shildi</span>'
+        : (current > 0
+            ? '<span class="daily-streak-today is-pending">Seriyani saqlash uchun bugun javob bering</span>'
+            : '<span class="daily-streak-today">Bugungi savol kutmoqda</span>');
+      const meta = total > 0
+        ? `<span>Eng yaxshi: <strong>${best}</strong></span><span>Jami: <strong>${total}</strong> kun</span>`
+        : '';
+
+      el.className = 'daily-streak' + (current > 0 ? ' is-live' : '');
+      el.innerHTML = `
+        <div class="daily-streak-main">${FLAME_SVG}${mainText}</div>
+        <div class="daily-streak-meta">${today}${meta}</div>
+      `;
+    }
+
+    // "Natijani ulashish": copy the server-built text (date, outcome, streak; never the question or answer).
+    async function copyDailyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (e) { /* fall back below */ }
+      }
+      try {
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.top = '-1000px';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        area.setSelectionRange(0, text.length);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(area);
+        return ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function wireDailyShare(text) {
+      const copyBtn = document.getElementById('dailyShareCopyBtn');
+      const nativeBtn = document.getElementById('dailyShareNativeBtn');
+      const status = document.getElementById('dailyShareStatus');
+      const say = (msg, kind) => {
+        if (!status) return;
+        status.textContent = msg;
+        status.className = 'daily-share-status' + (kind ? ' is-' + kind : '');
+      };
+      if (copyBtn) {
+        copyBtn.addEventListener('click', async () => {
+          const ok = await copyDailyText(text);
+          say(ok ? 'Nusxa olindi — Telegram yoki istalgan chatga joylashtiring.'
+                 : 'Nusxa olib bo‘lmadi. Matnni qo‘lda belgilab, nusxalang.', ok ? 'ok' : 'error');
+          if (!ok && status) {
+            const pre = document.createElement('pre');
+            pre.textContent = text;
+            pre.style.whiteSpace = 'pre-wrap';
+            pre.style.marginTop = '0.5rem';
+            pre.style.userSelect = 'all';
+            status.appendChild(pre);
+          }
+        });
+      }
+      if (nativeBtn && typeof navigator.share === 'function') {
+        nativeBtn.classList.remove('hidden');
+        nativeBtn.addEventListener('click', async () => {
+          try {
+            await navigator.share({ text });
+            say('Yuborildi.', 'ok');
+          } catch (e) {
+            if (e && e.name === 'AbortError') return;    // the player closed the share sheet
+            say('Yuborib bo‘lmadi. «Natijani ulashish» orqali nusxa oling.', 'error');
+          }
+        });
       }
     }
 

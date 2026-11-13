@@ -11,7 +11,9 @@ from services.daily_question import (
     get_or_schedule_daily_question,
     submit_daily_answer,
     is_repeated_daily_answer,
+    MAX_DAILY_ATTEMPTS,
 )
+from services.daily_engagement import compute_daily_streak, build_share_text
 
 router = APIRouter(prefix="/api/daily", tags=["daily_question"])
 
@@ -81,6 +83,9 @@ def get_today_daily_question(
                 "answered_at": sub.answered_at.isoformat()
             }
 
+    # Streak (signed-in players only; derived from existing submissions, server date only)
+    streak = compute_daily_streak(db, current_user.id, today) if current_user else None
+
     response_payload = {
         "status": "available",
         "date": daily_q.schedule_date.isoformat(),
@@ -93,15 +98,33 @@ def get_today_daily_question(
         "has_submitted": has_submitted,
         "user_submission": user_submission,
         "is_authenticated": current_user is not None,
-        "max_attempts": 3
+        "max_attempts": 3,
+        "streak": streak,
     }
 
     # Reveal original answer and explanation ONLY if finished!
     if has_submitted:
         response_payload["question"]["correct_answer"] = daily_q.primary_answer
         response_payload["question"]["explanation"] = daily_q.explanation
+        # Text for "Natijani ulashish": date, outcome and streak only (never the question or answer)
+        response_payload["share_text"] = build_share_text(
+            schedule_date=daily_q.schedule_date,
+            is_correct=bool(user_submission["is_correct"]),
+            attempts_used=user_submission.get("attempts_used"),
+            max_attempts=MAX_DAILY_ATTEMPTS,
+            current_streak=(streak or {}).get("current", 0),
+        )
 
     return response_payload
+
+
+@router.get("/stats")
+def get_daily_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required)
+):
+    """The signed-in player's Daily streak: current, best, participation days, last date."""
+    return compute_daily_streak(db, current_user.id, get_tashkent_today())
 
 
 @router.post("/submit")
@@ -239,16 +262,24 @@ def get_user_daily_history(
         .all()
     )
 
+    today = get_tashkent_today()
     history = []
     for s in submissions:
         dq = s.daily_question
+        meta = s.submission_meta or {}
+        attempts = meta.get("attempts", 1)
+        finished = s.is_correct or meta.get("is_finished", False) or attempts >= MAX_DAILY_ATTEMPTS
+        # Same rule as /today: the answer is revealed only once the player has finished,
+        # or once that day is over. (It used to leak today's answer after one wrong try.)
+        revealed = finished or dq.schedule_date < today
         history.append({
             "date": dq.schedule_date.isoformat(),
             "question_text": dq.question_text,
-            "primary_answer": dq.primary_answer,
-            "explanation": dq.explanation,
+            "primary_answer": dq.primary_answer if revealed else None,
+            "explanation": dq.explanation if revealed else None,
             "submitted_text": s.submitted_text,
             "is_correct": s.is_correct,
+            "is_finished": finished,
             "answered_at": s.answered_at.isoformat()
         })
 

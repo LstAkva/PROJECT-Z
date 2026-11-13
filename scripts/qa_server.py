@@ -31,7 +31,8 @@ if not _KEY_FILE.exists():
     _KEY_FILE.write_text(secrets.token_urlsafe(48), encoding="utf-8")
 os.environ["SECRET_KEY"] = _KEY_FILE.read_text(encoding="utf-8").strip()
 os.environ["GOOGLE_CLIENT_ID"] = ""
-os.environ["OWNER_EMAIL"] = ""
+# QA-only owner account (exists only in the throwaway database) for checking the owner panel
+os.environ["OWNER_EMAIL"] = "qa-owner@zakowhat.test"
 os.environ["OWNER_EMAILS"] = ""
 
 sys.path.insert(0, str(ROOT))

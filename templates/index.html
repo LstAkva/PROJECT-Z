@@ -767,6 +767,29 @@
                 </div>
                 <p id="profile-practice-note" class="hidden text-[11px] text-[var(--text-dim)] -mt-2"></p>
 
+                <!-- Daily Question streak (filled from /api/daily/stats; hidden if it cannot load) -->
+                <section id="profile-daily" class="profile-daily hidden" aria-labelledby="profile-daily-title">
+                    <div class="profile-daily-head">
+                        <h3 id="profile-daily-title" class="profile-daily-title">Kun savoli</h3>
+                        <a href="/daily" class="profile-daily-link">Bugungi savol &rarr;</a>
+                    </div>
+                    <dl class="profile-daily-figures">
+                        <div class="profile-daily-figure is-current">
+                            <dt>Joriy seriya</dt>
+                            <dd><span id="profile-daily-current">0</span> <span class="profile-daily-unit">kun</span></dd>
+                        </div>
+                        <div class="profile-daily-figure">
+                            <dt>Eng yaxshi seriya</dt>
+                            <dd><span id="profile-daily-best">0</span> <span class="profile-daily-unit">kun</span></dd>
+                        </div>
+                        <div class="profile-daily-figure">
+                            <dt>Qatnashgan kunlar</dt>
+                            <dd><span id="profile-daily-total">0</span></dd>
+                        </div>
+                    </dl>
+                    <p id="profile-daily-note" class="profile-daily-note"></p>
+                </section>
+
                 <div>
                     <h3 class="text-base font-bold text-[var(--text-main)] mb-3">
                         O‘yinlar Tarixi
@@ -1708,7 +1731,34 @@
             await loadPlayerProfile();
         }
 
+        // Daily Question streak on the profile. Independent of the main profile request: a failure here
+        // only hides this block.
+        async function loadProfileDailyStats() {
+            const box = document.getElementById('profile-daily');
+            if (!box) return;
+            try {
+                const res = await fetch(`${API_BASE}/daily/stats`);
+                if (!res.ok) throw new Error(String(res.status));
+                const d = await res.json();
+                document.getElementById('profile-daily-current').innerText = d.current ?? 0;
+                document.getElementById('profile-daily-best').innerText = d.best ?? 0;
+                document.getElementById('profile-daily-total').innerText = d.total_days ?? 0;
+                const note = document.getElementById('profile-daily-note');
+                if (note) {
+                    note.innerText = !d.total_days
+                        ? 'Hali Kun savoliga javob bermagansiz. Bugungi savoldan seriyangizni boshlang.'
+                        : (d.today_done ? '✓ Bugungi savol bajarildi.'
+                            : (d.current > 0 ? 'Seriyani saqlash uchun bugungi savolga javob bering.' : ''));
+                }
+                box.classList.toggle('is-live', (d.current || 0) > 0);
+                box.classList.remove('hidden');
+            } catch (e) {
+                box.classList.add('hidden');
+            }
+        }
+
         async function loadPlayerProfile() {
+            loadProfileDailyStats();
             try {
                 const res = await fetch(`${API_BASE}/auth/profile`);
                 if (!res.ok) {

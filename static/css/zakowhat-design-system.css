@@ -4864,6 +4864,118 @@ button.game-cell:focus-visible {
   }
 }
 
+/* ---- Profile: Daily Question streak --------------------------------------- */
+.profile-daily {
+  margin: 0 0 var(--space-8);
+  padding-top: var(--space-4);
+  border-top: 2px solid var(--text-main);
+}
+
+.profile-daily-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem var(--space-4);
+}
+
+.profile-daily-title {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.profile-daily-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+.profile-daily-link:hover,
+.profile-daily-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.profile-daily-figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: var(--space-2) 0 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.profile-daily-figure {
+  min-width: 0;
+  padding: var(--space-3) var(--space-3) var(--space-3) 0;
+}
+
+.profile-daily-figure + .profile-daily-figure {
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.profile-daily-figure dt {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.profile-daily-figure dd {
+  margin: 0.3rem 0 0;
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--text-main);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.profile-daily.is-live .profile-daily-figure.is-current dd {
+  color: var(--link-color);
+}
+
+.profile-daily-unit {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.profile-daily-note {
+  margin-top: var(--space-3);
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+.profile-daily-note:empty {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .profile-daily-figure {
+    padding-right: var(--space-2);
+  }
+
+  .profile-daily-figure + .profile-daily-figure {
+    padding-left: var(--space-3);
+  }
+
+  .profile-daily-figure dt {
+    letter-spacing: 0.08em;
+  }
+
+  .profile-daily-figure dd {
+    font-size: 1.45rem;
+  }
+}
+
 /* ---- Touch targets on phones ---------------------------------------------
    The controls people tap most were 27-38px tall; bring them to roughly 44px. */
 @media (max-width: 640px) {
