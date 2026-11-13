@@ -35,7 +35,7 @@ def get_client_ip(request: Request) -> str:
 
 def enforce_session_not_expired(attempt: SoloAttempt, db: Session) -> None:
     """
-    Enforces server-side session expiry after 5 minutes (300 seconds) of inactivity.
+    Enforces server-side session expiry after SESSION_INACTIVITY_LIMIT_SECONDS (30 minutes) of inactivity.
     If expired:
     - Sets attempt.status = 'expired'
     - Prevents resumption, submitting answers, or continuing
@@ -44,7 +44,7 @@ def enforce_session_not_expired(attempt: SoloAttempt, db: Session) -> None:
     if attempt.status == "expired":
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
-            detail="O'yin sessiyasi muddati tugagan (5 daqiqa faolsizlik). Yangi o'yin boshlang."
+            detail="O'yin sessiyasi muddati tugagan (30 daqiqa faolsizlik). Yangi o'yin boshlang."
         )
 
     if attempt.status == "abandoned":
@@ -93,7 +93,7 @@ def enforce_session_not_expired(attempt: SoloAttempt, db: Session) -> None:
             db.commit()
             raise HTTPException(
                 status_code=status.HTTP_410_GONE,
-                detail="O'yin sessiyasi muddati tugagan (5 daqiqa faolsizlik). Yangi o'yin boshlang."
+                detail="O'yin sessiyasi muddati tugagan (30 daqiqa faolsizlik). Yangi o'yin boshlang."
             )
 
     # Active session: touch activity timestamp
@@ -2566,7 +2566,7 @@ def get_final_results(
     if attempt.status == "expired":
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
-            detail="O'yin sessiyasi muddati tugagan (5 daqiqa faolsizlik). Yangi o'yin boshlang."
+            detail="O'yin sessiyasi muddati tugagan (30 daqiqa faolsizlik). Yangi o'yin boshlang."
         )
     if attempt.status == "abandoned":
         # An abandoned (restarted) attempt is final: never auto-finalized into a completed/ranked result

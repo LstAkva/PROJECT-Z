@@ -98,6 +98,32 @@ any other way.
   critical ≤ 10, empty 0. Shown on the owner dashboard.
 - Answers are revealed only after the player finishes (or, in `/api/daily/history`, once the day is over).
 
+## 3b. Player progress and resuming games
+
+`services/player_progress.py` (read-only) derives everything from `solo_attempts` and `answer_records`:
+
+- **Profile statistics** (`stats.by_format` in `/api/auth/profile`): Classic = games, correct, answered,
+  accuracy; Svoya Igra = games, total points, best points. Competitive games only (practice counted apart,
+  previews excluded). The two scoring systems are never added together.
+- **Arena progress** (`/api/me/pack-progress`, the caller's own packs): `in_progress` = an active attempt
+  within the 30-minute inactivity limit, with distinct questions answered in *that* attempt / questions in its
+  version; `completed` = best result in that pack's own scoring; `unfinished` = started, no longer resumable.
+  Never-played packs carry no label. Restarts are separate attempts and never add up.
+- **Resuming** (`/api/me/active-game`): returns the caller's latest resumable attempt (anonymous visitors get
+  `{"game": null}`). The page then restores it through the existing `GET /api/play/{token}`; it never starts a
+  game. Timers are server-side (`question_opened_at`): a reload or another device never grants time, and a
+  question whose time already ran out times out immediately. Ranked answers past the limit (+3 s grace) score 0.
+  Sessions expire after 30 minutes without activity (`SESSION_INACTIVITY_LIMIT_SECONDS`).
+
+## 3c. Indexing
+
+- Indexed: `/`, `/arena`, `/daily`, `/privacy`, `/terms` — each has a canonical URL, Open Graph and
+  Twitter tags and the share image `static/img/og-zakowhat.png` (1200×630, built from the official mark).
+- `noindex`: every other path served by `index.html` (`/quiz/{id}`, `/play/{id}`, `/profile`, `/u/…`,
+  `/staging`) and the owner tools. `robots.txt` also keeps crawlers out of `/api/`, owner tools, games and
+  profiles — a crawling hint only; access control stays on the server.
+- `/sitemap.xml` and all absolute URLs use `public_site_url()` (`PUBLIC_SITE_URL`, default `https://zakowhat.uz`).
+
 ## 4. The Round: tokens and components
 
 - Brand tokens: `--ink`, `--charcoal`, `--burgundy`, `--brass`, `--ivory`. Semantic tokens built on them:

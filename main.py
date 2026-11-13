@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Depends, status, HTTPException
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, Response
 import logging
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -16,6 +16,7 @@ from api.owner import router as owner_router, get_owner_emails
 from contextlib import asynccontextmanager
 from api.auth import router as auth_router, users_router, get_secret_key, get_current_user_optional
 from api.daily import router as daily_router
+from api.me import router as me_router
 
 
 @asynccontextmanager
@@ -126,6 +127,25 @@ def static_url(path: str) -> str:
 
 templates.env.globals["static_url"] = static_url
 
+# Absolute public origin for canonical / Open Graph / sitemap URLs (optional PUBLIC_SITE_URL, safe fallback)
+from services.daily_engagement import public_site_url  # noqa: E402
+templates.env.globals["public_site_url"] = public_site_url
+
+# Pages that are meant to be found in search. Everything else is either private, user-specific or
+# rendered client-side without its own content (see docs/GAMEPLAY_AND_FRONTEND.md, "Indexing").
+SITEMAP_PAGES = (
+    ("/", "weekly", "1.0"),
+    ("/arena", "weekly", "0.9"),
+    ("/daily", "daily", "0.8"),
+    ("/privacy", "yearly", "0.2"),
+    ("/terms", "yearly", "0.2"),
+)
+
+ROBOTS_DISALLOW = (
+    "/api/", "/owner", "/bank", "/admin", "/builder", "/create", "/staging",
+    "/play/", "/profile", "/u/", "/preview/",
+)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(quizzes_router)
@@ -136,6 +156,32 @@ app.include_router(owner_router)
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(daily_router)
+app.include_router(me_router)
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots_txt():
+    """Crawling hints only — access control stays on the server."""
+    lines = ["User-agent: *", "Allow: /"]
+    lines += [f"Disallow: {path}" for path in ROBOTS_DISALLOW]
+    lines += ["", f"Sitemap: {public_site_url()}/sitemap.xml", ""]
+    return Response("\n".join(lines), media_type="text/plain; charset=utf-8",
+                    headers={"Cache-Control": "public, max-age=3600"})
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+def sitemap_xml():
+    """Canonical public pages on the public origin (never localhost unless PUBLIC_SITE_URL says so)."""
+    from xml.sax.saxutils import escape
+    origin = public_site_url()
+    entries = "".join(
+        f"  <url><loc>{escape(origin + path)}</loc><changefreq>{freq}</changefreq><priority>{prio}</priority></url>\n"
+        for path, freq, prio in SITEMAP_PAGES
+    )
+    body = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + entries + "</urlset>\n")
+    return Response(body, media_type="application/xml",
+                    headers={"Cache-Control": "public, max-age=3600"})
+
 
 @app.get("/health")
 def health_check():

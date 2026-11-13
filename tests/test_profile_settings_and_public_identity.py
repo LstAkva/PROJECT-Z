@@ -205,14 +205,17 @@ def test_public_profile_respects_privacy(client):
     priv_patch = client.patch("/api/auth/profile", json={"is_public": False})
     assert priv_patch.status_code == status.HTTP_200_OK
 
-    # Query public endpoint again
+    # Query public endpoint again: the owner still sees their own profile...
+    own_res = client.get(f"/api/users/{u_handle}/public")
+    assert own_res.status_code == status.HTTP_200_OK
+    assert own_res.json()["is_self"] is True and own_res.json()["is_private"] is True
+    assert "email" not in own_res.json() and "id" not in own_res.json()
+
+    # ...but anyone else gets the same answer as for an account that does not exist
+    client.cookies.clear()
     priv_res = client.get(f"/api/users/{u_handle}/public")
-    assert priv_res.status_code == status.HTTP_200_OK
-    priv_data = priv_res.json()
-    assert priv_data["is_private"] is True
-    assert priv_data.get("bio") is None
-    assert priv_data.get("stats") is None
-    assert "email" not in priv_data
+    assert priv_res.status_code == status.HTTP_404_NOT_FOUND
+    assert priv_res.json() == client.get("/api/users/no_such_user_x9/public").json()
 
 
 def test_consent_endpoint(client):

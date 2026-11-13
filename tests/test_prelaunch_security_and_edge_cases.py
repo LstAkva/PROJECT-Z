@@ -54,17 +54,13 @@ def test_private_profile_data_protection(client: TestClient, db_session):
     })
     assert patch_res.status_code == 200
 
-    # Query public endpoint by username
+    # Query public endpoint by username as someone else: nothing about the account is revealed
+    client.cookies.clear()
     pub_res = client.get(f"/api/users/agent_{u_suffix}/public")
-    assert pub_res.status_code == 200
-    pub_data = pub_res.json()
-
-    assert pub_data["is_private"] is True
-    assert pub_data.get("bio") is None
-    assert pub_data.get("stats") is None
-    assert "email" not in pub_data
-    assert "hashed_password" not in pub_data
-    assert "password_hash" not in pub_data
+    assert pub_res.status_code == 404
+    body = pub_res.text
+    for secret in (f"Secret Agent {u_suffix}", "Top secret", email, "hashed_password", "password_hash"):
+        assert secret not in body
 
 
 def test_avatar_upload_security_validation(client: TestClient):

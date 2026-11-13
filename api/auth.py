@@ -1,12 +1,13 @@
 import html
 import os
 import time
+from services.player_progress import format_statistics
 from collections import defaultdict
 import re
 import secrets
 import base64
 from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import jwt
 import bcrypt
@@ -661,6 +662,8 @@ def get_player_profile(
             "total_questions_answered": total_answered_records,
             "accuracy_percent": accuracy_percent,
             "practice_games": practice_games,
+            # Per format, never mixed: Classic is scored by correct answers, Svoya Igra by points.
+            "by_format": format_statistics(db, current_user.id),
         },
         "recent_games": recent_games,
     }
@@ -907,7 +910,55 @@ def delete_account(
 users_router = APIRouter(prefix="/api/users", tags=["users"])
 
 
-def resolve_public_user_profile(identifier: str, db: Session):
+ANONYMOUS_PLAYER_NAME = "Yashirin o‘yinchi"
+IDENTITY_CACHE_CONTROL = "private, no-store"
+
+
+def no_store_identity(response: Response) -> None:
+    """Responses carrying player identity depend on the viewer (own private profile, `is_me` rows) and on
+    visibility settings that can change at any moment, so no browser or shared cache may keep them."""
+    response.headers["Cache-Control"] = IDENTITY_CACHE_CONTROL
+
+PROFILE_UNAVAILABLE_DETAIL = "Profil topilmadi yoki yopiq"
+
+
+def profile_is_public(user: Optional[User]) -> bool:
+    """The single visibility rule: a profile is public unless its owner switched is_public off."""
+    return bool(user) and (user.is_public if user.is_public is not None else True)
+
+
+def public_identity(user: Optional[User], viewer_id: Optional[int] = None) -> Dict[str, Any]:
+    """How a player is shown to OTHER people (leaderboards, pack details).
+
+    Public profile: display name, avatar and a profile link (username only — never the internal id).
+    Private profile: an anonymous placeholder with no name, avatar, username or link.
+    The player always sees their own real identity, and `is_me` replaces any id comparison."""
+    is_me = bool(user) and viewer_id is not None and user.id == viewer_id
+    if user is not None and (is_me or profile_is_public(user)):
+        return {
+            "display_name": user.display_name,
+            "username": user.username,
+            "avatar_url": user.avatar_url,
+            "profile_ref": user.username or None,
+            "is_private": False if not is_me else not profile_is_public(user),
+            "is_me": is_me,
+        }
+    return {
+        "display_name": ANONYMOUS_PLAYER_NAME,
+        "username": None,
+        "avatar_url": None,
+        "profile_ref": None,
+        "is_private": True,
+        "is_me": False,
+    }
+
+
+def resolve_public_user_profile(identifier: str, db: Session, viewer: Optional[User] = None):
+    """Public profile by username (or, for backward-compatible /profile/{id} links, numeric id).
+
+    A private profile is answered exactly like a profile that does not exist (404, same message), so
+    neither a username nor a sequential id can be used to discover or enumerate private accounts.
+    The owner may always view their own profile. No internal id is ever returned."""
     clean_id = identifier.strip()
     user = None
     if clean_id.isdigit():
@@ -915,21 +966,9 @@ def resolve_public_user_profile(identifier: str, db: Session):
     if not user:
         user = db.query(User).filter(func.lower(User.username) == clean_id.lower()).first()
 
-    if not user:
-        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
-
-    is_public = user.is_public if user.is_public is not None else True
-    if not is_public:
-        return {
-            "id": user.id,
-            "display_name": user.display_name,
-            "username": user.username,
-            "avatar_url": user.avatar_url,
-            "is_private": True,
-            "show_stats": False,
-            "created_at": user.created_at.isoformat() if user.created_at else None,
-            "stats": None,
-        }
+    is_owner = bool(user) and viewer is not None and viewer.id == user.id
+    if not user or not (profile_is_public(user) or is_owner):
+        raise HTTPException(status_code=404, detail=PROFILE_UNAVAILABLE_DETAIL)
 
     show_stats = user.show_stats if user.show_stats is not None else True
     stats = None
@@ -964,26 +1003,36 @@ def resolve_public_user_profile(identifier: str, db: Session):
         }
 
     return {
-        "id": user.id,
         "display_name": user.display_name,
         "username": user.username,
         "avatar_url": user.avatar_url,
         "bio": user.bio,
-        "is_private": False,
+        "is_private": not profile_is_public(user),      # True only when the owner views their own private profile
+        "is_self": is_owner,
         "show_stats": show_stats,
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "stats": stats,
     }
 
 
-@users_router.get("/{identifier}/public", status_code=status.HTTP_200_OK)
-def get_user_public_profile(identifier: str, db: Session = Depends(get_db)):
-    return resolve_public_user_profile(identifier, db)
+@users_router.get("/{identifier}/public", status_code=status.HTTP_200_OK, dependencies=[Depends(no_store_identity)])
+def get_user_public_profile(
+    identifier: str,
+    db: Session = Depends(get_db),
+    viewer: Optional[User] = Depends(get_current_user_optional),
+):
+    """Public profile; private profiles answer 404 to everyone except their owner."""
+    return resolve_public_user_profile(identifier, db, viewer)
 
 
-@router.get("/users/{identifier}/public", status_code=status.HTTP_200_OK)
-def get_auth_user_public_profile(identifier: str, db: Session = Depends(get_db)):
-    return resolve_public_user_profile(identifier, db)
+@router.get("/users/{identifier}/public", status_code=status.HTTP_200_OK, dependencies=[Depends(no_store_identity)])
+def get_auth_user_public_profile(
+    identifier: str,
+    db: Session = Depends(get_db),
+    viewer: Optional[User] = Depends(get_current_user_optional),
+):
+    """Public profile; private profiles answer 404 to everyone except their owner."""
+    return resolve_public_user_profile(identifier, db, viewer)
 
 
 @router.post("/google", status_code=status.HTTP_200_OK)

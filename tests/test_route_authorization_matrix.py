@@ -100,6 +100,7 @@ AUTHENTICATED_PLAYER_ROUTES = {
     ("DELETE", "/api/auth/account"),
     ("GET", "/api/daily/history"),
     ("GET", "/api/daily/stats"),  # the signed-in player's own streak
+    ("GET", "/api/me/pack-progress"),  # own Arena progress
     ("POST", "/api/play/start/{quiz_id}"),
     ("GET", "/api/play/{session_token}"),
     ("GET", "/api/play/{session_token}/board"),
@@ -116,6 +117,9 @@ PUBLIC_ROUTES = {
     # Public Root & Legal Views
     ("GET", "/"),
     ("GET", "/health"),
+    ("GET", "/robots.txt"),  # crawler hints, no data
+    ("GET", "/sitemap.xml"),  # public page list, no data
+    ("GET", "/api/me/active-game"),  # anonymous: {"game": null}; signed in: only the caller's own game
     ("GET", "/daily"),
     ("GET", "/privacy"),
     ("GET", "/terms"),

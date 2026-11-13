@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
 from database import get_db
 from models import Quiz, QuizVersion, Round, Question, RoundQuestion, SoloAttempt, User
-from api.auth import verify_owner_access
+from api.auth import verify_owner_access, get_current_user_optional, public_identity, no_store_identity
 
 router = APIRouter(prefix="/api/quizzes", tags=["quizzes"])
 
@@ -206,7 +206,7 @@ def normalize_uzbek_text(text: Optional[str]) -> str:
     )
 
 
-def fetch_version_leaderboard(version: QuizVersion, db: Session) -> dict:
+def fetch_version_leaderboard(version: QuizVersion, db: Session, viewer_id: Optional[int] = None) -> dict:
     """
     Computes per-quiz-version leaderboard:
     - Strictly scoped to this specific published version (never mixes across versions).
@@ -298,17 +298,12 @@ def fetch_version_leaderboard(version: QuizVersion, db: Session) -> dict:
 
     leaderboard_rows = []
     for rank, att in enumerate(sorted_attempts, start=1):
-        name = att.user.display_name if att.user else f"Foydalanuvchi #{att.user_id}"
-        username = att.user.username if att.user else None
-        avatar_url = att.user.avatar_url if att.user else None
         mins = att.active_time_seconds // 60
         secs = att.active_time_seconds % 60
+        # Identity follows the player's privacy setting; no internal user id is ever published.
         leaderboard_rows.append({
             "rank": rank,
-            "user_id": att.user_id,
-            "display_name": name,
-            "username": username,
-            "avatar_url": avatar_url,
+            **public_identity(att.user, viewer_id),
             "correct_count": att.total_correct,
             "total_score": att.total_score,
             "total_questions": total_questions,
@@ -333,7 +328,7 @@ def fetch_version_leaderboard(version: QuizVersion, db: Session) -> dict:
 # ARENA / DISCOVERY ENDPOINTS
 # =========================================================
 
-@router.get("", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK, dependencies=[Depends(no_store_identity)])
 def list_quizzes(
     q: Optional[str] = None,
     game_mode: Optional[str] = None,
@@ -688,8 +683,9 @@ def public_question_stub(sequence: Any, points: Any) -> dict:
     return {"sequence": sequence, "points": points if points is not None else 1}
 
 
-@router.get("/{quiz_id}", status_code=status.HTTP_200_OK)
-def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):
+@router.get("/{quiz_id}", status_code=status.HTTP_200_OK, dependencies=[Depends(no_store_identity)])
+def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db),
+                    viewer: Optional[User] = Depends(get_current_user_optional)):
     """Returns the ordered structure of a quiz for display and play, with leaderboard preview."""
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
     if not quiz:
@@ -764,7 +760,7 @@ def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):
             })
 
     # Fetch version-scoped leaderboard for preview & #1 player
-    lb_data = fetch_version_leaderboard(latest_version, db)
+    lb_data = fetch_version_leaderboard(latest_version, db, viewer.id if viewer else None)
     top_player = lb_data["leaderboard"][0] if lb_data["leaderboard"] else None
     leaderboard_preview = lb_data["leaderboard"][:5]
 
@@ -806,8 +802,9 @@ def get_quiz_detail(quiz_id: int, db: Session = Depends(get_db)):
 # =========================================================
 
 
-@router.get("/{quiz_id}/leaderboard", status_code=status.HTTP_200_OK)
-def get_quiz_leaderboard(quiz_id: int, db: Session = Depends(get_db)):
+@router.get("/{quiz_id}/leaderboard", status_code=status.HTTP_200_OK, dependencies=[Depends(no_store_identity)])
+def get_quiz_leaderboard(quiz_id: int, db: Session = Depends(get_db),
+                         viewer: Optional[User] = Depends(get_current_user_optional)):
     """Leaderboard for the latest published version of a quiz."""
     latest_published = (
         db.query(QuizVersion)
@@ -818,11 +815,12 @@ def get_quiz_leaderboard(quiz_id: int, db: Session = Depends(get_db)):
     if not latest_published:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nashr qilingan versiya topilmadi")
 
-    return fetch_version_leaderboard(latest_published, db)
+    return fetch_version_leaderboard(latest_published, db, viewer.id if viewer else None)
 
 
-@router.get("/{quiz_id}/versions/{version_number}/leaderboard", status_code=status.HTTP_200_OK)
-def get_version_leaderboard(quiz_id: int, version_number: int, db: Session = Depends(get_db)):
+@router.get("/{quiz_id}/versions/{version_number}/leaderboard", status_code=status.HTTP_200_OK, dependencies=[Depends(no_store_identity)])
+def get_version_leaderboard(quiz_id: int, version_number: int, db: Session = Depends(get_db),
+                            viewer: Optional[User] = Depends(get_current_user_optional)):
     """Leaderboard for a specific published version of a quiz."""
     version = (
         db.query(QuizVersion)
@@ -836,4 +834,4 @@ def get_version_leaderboard(quiz_id: int, version_number: int, db: Session = Dep
     if not version:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nashr qilingan versiya topilmadi")
 
-    return fetch_version_leaderboard(version, db)
+    return fetch_version_leaderboard(version, db, viewer.id if viewer else None)

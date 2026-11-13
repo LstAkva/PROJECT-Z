@@ -213,8 +213,9 @@ def test_leaderboard_sheet_matches_the_round(client):
                        "leaderboard-table-container", "leaderboard-rows"):
         assert modal.count(f'id="{element_id}"') == 1, element_id
     fn = html[html.index("async function openLeaderboardModal("):html.index("function closeLeaderboardModal()")]
-    assert "openPublicProfileModal(${item.user_id})" in fn                 # rows still open the profile
-    assert "state.currentUser.id === item.user_id" in fn and "is-me" in fn  # current user's row is marked
+    # Public players open their profile by username; private players are not linked; no internal ids
+    assert "openPublicProfileModal('${profileRef}')" in fn and "item.user_id" not in fn
+    assert "const isMe = item.is_me === true;" in fn and "is-me" in fn       # server marks the viewer's own row
     assert "empty.innerHTML" not in fn                                     # an error no longer wipes the empty state
     assert "errorEl.innerText = err.message" in fn
     assert "escapeHtml(item.display_name)" in fn and "escapeHtml(item.username)" in fn

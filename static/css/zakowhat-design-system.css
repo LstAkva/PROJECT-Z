@@ -3438,6 +3438,11 @@ h1, h2, h3, h4, h5, h6 {
   cursor: pointer;
 }
 
+/* Private players (and public ones without a username) are shown, not linked */
+.leaderboard-player.is-static {
+  cursor: default;
+}
+
 .leaderboard-player:hover .leaderboard-player-name,
 .leaderboard-player:focus-visible .leaderboard-player-name {
   color: var(--link-color);
@@ -4861,6 +4866,466 @@ button.game-cell:focus-visible {
   .game-progress-fill,
   .game-cell {
     transition: none;
+  }
+}
+
+/* ---- Arena: the player's own progress on a pack ------------------------------ */
+.pack-progress {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.pack-progress.is-active {
+  color: var(--link-color);
+}
+
+.pack-progress.is-active::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: 0.1em;
+}
+
+.pack-progress.is-done {
+  color: var(--state-correct);
+}
+
+.pack-progress.is-done::before {
+  content: "✓ ";
+}
+
+.pack-progress.is-left {
+  color: var(--text-dim);
+}
+
+/* ---- Homepage: continue where you left off ---------------------------------- */
+.resume-game {
+  max-width: 900px;
+  margin: 0 auto var(--space-8);
+  padding: 0 var(--space-6);
+}
+
+.resume-game-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  padding: var(--space-5) var(--space-6);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
+  border-left: 3px solid var(--burgundy);
+  border-radius: var(--radius-sm);
+}
+
+.resume-game-text {
+  min-width: 0;
+}
+
+.resume-game-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--link-color);
+}
+
+.resume-game-title {
+  margin-top: 0.3rem;
+  font-family: var(--font-serif);
+  font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.resume-game-meta {
+  margin-top: 0.3rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.resume-game-btn {
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .resume-game {
+    padding: 0 var(--space-4);
+  }
+
+  .resume-game-inner {
+    padding: var(--space-4);
+  }
+
+  .resume-game-btn {
+    width: 100%;
+  }
+}
+
+/* ---- Profile: a player's personal record ----------------------------------- */
+.profile-record {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: var(--space-8);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
+  border-top: 3px solid var(--burgundy);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  color: var(--text-main);
+}
+
+.profile-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  padding-bottom: var(--space-6);
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.profile-identity-main {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.profile-avatar {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--burgundy);
+  color: var(--ivory);
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar-initial {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.profile-identity-text {
+  min-width: 0;
+}
+
+.profile-eyebrow,
+.profile-section-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--link-color);
+}
+
+.profile-name {
+  margin-top: 0.2rem;
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 3.6vw, 2.2rem);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.profile-handle-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem var(--space-3);
+  margin-top: 0.35rem;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+.profile-handle {
+  font-weight: 600;
+  color: var(--text-brass);
+}
+
+.profile-bio {
+  margin-top: var(--space-2);
+  max-width: 56ch;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.profile-email-row {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.profile-action-btn {
+  min-height: 40px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.profile-logout {
+  color: var(--state-incorrect);
+}
+
+/* Section headings match the "Kun savoli" heading: serif, not small caps */
+.profile-section-title {
+  margin-bottom: var(--space-3);
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-main);
+}
+
+.profile-stats,
+.profile-activity {
+  margin-top: var(--space-8);
+}
+
+.profile-format-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+  border-top: 2px solid var(--text-main);
+  padding-top: var(--space-4);
+}
+
+.profile-format-title {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.profile-format[data-format="svoyak"] .profile-format-title {
+  color: var(--text-brass);
+}
+
+.profile-format-figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: var(--space-2) 0 0;
+}
+
+.profile-format-figures div {
+  min-width: 0;
+  padding: var(--space-2) var(--space-2) var(--space-2) 0;
+}
+
+.profile-format-figures div + div {
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.profile-format-figures dt {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.profile-format-figures dd {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--text-main);
+  font-variant-numeric: lining-nums tabular-nums;
+  white-space: nowrap;
+}
+
+.profile-note {
+  margin-top: var(--space-3);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.profile-activity-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 2px solid var(--text-main);
+}
+
+.profile-activity-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.profile-activity-main {
+  min-width: 0;
+  flex: 1 1 16rem;
+}
+
+.profile-activity-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.profile-activity-meta {
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.profile-activity-tag {
+  padding: 0 0.3rem;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xs);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.profile-activity-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-3);
+  font-size: 0.84rem;
+}
+
+.profile-activity-state {
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.profile-activity-state.is-done {
+  color: var(--state-correct);
+}
+
+.profile-activity-state.is-active {
+  color: var(--link-color);
+}
+
+.profile-activity-result {
+  font-weight: 600;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-activity-action {
+  min-height: 40px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.84rem;
+}
+
+.profile-empty {
+  padding: var(--space-6) 0;
+  border-top: 2px solid var(--text-main);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.profile-empty-title {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.profile-empty-text {
+  margin-top: 0.3rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.profile-empty-btn {
+  margin-top: var(--space-4);
+  min-height: 46px;
+}
+
+@media (max-width: 720px) {
+  .profile-record {
+    padding: var(--space-5) var(--space-4);
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .profile-format-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .profile-actions {
+    width: 100%;
+  }
+
+  .profile-action-btn {
+    flex: 1;
+    min-height: 44px;
+  }
+
+  .profile-activity-side {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .profile-activity-action {
+    min-height: 44px;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 400px) {
+  .profile-action-btn {
+    padding: 0.45rem 0.5rem;
+    font-size: 0.78rem;
+    gap: 0.3rem;
+  }
+
+  .profile-format-figures dd {
+    font-size: 1.25rem;
+  }
+
+  .profile-avatar {
+    width: 52px;
+    height: 52px;
   }
 }
 

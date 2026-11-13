@@ -10,7 +10,16 @@
   <meta property="og:locale" content="uz_UZ">
   <meta property="og:title" content="ZakoWhat — Zakovat va Svoya Igra onlayn">
   <meta property="og:description" content="Zakovat (2×12) va Svoya Igra to‘plamlarini onlayn o‘ynang. Har bir savoldan so‘ng to‘g‘ri javob. Har kuni yangi «Kun savoli».">
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="{{ public_site_url() }}/">
+  <meta property="og:url" content="{{ public_site_url() }}/">
+  <meta property="og:image" content="{{ public_site_url() }}/static/img/og-zakowhat.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ZakoWhat — Intelligence Meets Culture">
+  <meta name="twitter:title" content="ZakoWhat — Zakovat va Svoya Igra onlayn">
+  <meta name="twitter:description" content="Zakovat (2×12) va Svoya Igra to‘plamlarini onlayn o‘ynang. Har bir savoldan so‘ng to‘g‘ri javob. Har kuni yangi «Kun savoli».">
+  <meta name="twitter:image" content="{{ public_site_url() }}/static/img/og-zakowhat.png">
   
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-app-icon.svg">
@@ -96,6 +105,18 @@
             Kun Savoli
           </a>
         </div>
+      </div>
+    </section>
+
+    <!-- Continue where you left off (signed-in players with a resumable game only; filled by script) -->
+    <section id="resume-game" class="resume-game hidden" aria-labelledby="resume-game-title">
+      <div class="resume-game-inner">
+        <div class="resume-game-text">
+          <p class="resume-game-eyebrow">Davom ettirish</p>
+          <h2 id="resume-game-title" class="resume-game-title"></h2>
+          <p id="resume-game-meta" class="resume-game-meta"></p>
+        </div>
+        <a id="resume-game-link" class="btn btn-primary resume-game-btn" href="/arena">O‘yinni davom ettirish <span aria-hidden="true">&rarr;</span></a>
       </div>
     </section>
 
@@ -385,6 +406,33 @@
           finishSample(false);
         });
       }
+    })();
+  </script>
+  <script>
+    // "Davom ettirish": shown only when the server reports a resumable game for the signed-in player.
+    // Anonymous visitors get a 401 and see the homepage unchanged.
+    (async function showResumableGame() {
+      const box = document.getElementById('resume-game');
+      if (!box) return;
+      try {
+        const res = await fetch('/api/me/active-game');
+        if (!res.ok) return;
+        const game = (await res.json()).game;
+        if (!game || !game.quiz_id) return;
+        const format = game.format === 'svoyak' ? 'Svoya Igra' : (game.format === 'classic' ? 'Klassik Zakovat' : 'Viktorina');
+        const parts = [format];
+        if (Number.isFinite(game.answered) && Number.isFinite(game.total) && game.total > 0) {
+          parts.push(`${game.answered}/${game.total} savol`);
+        }
+        if (game.format === 'svoyak' && Number.isFinite(game.score)) parts.push(`${game.score} ball`);
+        if (game.ranked === false) parts.push('mashq');
+        // Same player-facing title as the Arena ("Classic Zakovat — Pack 01" reads "Zakovat — Pack 01")
+        const title = String(game.title || 'Tugallanmagan o‘yin').replace(/Classic Zakovat|Klassik Zakovat/gi, 'Zakovat');
+        document.getElementById('resume-game-title').textContent = title;
+        document.getElementById('resume-game-meta').textContent = parts.join(' · ');
+        document.getElementById('resume-game-link').href = `/play/${encodeURIComponent(game.quiz_id)}`;
+        box.classList.remove('hidden');
+      } catch (e) { /* the homepage works without it */ }
     })();
   </script>
   <script src="{{ static_url('js/zakowhat-navbar.js') }}"></script>
