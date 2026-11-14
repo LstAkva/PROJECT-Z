@@ -348,19 +348,29 @@ def test_staging_attempts_excluded_from_leaderboard(client, db_session):
     assert lb_res.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_staging_html_routes(client):
+def test_staging_html_routes(client, monkeypatch):
     """
-    GET /staging and GET /staging/{quiz_id} serve index.html successfully.
+    GET /staging and GET /staging/{quiz_id} serve index.html to staging staff only; every other visitor
+    (signed out, or signed in without staging rights) is redirected to the public Arena.
     """
-    r1 = client.get("/staging")
-    assert r1.status_code == status.HTTP_200_OK
-    assert "text/html" in r1.headers["content-type"]
-    assert "ZAKOWHAT" in r1.text
+    # the test client is signed in as an ordinary player (this module's autouse fixture makes it staging
+    # staff, so remove that grant first)
+    monkeypatch.delenv("STAGING_AUTHORIZED_EMAILS", raising=False)
+    for path in ("/staging", "/staging/43"):
+        res = client.get(path, follow_redirects=False)
+        assert res.status_code == status.HTTP_303_SEE_OTHER and res.headers["location"] == "/arena", path
 
-    r2 = client.get("/staging/43")
-    assert r2.status_code == status.HTTP_200_OK
-    assert "text/html" in r2.headers["content-type"]
-    assert "ZAKOWHAT" in r2.text
+    # staff (same allowlist as the staging API) get the page
+    monkeypatch.setenv("STAGING_AUTHORIZED_EMAILS", "testplayer@zakowhat.uz")
+    for path in ("/staging", "/staging/43"):
+        res = client.get(path, follow_redirects=False)
+        assert res.status_code == status.HTTP_200_OK, path
+        assert "text/html" in res.headers["content-type"]
+        assert "ZAKOWHAT" in res.text
+
+    # signed out: redirected
+    client.cookies.clear()
+    assert client.get("/staging", follow_redirects=False).headers["location"] == "/arena"
 
 
 def test_question_time_limit_calculation(client):

@@ -9,7 +9,7 @@ import hashlib
 from functools import lru_cache
 from database import test_database_connection, get_db
 from api.quizzes import router as quizzes_router
-from api.play import router as play_router
+from api.play import router as play_router, verify_staging_access
 from api.questions import router as questions_router
 from api.drafts import router as drafts_router
 from api.owner import router as owner_router, get_owner_emails
@@ -225,9 +225,28 @@ def read_terms_page(request: Request):
 @app.get("/u/{username}")
 @app.get("/quiz/{quiz_id}")
 @app.get("/play/{quiz_id}")
+def read_root(request: Request, quiz_id: int = None, user_id_or_username: str = None, username: str = None):
+    response = templates.TemplateResponse(request=request, name="index.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
 @app.get("/staging")
 @app.get("/staging/{quiz_id}")
-def read_root(request: Request, quiz_id: int = None, user_id_or_username: str = None, username: str = None):
+def read_staging(request: Request, quiz_id: int = None, db: Session = Depends(get_db)):
+    """Staff-only page. Everyone else (signed out, or signed in without staging rights) is sent to the public
+    Arena. Same rule as the staging API (verify_staging_access), which still enforces access on its own."""
+    user = get_current_user_optional(request, db)
+    allowed = False
+    if user:
+        try:
+            verify_staging_access(user)
+            allowed = True
+        except HTTPException:
+            allowed = False
+    if not allowed:
+        return RedirectResponse(url="/arena", status_code=status.HTTP_303_SEE_OTHER,
+                                headers={"Cache-Control": "no-store"})
     response = templates.TemplateResponse(request=request, name="index.html")
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return response

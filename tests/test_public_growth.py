@@ -81,7 +81,9 @@ def test_titles_and_descriptions_differ_between_pages(client):
 
 
 @pytest.mark.parametrize("path", ["/quiz/1", "/play/1", "/profile", "/u/someone", "/staging"])
-def test_user_specific_and_client_rendered_paths_are_not_indexed(client, path):
+def test_user_specific_and_client_rendered_paths_are_not_indexed(client, path, monkeypatch):
+    # /staging is staff-only (others are redirected to /arena); check the page staff actually receive
+    monkeypatch.setenv("STAGING_AUTHORIZED_EMAILS", "testplayer@zakowhat.uz")
     head = _head(client, path)
     assert '<meta name="robots" content="noindex, follow">' in head
     assert '<link rel="canonical" href="https://zakowhat.uz/arena">' in head
