@@ -1428,7 +1428,9 @@ def list_owner_users(
                 func.count(SoloAttempt.id).label("total"),
                 func.sum(case((SoloAttempt.status == "completed", 1), else_=0)).label("completed"),
             )
-            .filter(SoloAttempt.user_id.in_(user_ids))
+            .filter(SoloAttempt.user_id.in_(user_ids),
+                    # games only: staff previews and owner demonstrations are not games played
+                    SoloAttempt.timer_mode.notin_(("preview", "preview_no_timer")))
             .group_by(SoloAttempt.user_id)
             .all()
         )
@@ -1492,7 +1494,8 @@ def get_owner_user_detail(
     # Fetch attempts
     attempts = (
         db.query(SoloAttempt)
-        .filter(SoloAttempt.user_id == user.id)
+        .filter(SoloAttempt.user_id == user.id,
+                SoloAttempt.timer_mode.notin_(("preview", "preview_no_timer")))   # games only, as above
         .options(joinedload(SoloAttempt.quiz_version).joinedload(QuizVersion.quiz))
         .order_by(SoloAttempt.started_at.desc())
         .limit(50)

@@ -425,7 +425,8 @@
           parts.push(`${game.answered}/${game.total} savol`);
         }
         if (game.format === 'svoyak' && Number.isFinite(game.score)) parts.push(`${game.score} ball`);
-        if (game.ranked === false) parts.push('mashq');
+        if (game.demo === true) parts.push('namoyish');
+        else if (game.ranked === false) parts.push('mashq');
         // Same player-facing title as the Arena ("Classic Zakovat — Pack 01" reads "Zakovat — Pack 01")
         const title = String(game.title || 'Tugallanmagan o‘yin').replace(/Classic Zakovat|Klassik Zakovat/gi, 'Zakovat');
         document.getElementById('resume-game-title').textContent = title;

@@ -80,8 +80,13 @@ def _aware(value: Optional[datetime]) -> Optional[datetime]:
 
 def load_owned_demo(session_token: str, owner: User, db: Session) -> SoloAttempt:
     """The only way into a session from this router: it must exist, be a demo and belong to this owner.
-    Every other case answers 404, so the endpoint reveals nothing about other people's sessions."""
-    attempt = db.query(SoloAttempt).filter(SoloAttempt.session_token == session_token).first()
+    Every other case answers 404, so the endpoint reveals nothing about other people's sessions.
+    The row is locked (SELECT ... FOR UPDATE in PostgreSQL) until the request commits, so two owner
+    actions on the same demo run one after the other instead of overwriting each other's changes."""
+    attempt = (db.query(SoloAttempt)
+               .filter(SoloAttempt.session_token == session_token)
+               .with_for_update()
+               .first())
     if not attempt or attempt.user_id != owner.id or not is_demo_attempt(attempt):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Namoyish sessiyasi topilmadi")
     enforce_session_not_expired(attempt, db)

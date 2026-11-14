@@ -211,10 +211,14 @@ def resumable_game(db: Session, user_id: int, quiz_id: Optional[int] = None,
     Only attempts the play API would still accept are returned; the client restores them through the
     existing GET /api/play/{session_token}, so no state is rebuilt in the browser."""
     now = now or datetime.now(timezone.utc)
-    for r in _attempt_rows(db, user_id):
+    # The player's own owner demonstrations are resumable too (on another device as well); they stay out of
+    # every statistic and progress figure, which keep using _attempt_rows alone.
+    rows = sorted(list(_attempt_rows(db, user_id)) + _own_demo_rows(db, user_id), key=lambda r: r.id, reverse=True)
+    for r in rows:
         if quiz_id is not None and r.quiz_id != quiz_id:
             continue
-        if _is_preview(r.timer_mode, r.attempt_metadata):
+        is_demo = _is_demo(r.timer_mode, r.attempt_metadata)
+        if _is_preview(r.timer_mode, r.attempt_metadata) and not is_demo:
             continue
         if not is_resumable(r.status, r.attempt_metadata, r.started_at, now):
             continue
@@ -234,7 +238,29 @@ def resumable_game(db: Session, user_id: int, quiz_id: Optional[int] = None,
             "total": _manifest_question_count(manifest),
             "score": r.total_score if fmt == "svoyak" else None,
             "correct": r.total_correct if fmt != "svoyak" else None,
-            "ranked": not _is_practice(r.attempt_metadata),
+            "ranked": (not is_demo) and not _is_practice(r.attempt_metadata),
+            "demo": is_demo,
             "last_active_at": _last_active(r.attempt_metadata, r.started_at).isoformat(),
         }
     return None
+
+
+def _is_demo(timer_mode: Optional[str], meta: Optional[dict]) -> bool:
+    return str(timer_mode or "") in PREVIEW_TIMER_MODES and bool((meta or {}).get("is_demo"))
+
+
+def _own_demo_rows(db: Session, user_id: int):
+    """The player's active owner-demo sessions (same columns as _attempt_rows; used only for resuming)."""
+    rows = (
+        db.query(
+            SoloAttempt.id, SoloAttempt.status, SoloAttempt.timer_mode, SoloAttempt.total_score,
+            SoloAttempt.total_correct, SoloAttempt.attempt_metadata, SoloAttempt.started_at,
+            SoloAttempt.completed_at, SoloAttempt.quiz_version_id, SoloAttempt.session_token,
+            QuizVersion.quiz_id, QuizVersion.game_mode,
+        )
+        .join(QuizVersion, SoloAttempt.quiz_version_id == QuizVersion.id)
+        .filter(SoloAttempt.user_id == user_id, SoloAttempt.timer_mode.in_(PREVIEW_TIMER_MODES),
+                SoloAttempt.status.in_(("in_progress", "board_selection", "intermediate_break", "round_reveal")))
+        .all()
+    )
+    return [r for r in rows if _is_demo(r.timer_mode, r.attempt_metadata)]

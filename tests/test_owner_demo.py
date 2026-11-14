@@ -417,3 +417,59 @@ def test_ordinary_restart_behaviour_unchanged(anon, db_session, pack, player):
     practice = data["session_token"]
     again = header_restart(anon, practice, player)
     assert again["session_token"] == practice and again["ranked"] is False
+
+
+# ============================================================================ audit P3 follow-ups
+
+def test_demo_actions_lock_the_session_row(anon, pack, owner, monkeypatch):
+    """Every owner action reads the demo with SELECT ... FOR UPDATE (PostgreSQL), so concurrent actions on
+    one demo are serialized instead of overwriting each other (SQLite ignores the clause in tests)."""
+    from sqlalchemy.dialects import postgresql
+    from sqlalchemy.orm import Query
+
+    token = start_demo(anon, pack, owner)["session_token"]
+    locked = []
+    original = Query.with_for_update
+
+    def spy(self, *args, **kwargs):
+        q = original(self, *args, **kwargs)
+        locked.append("FOR UPDATE" in str(q.statement.compile(dialect=postgresql.dialect())))
+        return q
+
+    monkeypatch.setattr(Query, "with_for_update", spy)
+    for path, body in (("/skip", {}), ("/score", {"action": "add", "delta": 1}), ("/timer", {"action": "pause"}),
+                       ("/restart", {}), ("/end", {})):
+        before = len(locked)
+        act(anon, token, owner, path, body)
+        assert len(locked) == before + 1 and locked[-1] is True, path
+
+
+def test_owner_panel_counts_games_not_demos(anon, db_session, pack, owner, player):
+    _complete_demo_with_inflated_score(anon, pack, owner)
+    start_demo(anon, make_classic_pack(db_session, "Ikkinchi namoyish"), owner)       # one active demo too
+    token = _start(anon, pack, owner)                                                 # one ordinary game
+    users = anon.get("/api/owner/users", params={"search": OWNER_EMAIL}, headers=_hdr(owner)).json()["users"]
+    me = next(u for u in users if u["email"] == OWNER_EMAIL)
+    assert me["total_attempts"] == 1 and me["completed_attempts"] == 0
+    detail = anon.get(f"/api/owner/users/{owner.id}", headers=_hdr(owner)).json()
+    assert [a["session_token"] for a in detail["attempts"]] == [token]
+
+
+def test_owner_can_resume_an_active_demo_on_another_device(anon, db_session, pack, owner, player):
+    token = start_demo(anon, pack, owner)["session_token"]
+    act(anon, token, owner, "/skip")
+    anon.cookies.clear()                                   # "another device": no cookies, only the account
+    game = anon.get("/api/me/active-game", headers=_hdr(owner)).json()["game"]
+    assert game["session_token"] == token and game["demo"] is True and game["ranked"] is False
+    assert anon.get(f"/api/me/active-game?quiz_id={pack.id}", headers=_hdr(owner)).json()["game"]["session_token"] == token
+    assert state(anon, token, owner)["question"]["sequence"] == 2            # restores the same question
+    assert anon.get(f"/api/demo/{token}", headers=_hdr(owner)).status_code == 200   # controls reattach
+    # still not progress, and only ever offered to its owner
+    assert str(pack.id) not in anon.get("/api/me/pack-progress", headers=_hdr(owner)).json()["packs"]
+    assert anon.get("/api/me/active-game", headers=_hdr(player)).json()["game"] is None
+    # an ordinary game started later is the more recent one and wins
+    later = _start(anon, make_classic_pack(db_session, "Keyinroq"), owner)
+    assert anon.get("/api/me/active-game", headers=_hdr(owner)).json()["game"]["session_token"] == later
+    # a finished demo is not offered
+    act(anon, token, owner, "/end")
+    assert anon.get(f"/api/me/active-game?quiz_id={pack.id}", headers=_hdr(owner)).json()["game"] is None
