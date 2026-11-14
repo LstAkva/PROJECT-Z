@@ -4835,6 +4835,8 @@
 
                 state.sessionToken = data.session_token;
                 sessionStorage.setItem('zakowhat_session_token', data.session_token);
+                // an owner demo restarts in place: refresh the Owner Controls panel (no-op for everyone else)
+                if (typeof syncOwnerControls === 'function') syncOwnerControls(data.session_token, true);
                 if (data.game_mode) {
                     state.gameMode = data.game_mode;
                     sessionStorage.setItem('zakowhat_game_mode', data.game_mode);
@@ -5206,9 +5208,9 @@
         });
 
         // Called by the controller whenever a session starts or is restored.
-        window.syncOwnerControls = async function (sessionToken) {
+        window.syncOwnerControls = async function (sessionToken, force = false) {
             if (!sessionToken || !(state.currentUser && state.currentUser.is_owner)) { hide(); return; }
-            if (sessionToken === token && info) return;          // already attached; actions refresh it
+            if (!force && sessionToken === token && info) return; // already attached; actions refresh it
             try {
                 token = sessionToken;
                 info = await call('');

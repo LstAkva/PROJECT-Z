@@ -317,3 +317,103 @@ def test_a_normal_start_never_resumes_a_demo(anon, db_session, pack, owner):
     assert data["session_token"] != demo_token
     # the owner has seen the answers in the demo, so their own game on this pack is practice, never ranked
     assert data["ranked"] is False
+
+
+# ============================================================================ header "Qaytadan boshlash" on a demo
+
+def header_restart(client, token, user):
+    res = client.post(f"/api/play/{token}/restart", json={}, headers=_hdr(user))
+    assert res.status_code == 200, res.text
+    return res.json()
+
+
+def assert_clean_owner_demo(client, db, token, owner):
+    att = attempt_of(db, token)
+    meta = att.attempt_metadata
+    assert att.timer_mode == "preview" and meta["is_demo"] is True and meta["competitive"] is False
+    assert is_ranked_or_legacy_timed(att) is False
+    for key in ("demo_score_adjustment", "demo_score_modified", "demo_paused_at", "awaiting_continue"):
+        assert key not in meta, key
+    assert att.total_score == 0 and att.total_correct == 0 and att.completed_at is None
+    assert db.query(AnswerRecord).filter(AnswerRecord.attempt_id == att.id).count() == 0
+    s = client.get(f"/api/demo/{token}", headers=_hdr(owner)).json()      # owner controls still attached
+    assert s["score"] == {"total_score": 0, "total_correct": 0, "manual_adjustment": 0, "modified": False}
+    return att
+
+
+def test_header_restart_on_active_demo_clears_manual_adjustment(anon, db_session, pack, owner):
+    token = start_demo(anon, pack, owner)["session_token"]
+    answer(anon, token, owner, "Javob 1")
+    anon.post(f"/api/play/{token}/continue", headers=_hdr(owner))
+    act(anon, token, owner, "/score", {"action": "add", "delta": 3})
+    data = header_restart(anon, token, owner)
+    assert data["session_token"] == token and data["ranked"] is False       # same session, in place
+    att = assert_clean_owner_demo(anon, db_session, token, owner)
+    assert (att.current_round_index, att.current_question_index, att.status) == (0, 0, "in_progress")
+    # finishing with all-wrong answers now gives 0, not the old adjustment (the audit's P3 path)
+    for _ in range(CLASSIC_Q):
+        answer(anon, token, owner, "xato")
+        anon.post(f"/api/play/{token}/continue", headers=_hdr(owner))
+    assert attempt_of(db_session, token).total_correct == 0
+
+
+def test_header_restart_on_paused_demo_resets_the_clock(anon, db_session, pack, owner):
+    token = start_demo(anon, pack, owner)["session_token"]
+    act(anon, token, owner, "/skip")
+    act(anon, token, owner, "/timer", {"action": "pause"})
+    time.sleep(1.1)
+    data = header_restart(anon, token, owner)
+    q = data["current_state"]["question"]
+    assert q["timer_paused"] is False and q["remaining_time_seconds"] >= q["time_limit_seconds"] - 1
+    assert_clean_owner_demo(anon, db_session, token, owner)
+    st = anon.get(f"/api/demo/{token}", headers=_hdr(owner)).json()
+    assert st["timer"]["paused"] is False and st["position"] == {"round_index": 0, "question_index": 0}
+
+
+def test_header_restart_on_completed_demo_reuses_the_demo(anon, db_session, pack, owner, monkeypatch):
+    token = start_demo(anon, pack, owner)["session_token"]
+    act(anon, token, owner, "/score", {"action": "add", "delta": 2})
+    act(anon, token, owner, "/end")
+    attempts_before = db_session.query(SoloAttempt).count()
+    data = header_restart(anon, token, owner)
+    assert data["session_token"] == token and data["ranked"] is False
+    assert db_session.query(SoloAttempt).count() == attempts_before          # no new (non-demo) attempt
+    assert_clean_owner_demo(anon, db_session, token, owner)
+
+
+def test_restarted_demo_stays_owner_only_and_out_of_competitive_data(anon, db_session, owner, player, monkeypatch):
+    quiz = create_svoyak_test_game(anon, db_session, "Namoyish restart")
+    token = start_demo(anon, quiz, owner)["session_token"]
+    act(anon, token, owner, "/jump", {"round_index": 0, "question_index": 4})
+    answer(anon, token, owner, act(anon, token, owner, "/reveal")["correct_answer"])
+    act(anon, token, owner, "/score", {"action": "add", "delta": 100})
+    act(anon, token, owner, "/end")
+    data = header_restart(anon, token, owner)
+    assert data["status"] == "board_selection" and data["svoyak_mode"] == "free_choice"
+    assert_clean_owner_demo(anon, db_session, token, owner)
+    # owner-only: staff and players are refused on both the game API and the controls
+    admin = _user(db_session, "admin-restart@zakowhat.uz", "Admin")
+    monkeypatch.setenv("ADMIN_EMAILS", admin.email)
+    for user in (admin, player):
+        assert anon.get(f"/api/play/{token}", headers=_hdr(user)).status_code == status.HTTP_403_FORBIDDEN
+        assert anon.post(f"/api/play/{token}/restart", json={}, headers=_hdr(user)).status_code == status.HTTP_403_FORBIDDEN
+        assert anon.get(f"/api/demo/{token}", headers=_hdr(user)).status_code == status.HTTP_403_FORBIDDEN
+    # play it to the end again: still nowhere in competitive data
+    act(anon, token, owner, "/jump", {"round_index": 1, "question_index": 4})
+    answer(anon, token, owner, act(anon, token, owner, "/reveal")["correct_answer"])
+    act(anon, token, owner, "/end")
+    assert anon.get(f"/api/quizzes/{quiz.id}/leaderboard").json()["leaderboard"] == []
+    stats = anon.get("/api/auth/profile", headers=_hdr(owner)).json()["stats"]["by_format"]
+    assert stats["svoyak"]["games"] == 0 and stats["practice_games"] == 0
+    assert str(quiz.id) not in anon.get("/api/me/pack-progress", headers=_hdr(owner)).json()["packs"]
+
+
+def test_ordinary_restart_behaviour_unchanged(anon, db_session, pack, player):
+    """Ranked: abandoned + a new practice attempt. Practice: reset in place. (Regression guard.)"""
+    ranked = _start(anon, pack, player)
+    data = header_restart(anon, ranked, player)
+    assert data["session_token"] != ranked and data["ranked"] is False
+    assert attempt_of(db_session, ranked).status == "abandoned"
+    practice = data["session_token"]
+    again = header_restart(anon, practice, player)
+    assert again["session_token"] == practice and again["ranked"] is False

@@ -444,14 +444,26 @@ def end_demo(session_token: str, db: Session = Depends(get_db), owner: User = De
 def restart_demo(session_token: str, db: Session = Depends(get_db), owner: User = Depends(verify_owner_access)):
     """Same session, from the beginning: answers, score and adjustments cleared."""
     attempt = load_owned_demo(session_token, owner, db)
-    rounds = _rounds(attempt, db)
+    reset_demo_in_place(attempt, _rounds(attempt, db), db)
+    db.commit()
+    return demo_status(attempt, db)
+
+
+def reset_demo_in_place(attempt: SoloAttempt, rounds: List[Dict[str, Any]], db: Session) -> None:
+    """The one demo reset, shared by the Owner Controls restart and the game header's ordinary
+    restart button (api.play.restart_play_session). The session stays the same owner-only demo:
+    answers, progress, score, manual adjustment and its flag, pause and break state are cleared."""
     db.query(AnswerRecord).filter(AnswerRecord.attempt_id == attempt.id).delete(synchronize_session=False)
     meta = _meta(attempt)
-    for key in ("demo_score_adjustment", "demo_score_modified", "demo_paused_at", "awaiting_continue"):
+    for key in ("demo_score_adjustment", "demo_score_modified", "demo_paused_at", "awaiting_continue",
+                "break_started_at", "break_duration_seconds", "expired_at"):
         meta.pop(key, None)
+    meta["is_demo"] = True                    # stays an owner demo (and never competitive)
+    meta["competitive"] = False
     _save_meta(attempt, meta)
     attempt.active_time_seconds = 0
     attempt.completed_at = None
+    attempt.started_at = _now()
     if _game_mode(attempt) == "svoyak":
         attempt.current_round_index = 0
         attempt.current_question_index = 0
@@ -459,5 +471,3 @@ def restart_demo(session_token: str, db: Session = Depends(get_db), owner: User 
         recompute_totals(attempt, db)
     else:
         open_question(attempt, rounds, 0, 0, db)
-    db.commit()
-    return demo_status(attempt, db)

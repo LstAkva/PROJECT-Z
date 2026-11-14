@@ -1408,9 +1408,12 @@ def restart_play_session(
     # attempts are never revived. Those cases start a NEW attempt (practice); only active practice
     # (and staging preview) attempts are still reset in place.
     preview = is_preview_attempt(attempt)
-    needs_new_attempt = attempt.status in ("completed", "expired", "abandoned") or (
+    # Owner demonstrations are always restarted in place by the demo reset (same session, still a demo),
+    # whatever their status; nothing below applies to them.
+    is_demo_restart = preview and bool(meta.get("is_demo"))
+    needs_new_attempt = not is_demo_restart and (attempt.status in ("completed", "expired", "abandoned") or (
         not preview and attempt.status in ACTIVE_ATTEMPT_STATUSES and is_ranked_or_legacy_timed(attempt)
-    )
+    ))
     ranked_meta: Dict[str, Any] = {}
     if needs_new_attempt and not preview:
         version_ids = pack_version_ids(db, quiz_version.quiz_id)
@@ -1450,6 +1453,13 @@ def restart_play_session(
         db.commit()
         db.refresh(new_attempt)
         target_attempt = new_attempt
+    elif is_demo_restart:
+        from api.demo import reset_demo_in_place      # local import: api.demo imports this module
+        reset_demo_in_place(attempt, rounds, db)
+        db.commit()
+        db.refresh(attempt)
+        cur_svoyak_mode = "free_choice"               # demos always play Svoya Igra from the board
+        target_attempt = attempt
     else:
         db.query(AnswerRecord).filter(AnswerRecord.attempt_id == attempt.id).delete()
         attempt.total_score = 0
