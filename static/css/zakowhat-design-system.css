@@ -5673,3 +5673,127 @@ button.game-cell:active {
     animation: none;
   }
 }
+
+/* ==========================================================================
+   18. OWNER CONTROLS — demo sessions only
+   A quiet administrative strip under the game table: charcoal surface, brass labels, one burgundy
+   badge. Visibly separate from the player's controls, never covering the question.
+   ========================================================================== */
+.owner-controls {
+  margin: var(--space-4) auto 0;
+  max-width: 920px;
+  border: 1px dashed var(--border-medium);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  font-family: var(--font-sans);
+  color: var(--text-main);
+  animation: zw-fade var(--motion-base) var(--ease-out) backwards;
+}
+.owner-controls[aria-busy="true"] { opacity: 0.7; }
+.owner-controls-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.owner-controls-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ivory);
+  background: var(--burgundy);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.55rem;
+}
+.owner-controls-meta { font-size: 0.78rem; color: var(--text-muted); }
+.owner-controls-flag {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-brass);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.5rem;
+}
+.owner-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3) var(--space-5);
+  padding-top: var(--space-3);
+}
+.owner-controls-group h3 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-variant: normal;
+  color: var(--text-brass);
+}
+.owner-controls-figure {
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  text-transform: none;
+  font-variant: normal;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+}
+.owner-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.owner-controls button,
+.owner-controls select {
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.7rem;
+  min-height: 36px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+}
+.owner-controls button:hover:not(:disabled) { border-color: var(--link-color); color: var(--link-color); }
+.owner-controls button:focus-visible,
+.owner-controls select:focus-visible { outline: 2px solid var(--link-color); outline-offset: 2px; }
+.owner-controls button:disabled { opacity: 0.45; cursor: not-allowed; }
+.owner-controls button.is-danger { color: var(--state-incorrect); }
+.owner-controls-jump { flex: 1 1 160px; display: flex; }
+.owner-controls-jump select { width: 100%; }
+.owner-controls-reveal {
+  border-left: 2px solid var(--link-color);
+  padding: var(--space-1) 0 var(--space-1) var(--space-3);
+}
+.owner-controls-answer { margin: 0 0 var(--space-1); font-weight: 600; }
+.owner-controls-answer span {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-brass);
+  margin-right: var(--space-2);
+}
+.owner-controls-note { margin: 0 0 var(--space-1); font-size: 0.82rem; color: var(--text-muted); }
+.game-clock.is-paused { opacity: 0.6; }
+.pack-detail-demo { margin-right: auto; }
+
+@media (max-width: 480px) {
+  .owner-controls { padding: var(--space-3); }
+  .owner-controls-flag { margin-left: 0; }
+  .owner-controls-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .owner-controls { animation: none; }
+}

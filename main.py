@@ -17,6 +17,7 @@ from contextlib import asynccontextmanager
 from api.auth import router as auth_router, users_router, get_secret_key, get_current_user_optional
 from api.daily import router as daily_router
 from api.me import router as me_router
+from api.demo import router as demo_router
 
 
 @asynccontextmanager
@@ -157,6 +158,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(daily_router)
 app.include_router(me_router)
+app.include_router(demo_router)
 
 @app.get("/robots.txt", include_in_schema=False)
 def robots_txt():

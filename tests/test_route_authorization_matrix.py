@@ -15,6 +15,17 @@ from services.gameplay import is_conservative_typo_match
 # ==============================================================================
 
 OWNER_ONLY_ROUTES = {
+    # Owner Control Mode (demonstration sessions) — verify_owner_access on every route
+    ("POST", "/api/demo/start/{quiz_id}"),
+    ("GET", "/api/demo/{session_token}"),
+    ("POST", "/api/demo/{session_token}/jump"),
+    ("POST", "/api/demo/{session_token}/skip"),
+    ("POST", "/api/demo/{session_token}/previous"),
+    ("POST", "/api/demo/{session_token}/reveal"),
+    ("POST", "/api/demo/{session_token}/timer"),
+    ("POST", "/api/demo/{session_token}/score"),
+    ("POST", "/api/demo/{session_token}/end"),
+    ("POST", "/api/demo/{session_token}/restart"),
     # Drafts Authoring API
     ("POST", "/api/drafts"),
     ("GET", "/api/drafts"),

@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from database import get_db
 from models import Quiz, QuizVersion, Round, Question, RoundQuestion, AcceptedAnswer, SoloAttempt, AnswerRecord, User
 from services.gameplay import normalize_uzbek_latin, verify_zanjir_chain, is_true_false_match, is_conservative_typo_match
-from api.auth import get_current_user_optional, get_current_user_required, is_secure_cookie, get_authoritative_anon_id
+from api.auth import get_current_user_optional, get_current_user_required, is_secure_cookie, get_authoritative_anon_id, get_owner_emails
 
 router = APIRouter(prefix="/api/play", tags=["play"])
 
@@ -118,11 +118,15 @@ def enforce_attempt_ownership(attempt: SoloAttempt, current_user: Optional[User]
                 headers={"WWW-Authenticate": "Bearer"},
             )
         if current_user.id != attempt.user_id:
-            is_preview = str(attempt.timer_mode).startswith("preview") or bool((attempt.attempt_metadata or {}).get("is_staging"))
-            is_admin_or_owner = current_user.email in (
-                os.getenv("OWNER_EMAIL", "owner@zakowhat.uz"),
-                *(e.strip() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip())
-            )
+            meta = attempt.attempt_metadata or {}
+            is_preview = str(attempt.timer_mode).startswith("preview") or bool(meta.get("is_staging"))
+            # Owner demonstrations belong to the owner who started them: nobody else, staff included.
+            if meta.get("is_demo"):
+                is_preview = False
+            staff_emails = set(get_owner_emails()) | {
+                e.strip().lower() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()
+            }
+            is_admin_or_owner = (current_user.email or "").lower() in staff_emails
             if not (is_preview and is_admin_or_owner):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -408,6 +412,15 @@ NO_TIMER_LOCKED_DETAIL = (
 )
 
 
+def demo_correct_adjustment(attempt: SoloAttempt) -> int:
+    """Owner demonstrations (api/demo.py) may carry a manual score adjustment; Classic counts correct
+    answers, so the adjustment is added to that count. Always 0 for every other attempt."""
+    meta = attempt.attempt_metadata or {}
+    if not meta.get("is_demo") or (attempt.quiz_version and attempt.quiz_version.game_mode == "svoyak"):
+        return 0
+    return int(meta.get("demo_score_adjustment", 0))
+
+
 def is_preview_attempt(attempt: SoloAttempt) -> bool:
     return str(attempt.timer_mode or "").startswith("preview") or bool((attempt.attempt_metadata or {}).get("is_staging"))
 
@@ -580,8 +593,15 @@ def format_question_response(
             time_limit = int(round_cfg_limit)
 
     remaining_seconds = time_limit
+    timer_paused = False
     if is_timed and time_limit > 0 and attempt and attempt.question_opened_at:
         now = datetime.now(timezone.utc)
+        paused_at = (attempt.attempt_metadata or {}).get("demo_paused_at")
+        if paused_at:
+            timer_paused = True
+            now = datetime.fromisoformat(paused_at)
+            if now.tzinfo is None:
+                now = now.replace(tzinfo=timezone.utc)
         opened_at = attempt.question_opened_at
         if opened_at.tzinfo is None:
             opened_at = opened_at.replace(tzinfo=timezone.utc)
@@ -618,6 +638,7 @@ def format_question_response(
             "points": q_data.get("points", 1),
             "time_limit_seconds": time_limit,
             "remaining_time_seconds": remaining_seconds,
+            "timer_paused": timer_paused,
         },
         "round_question_index": question_index,
         "round_total_questions": total_in_round,
@@ -692,6 +713,8 @@ def start_solo_attempt(
                 # round reveal must resume that attempt, never fall through to "new attempt" (which would
                 # abandon the ranked attempt).
                 SoloAttempt.status.in_(ACTIVE_ATTEMPT_STATUSES),
+                # Owner demonstrations (preview class) are separate sessions and never resumed here.
+                SoloAttempt.timer_mode.notin_(("preview", "preview_no_timer")),
             )
             .order_by(SoloAttempt.id.desc())
             .first()
@@ -2106,7 +2129,7 @@ def submit_answer(
             attempt.question_opened_at = None
             attempt.status = "completed"
             attempt.completed_at = datetime.now(timezone.utc)
-            attempt.total_correct = sum(1 for r in all_recs if r.is_correct)
+            attempt.total_correct = max(0, sum(1 for r in all_recs if r.is_correct) + demo_correct_adjustment(attempt))
             db.commit()
             board_data = build_svoyak_board(attempt, rounds, db)
             return {
@@ -2519,11 +2542,11 @@ def continue_to_next_round(
         attempt.completed_at = datetime.now(timezone.utc)
         attempt.question_opened_at = None
         # Authoritative server-side calculation of total_correct
-        attempt.total_correct = (
+        attempt.total_correct = max(0, (
             db.query(AnswerRecord)
             .filter(AnswerRecord.attempt_id == attempt.id, AnswerRecord.is_correct == True)
             .count()
-        )
+        ) + demo_correct_adjustment(attempt))
         db.commit()
         mins = attempt.active_time_seconds // 60
         secs = attempt.active_time_seconds % 60
@@ -2593,11 +2616,11 @@ def get_final_results(
         attempt.status = "completed"
         attempt.completed_at = datetime.now(timezone.utc)
         attempt.question_opened_at = None
-        attempt.total_correct = (
+        attempt.total_correct = max(0, (
             db.query(AnswerRecord)
             .filter(AnswerRecord.attempt_id == attempt.id, AnswerRecord.is_correct == True)
             .count()
-        )
+        ) + demo_correct_adjustment(attempt))
         db.commit()
 
     if attempt.status != "completed":

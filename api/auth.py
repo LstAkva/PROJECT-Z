@@ -539,6 +539,8 @@ def get_current_user_profile(
             "cookie_consent": current_user.cookie_consent or "necessary",
             "auth_provider": current_user.auth_provider,
             "created_at": current_user.created_at.isoformat(),
+            # UI hint only (shows the owner tools); every owner endpoint checks verify_owner_access itself.
+            "is_owner": (current_user.email or "").lower() in get_owner_emails(),
         },
     }
 

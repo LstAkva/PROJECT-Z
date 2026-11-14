@@ -395,6 +395,9 @@
                     <span class="game-foot-hint">Javobni kiritib, Enter tugmasini bosing</span>
                 </footer>
             </div>
+
+            <!-- Owner Controls: only for the owner's own demo sessions (every action is checked on the server) -->
+            <aside id="owner-controls" class="owner-controls hidden" aria-label="Egasi boshqaruvi"></aside>
         </section>
 
         <!-- ================================================================= -->
@@ -1182,6 +1185,9 @@
             <footer class="pack-detail-footer">
                 <button type="button" onclick="closeQuizDetailModal()" class="btn btn-secondary pack-detail-back">
                     Orqaga
+                </button>
+                <button type="button" id="detail-btn-demo" class="btn btn-secondary pack-detail-demo hidden" title="Faqat tizim egasi uchun: reytingga ta’sir qilmaydi">
+                    Namoyish rejimi
                 </button>
                 <button type="button" id="detail-btn-play-now" class="btn btn-primary pack-detail-play">
                     <span>O‘yinni boshlash</span>
@@ -2736,6 +2742,16 @@
                     };
                 }
 
+                const btnDemo = document.getElementById('detail-btn-demo');
+                if (btnDemo) {
+                    const ownerView = Boolean(state.currentUser && state.currentUser.is_owner) && !isStagingMode;
+                    btnDemo.classList.toggle('hidden', !ownerView);
+                    btnDemo.onclick = ownerView ? () => {
+                        closeQuizDetailModal();
+                        executeStartGame(data.quiz_id, false, 'with_timer', 'free_choice', true);
+                    } : null;
+                }
+
                 const btnPlay = document.getElementById('detail-btn-play-now');
                 if (btnPlay) {
                     const isResumable = hasActiveSessionForQuiz(data.quiz_id);
@@ -2915,12 +2931,13 @@
             openZakovatSettingsModal(quizId, true);
         }
 
-        async function executeStartGame(quizId, isStaging = false, timerMode = 'with_timer', svoyakMode = 'free_choice') {
+        async function executeStartGame(quizId, isStaging = false, timerMode = 'with_timer', svoyakMode = 'free_choice', isDemo = false) {
             state.currentQuizId = quizId;
             state.timerMode = timerMode;
             state.svoyakMode = svoyakMode;
             try {
-                const url = isStaging ? `${API_BASE}/play/staging/start/${quizId}` : `${API_BASE}/play/start/${quizId}`;
+                const url = isDemo ? `${API_BASE}/demo/start/${quizId}`
+                    : (isStaging ? `${API_BASE}/play/staging/start/${quizId}` : `${API_BASE}/play/start/${quizId}`);
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2967,6 +2984,7 @@
                 sessionStorage.setItem('zakowhat_quiz_id', String(quizId));
                 state.totalScore = 0;
                 window.history.pushState({}, '', `/play/${quizId}`);
+                if (typeof syncOwnerControls === 'function') syncOwnerControls(data.session_token);
                 if (data.restore_required) {
                     // Resumed a paused stage (round reveal / break / reveal pause): restore it from the
                     // server's state instead of rendering a question (same attempt, nothing withheld leaks)
@@ -3152,6 +3170,14 @@
             state.currentQuestionTimed = Number(question.time_limit_seconds) > 0;
             renderRankedBadge();
             startTimer(timeLimit);
+            if (question.timer_paused) {
+                clearInterval(state.timerInterval);
+                const clockEl = document.getElementById('gameplay-clock');
+                if (clockEl) clockEl.classList.add('is-paused');
+            } else {
+                const clockEl = document.getElementById('gameplay-clock');
+                if (clockEl) clockEl.classList.remove('is-paused');
+            }
         }
 
         // Ranked vs practice status (from the server's start/restart/state responses)
@@ -4095,6 +4121,7 @@
 
                 const data = await res.json();
                 state.sessionToken = savedToken;
+                if (typeof syncOwnerControls === 'function') syncOwnerControls(savedToken);
                 // Server state is authoritative for timer mode and ranked status on restore
                 state.timerMode = data.timer_mode || sessionStorage.getItem('zakowhat_timer_mode') || 'with_timer';
                 if (typeof data.ranked === 'boolean') {
@@ -5019,6 +5046,176 @@
                 }
             }
         });
+    </script>
+
+    <script>
+    // =====================================================================
+    // OWNER CONTROLS (demo sessions only). The server decides everything: this panel only calls the
+    // owner endpoints (/api/demo/...) and then re-reads the game through the normal restore path.
+    // =====================================================================
+    (function () {
+        const panel = document.getElementById('owner-controls');
+        let token = null;
+        let info = null;
+        let busy = false;
+
+        function esc(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        function hide() { token = null; info = null; panel.classList.add('hidden'); panel.innerHTML = ''; }
+
+        async function call(path, body) {
+            const res = await fetch(`/api/demo/${encodeURIComponent(token)}${path}`, {
+                method: body === undefined ? 'GET' : 'POST',
+                headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+                body: body === undefined ? undefined : JSON.stringify(body),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(apiDetail(data) || 'Amal bajarilmadi');
+            return data;
+        }
+
+        async function act(path, body, confirmText) {
+            if (busy || !token) return;
+            if (confirmText && !(await zwConfirm(confirmText, { title: 'Egasi boshqaruvi', confirmText: 'Ha', cancelText: 'Bekor qilish' }))) return;
+            busy = true;
+            panel.setAttribute('aria-busy', 'true');
+            try {
+                info = await call(path, body || {});
+                await restoreActiveSession();          // the game screen re-reads the server state
+                // the in-game score chip normally changes only on an answer: show the server's figure now
+                const chip = document.getElementById('gameplay-score-value');
+                if (chip && info && info.score) {
+                    state.totalScore = info.score.total_score;
+                    chip.innerText = info.score.total_score;
+                }
+                render();
+            } catch (err) {
+                await zwAlert('Xatolik: ' + describeError(err));
+            } finally {
+                busy = false;
+                panel.removeAttribute('aria-busy');
+            }
+        }
+
+        async function reveal() {
+            if (busy || !token) return;
+            try {
+                const r = await call('/reveal', {});
+                const box = panel.querySelector('[data-oc-reveal]');
+                if (!box) return;
+                const accepted = (r.accepted_answers || []).filter(a => a && a !== r.correct_answer);
+                box.innerHTML = `<p class="owner-controls-answer"><span>Javob</span> ${esc(r.correct_answer || '—')}</p>`
+                    + (accepted.length ? `<p class="owner-controls-note">Qabul qilinadi: ${accepted.map(esc).join(', ')}</p>` : '')
+                    + (r.explanation ? `<p class="owner-controls-note">${esc(r.explanation)}</p>` : '');
+                box.classList.remove('hidden');
+            } catch (err) { await zwAlert('Xatolik: ' + describeError(err)); }
+        }
+
+        function render() {
+            if (!info || info.status === 'completed') { panel.classList.add('hidden'); return; }
+            const svoyak = info.game_mode === 'svoyak';
+            const t = info.timer, sc = info.score;
+            const unit = svoyak ? 10 : 1;
+            const options = info.outline.map(r => `<optgroup label="${esc(r.title)}">` + r.questions.map(q =>
+                `<option value="${r.round_index}:${q.question_index}" ${info.position.round_index === r.round_index && info.position.question_index === q.question_index ? 'selected' : ''}>`
+                + `${esc(svoyak ? r.title + ' · ' + q.label : r.title + ' · ' + q.label + '-savol')}${q.answered ? ' ✓' : ''}</option>`).join('') + '</optgroup>').join('');
+            const timerOn = t.enabled && info.question_open;
+            panel.innerHTML = `
+              <header class="owner-controls-head">
+                <span class="owner-controls-badge">Namoyish rejimi</span>
+                <span class="owner-controls-meta">Reyting, statistika va Kun savoliga ta’sir qilmaydi</span>
+                ${sc.modified ? '<span class="owner-controls-flag">Ball qo‘lda o‘zgartirilgan</span>' : ''}
+              </header>
+              <div class="owner-controls-grid">
+                <section class="owner-controls-group" aria-label="Savollar">
+                  <h3>Savollar</h3>
+                  <div class="owner-controls-row">
+                    ${svoyak ? '' : '<button type="button" data-oc="previous">← Oldingi</button>'}
+                    <button type="button" data-oc="skip">${svoyak ? 'Doskaga qaytish' : 'Keyingi →'}</button>
+                    ${info.question_open || info.awaiting_continue ? '<button type="button" data-oc="replay">Savolni qayta</button>' : ''}
+                  </div>
+                  <div class="owner-controls-row">
+                    <label class="owner-controls-jump"><span class="zw-visually-hidden">Savolga o‘tish</span>
+                      <select data-oc-jump>${options}</select></label>
+                    <button type="button" data-oc="jump">O‘tish</button>
+                  </div>
+                </section>
+                <section class="owner-controls-group" aria-label="Javob">
+                  <h3>Javob</h3>
+                  <div class="owner-controls-row">
+                    <button type="button" data-oc="reveal" ${info.question_open || info.awaiting_continue ? '' : 'disabled'}>Javob va izohni ko‘rsatish</button>
+                  </div>
+                  <div class="owner-controls-reveal hidden" data-oc-reveal></div>
+                </section>
+                <section class="owner-controls-group" aria-label="Taymer">
+                  <h3>Taymer ${timerOn && t.remaining_seconds !== null ? `<span class="owner-controls-figure">${t.paused ? 'pauza · ' : ''}${t.remaining_seconds}s</span>` : ''}</h3>
+                  <div class="owner-controls-row">
+                    <button type="button" data-oc="${t.paused ? 'resume' : 'pause'}" ${timerOn ? '' : 'disabled'}>${t.paused ? 'Davom ettirish' : 'Pauza'}</button>
+                    <button type="button" data-oc="minus" ${timerOn ? '' : 'disabled'}>−10s</button>
+                    <button type="button" data-oc="plus" ${timerOn ? '' : 'disabled'}>+10s</button>
+                    <button type="button" data-oc="reset" ${timerOn ? '' : 'disabled'}>Qaytadan</button>
+                    <button type="button" data-oc="expire" ${timerOn ? '' : 'disabled'}>Vaqtni tugatish</button>
+                  </div>
+                </section>
+                <section class="owner-controls-group" aria-label="Ball">
+                  <h3>Ball <span class="owner-controls-figure">${svoyak ? sc.total_score : sc.total_correct}${sc.manual_adjustment ? ` (qo‘lda ${sc.manual_adjustment > 0 ? '+' : ''}${sc.manual_adjustment})` : ''}</span></h3>
+                  <div class="owner-controls-row">
+                    <button type="button" data-oc="score-minus">−${unit}</button>
+                    <button type="button" data-oc="score-plus">+${unit}</button>
+                    <button type="button" data-oc="score-reset">Nolga</button>
+                  </div>
+                </section>
+                <section class="owner-controls-group" aria-label="Sessiya">
+                  <h3>Sessiya</h3>
+                  <div class="owner-controls-row">
+                    <button type="button" data-oc="restart">Boshidan</button>
+                    <button type="button" data-oc="end" class="is-danger">Yakunlash</button>
+                  </div>
+                </section>
+              </div>`;
+            panel.classList.remove('hidden');
+        }
+
+        panel.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-oc]');
+            if (!btn || btn.disabled) return;
+            const svoyak = info && info.game_mode === 'svoyak';
+            const unit = svoyak ? 10 : 1;
+            const pos = info ? info.position : { round_index: 0, question_index: 0 };
+            switch (btn.dataset.oc) {
+                case 'previous': return act('/previous');
+                case 'skip': return act('/skip');
+                case 'replay': return act('/jump', { round_index: pos.round_index, question_index: pos.question_index });
+                case 'jump': {
+                    const [r, q] = (panel.querySelector('[data-oc-jump]').value || '0:0').split(':').map(Number);
+                    return act('/jump', { round_index: r, question_index: q });
+                }
+                case 'reveal': return reveal();
+                case 'pause': return act('/timer', { action: 'pause' });
+                case 'resume': return act('/timer', { action: 'resume' });
+                case 'minus': return act('/timer', { action: 'add', seconds: -10 });
+                case 'plus': return act('/timer', { action: 'add', seconds: 10 });
+                case 'reset': return act('/timer', { action: 'reset' });
+                case 'expire': return act('/timer', { action: 'expire' });
+                case 'score-minus': return act('/score', { action: 'add', delta: -unit });
+                case 'score-plus': return act('/score', { action: 'add', delta: unit });
+                case 'score-reset': return act('/score', { action: 'reset' }, 'Namoyish balli nolga tushirilsinmi?');
+                case 'restart': return act('/restart', {}, 'Namoyish boshidan boshlansinmi? Barcha javoblar va ball o‘chiriladi.');
+                case 'end': return act('/end', {}, 'Namoyish hozir yakunlansinmi?');
+            }
+        });
+
+        // Called by the controller whenever a session starts or is restored.
+        window.syncOwnerControls = async function (sessionToken) {
+            if (!sessionToken || !(state.currentUser && state.currentUser.is_owner)) { hide(); return; }
+            if (sessionToken === token && info) return;          // already attached; actions refresh it
+            try {
+                token = sessionToken;
+                info = await call('');
+                render();
+            } catch (e) { hide(); }                               // not a demo, or not the owner's: no panel
+        };
+    })();
     </script>
     <script src="{{ static_url('js/zakowhat-navbar.js') }}"></script>
     <script src="{{ static_url('js/zakowhat-motion.js') }}" defer></script>
