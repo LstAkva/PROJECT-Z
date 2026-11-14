@@ -74,10 +74,20 @@
   --radius-xl: 16px;
   --radius-pill: 9999px;
 
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-base: 250ms cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* Motion tokens (section 17). One vocabulary for every duration and curve on the site. */
+  --motion-fast: 140ms;            /* feedback: hover, press, colour changes */
+  --motion-base: 220ms;            /* interface: panels, rows, screen changes */
+  --motion-slow: 380ms;            /* larger entrances: hero, section reveals */
+  --motion-stagger: 60ms;          /* gap between items of one group */
+  --motion-rise: 6px;              /* entrance distance — small on purpose */
+  --motion-rise-lg: 14px;          /* scroll reveals */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* entrances: quick start, soft landing */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);  /* state changes */
+
+  /* Transitions (kept for existing rules; now built from the motion tokens) */
+  --transition-fast: var(--motion-fast) var(--ease-out);
+  --transition-base: var(--motion-base) var(--ease-out);
+  --transition-slow: var(--motion-slow) var(--ease-out);
 
   /* Light Theme (Default Root Variables overridden in [data-theme="light"]) */
   /* DARK THEME (PRIMARY) */
@@ -111,6 +121,7 @@
   --shadow-card: 0 12px 32px -4px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-table: 0 24px 64px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(197, 160, 89, 0.2);
   --shadow-glow-subtle: 0 0 35px -5px rgba(197, 160, 89, 0.12);
+  --shadow-lift: 0 10px 24px -14px rgba(0, 0, 0, 0.7);
 
   --focus-ring: 0 0 0 3px rgba(197, 160, 89, 0.5);
 
@@ -168,6 +179,7 @@
   --shadow-card: 0 8px 24px -2px rgba(80, 50, 20, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
   --shadow-table: 0 20px 50px -10px rgba(40, 10, 15, 0.25), 0 0 0 1px rgba(110, 85, 40, 0.3);
   --shadow-glow-subtle: 0 0 30px -5px rgba(110, 85, 40, 0.08);
+  --shadow-lift: 0 10px 22px -14px rgba(48, 37, 43, 0.35);
 
   --focus-ring: 0 0 0 3px rgba(110, 85, 40, 0.4);
 
@@ -324,7 +336,9 @@ body {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
 }
@@ -419,7 +433,8 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
   user-select: none;
 }
 
@@ -1767,7 +1782,7 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--shadow-card);
   padding: 1.5rem;
   color: var(--text-main);
-  animation: fadeInModal 200ms ease-out;
+  animation: fadeInModal var(--motion-base) var(--ease-out);
   text-align: left;
 }
 
@@ -2533,7 +2548,8 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-sm);
   padding: var(--space-5) var(--space-5) var(--space-4);
   position: relative;
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition: border-color var(--transition-fast), background var(--transition-fast),
+    transform var(--transition-base), box-shadow var(--transition-base);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -2719,7 +2735,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-card);
   color: var(--text-main);
-  animation: fadeInModal 200ms ease-out;
+  animation: fadeInModal var(--motion-base) var(--ease-out);
 }
 
 .pack-detail[data-mode="classic_zakovat"] {
@@ -3856,7 +3872,7 @@ h1, h2, h3, h4, h5, h6 {
 .game-progress-fill {
   height: 100%;
   background: var(--burgundy);
-  transition: width 300ms ease;
+  transition: width var(--motion-slow) var(--ease-out);
 }
 
 .game-table[data-mode="svoyak"] .game-progress-fill {
@@ -4238,7 +4254,8 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1;
   color: var(--text-brass);
   font-variant-numeric: lining-nums tabular-nums;
-  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 button.game-cell {
@@ -5497,5 +5514,148 @@ button.game-cell:focus-visible {
   .game-bar-btn {
     min-width: 44px;
     min-height: 44px;
+  }
+}
+
+/* ==========================================================================
+   17. MOTION — quiet, purposeful movement
+   Tokens live in :root (--motion-*, --ease-*). Entrances use opacity and small transforms only,
+   with fill-mode `backwards` so they never hold a transform after they finish (hover lifts keep
+   working and fixed overlays are unaffected). Nothing here is required to see or use the page:
+   scroll reveals only hide content under html.zw-motion, set by zakowhat-motion.js. Reduced motion
+   is handled globally (section 2) plus the explicit opt-outs at the end of this section.
+   ========================================================================== */
+
+@keyframes zw-rise {
+  from { opacity: 0; transform: translateY(var(--motion-rise)); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes zw-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes zw-tick {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+/* ---- App screens (index.html): each screen fades in when it is shown ------------------------- */
+.animate-fade-in {
+  animation: zw-fade var(--motion-base) var(--ease-out) backwards;
+}
+
+/* ---- Homepage hero: eyebrow, headline, lede, actions arrive in one short sequence ------------ */
+.hero-content-wrapper > * {
+  animation: zw-rise var(--motion-slow) var(--ease-out) backwards;
+}
+.hero-content-wrapper > :nth-child(2) { animation-delay: calc(var(--motion-stagger) * 1); }
+.hero-content-wrapper > :nth-child(3) { animation-delay: calc(var(--motion-stagger) * 2); }
+.hero-content-wrapper > :nth-child(n+4) { animation-delay: calc(var(--motion-stagger) * 3); }
+
+/* ---- Scroll reveals (homepage sections): once, small, never blocking ------------------------- */
+.zw-motion [data-reveal] {
+  transition: opacity var(--motion-slow) var(--ease-out), transform var(--motion-slow) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.zw-motion [data-reveal]:not(.is-revealed) {
+  opacity: 0;
+  transform: translateY(var(--motion-rise-lg));
+}
+
+/* ---- Buttons: a press you can feel -------------------------------------------------------------- */
+.btn:active:not(:disabled),
+.btn-submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* ---- Arena: cards settle in, lift a little under the pointer ------------------------------------ */
+.arena-card-grid > .arena-pack-card {
+  animation: zw-rise var(--motion-base) var(--ease-out) backwards;
+}
+.arena-card-grid > .arena-pack-card:nth-child(2) { animation-delay: calc(var(--motion-stagger) * 0.5); }
+.arena-card-grid > .arena-pack-card:nth-child(3) { animation-delay: calc(var(--motion-stagger) * 1); }
+.arena-card-grid > .arena-pack-card:nth-child(4) { animation-delay: calc(var(--motion-stagger) * 1.5); }
+.arena-card-grid > .arena-pack-card:nth-child(n+5) { animation-delay: calc(var(--motion-stagger) * 2); }
+
+@media (hover: hover) {
+  .arena-pack-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+  }
+}
+
+.pack-progress {
+  animation: zw-fade var(--motion-base) var(--ease-out) backwards;
+  transition: color var(--transition-base), border-color var(--transition-base), background-color var(--transition-base);
+}
+
+/* ---- Leaderboard rows: a short cascade on open (first rows only) ------------------------------- */
+.leaderboard-table tbody tr {
+  animation: zw-fade var(--motion-base) var(--ease-out) backwards;
+}
+.leaderboard-table tbody tr:nth-child(2) { animation-delay: calc(var(--motion-stagger) * 0.5); }
+.leaderboard-table tbody tr:nth-child(3) { animation-delay: calc(var(--motion-stagger) * 1); }
+.leaderboard-table tbody tr:nth-child(4) { animation-delay: calc(var(--motion-stagger) * 1.5); }
+.leaderboard-table tbody tr:nth-child(n+5) { animation-delay: calc(var(--motion-stagger) * 2); }
+
+/* ---- Gameplay: clarity first. Nothing here waits, blocks input or touches the timer ------------- */
+.game-question.zw-enter {
+  animation: zw-rise var(--motion-base) var(--ease-out) backwards;
+}
+
+.game-score-chip strong,
+.game-board-score {
+  display: inline-block;
+}
+.zw-tick {
+  animation: zw-tick var(--motion-slow) var(--ease-out);
+}
+
+.game-table .feedback-banner:not(.hidden),
+.game-reveal:not(.hidden) {
+  animation: zw-rise var(--motion-base) var(--ease-out) backwards;
+}
+
+.game-board:not(.hidden) {
+  animation: zw-fade var(--motion-base) var(--ease-out) backwards;
+}
+
+button.game-cell:active {
+  transform: scale(0.97);
+}
+
+.game-clock {
+  transition: color var(--transition-base), border-color var(--transition-base), background-color var(--transition-base);
+}
+
+/* ---- Navigation: the mobile drawer drops in --------------------------------------------------- */
+#mobileNavDrawer:not(.hidden) {
+  animation: zw-rise var(--motion-base) var(--ease-out) backwards;
+}
+
+/* ---- Reduced motion: no movement at all, only instant state changes ---------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .arena-pack-card:hover,
+  .btn:active:not(:disabled),
+  .btn-submit:active:not(:disabled),
+  .btn-submit:hover:not(:disabled),
+  button.game-cell:active {
+    transform: none;
+  }
+  .animate-fade-in,
+  .hero-content-wrapper > *,
+  .arena-card-grid > .arena-pack-card,
+  .pack-progress,
+  .leaderboard-table tbody tr,
+  .game-question.zw-enter,
+  .zw-tick,
+  .game-table .feedback-banner:not(.hidden),
+  .game-reveal:not(.hidden),
+  .game-board:not(.hidden),
+  #mobileNavDrawer:not(.hidden) {
+    animation: none;
   }
 }

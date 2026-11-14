@@ -33,6 +33,29 @@
   <link rel="stylesheet" href="{{ static_url('css/zakowhat-design-system.css') }}">
   
   <style>
+    /* Motion (tokens and keyframes from the design system, section 17) */
+    .daily-enter .daily-card {
+      animation: zw-rise var(--motion-slow) var(--ease-out) backwards;
+    }
+    .daily-result-banner,
+    .daily-after {
+      animation: zw-rise var(--motion-base) var(--ease-out) backwards;
+    }
+    .daily-revealed-section {
+      animation: zw-rise var(--motion-slow) var(--ease-out) backwards;
+      animation-delay: var(--motion-stagger);
+    }
+    .daily-streak-count {
+      display: inline-block;
+    }
+    .daily-share-status {
+      animation: zw-fade var(--motion-base) var(--ease-out) backwards;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .daily-enter .daily-card, .daily-result-banner, .daily-after,
+      .daily-revealed-section, .daily-share-status { animation: none; }
+    }
+
     .daily-container {
       max-width: 820px;
       margin: 0 auto;
@@ -103,7 +126,7 @@
       font-size: 1.05rem;
       font-family: 'Plus Jakarta Sans', sans-serif;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
     .daily-input:focus {
       border-color: var(--accent-brass);
@@ -167,7 +190,7 @@
       border: 1.5px solid var(--border-subtle);
       background: transparent;
       display: inline-block;
-      transition: all 0.25s ease;
+      transition: background-color var(--transition-base), border-color var(--transition-base);
     }
     .daily-pip.pip-used {
       background: var(--state-incorrect);
@@ -455,8 +478,13 @@
     // Theme handled globally by zakowhat-navbar.js
 
     // Daily Question Fetch & Render (3 Tries Supported)
+    let dailyFirstPaint = true;           // entrance animation on the first render only
+    let dailyLastStreak = null;           // streak count shown last, to mark a real increase
+
     async function loadDailyQuestion(focusInput = false) {
       const container = document.getElementById('dailyContentWrapper');
+      container.classList.toggle('daily-enter', dailyFirstPaint);
+      dailyFirstPaint = false;
       const dateDisplay = document.getElementById('dailyDateDisplay');
 
       try {
@@ -756,6 +784,12 @@
         <div class="daily-streak-main">${FLAME_SVG}${mainText}</div>
         <div class="daily-streak-meta">${today}${meta}</div>
       `;
+      // A short emphasis only when the count really went up during this visit (never on first paint).
+      if (dailyLastStreak !== null && current > dailyLastStreak) {
+        const countEl = el.querySelector('.daily-streak-count');
+        if (countEl) countEl.classList.add('zw-tick');
+      }
+      dailyLastStreak = current;
     }
 
     // "Natijani ulashish": copy the server-built text (date, outcome, streak; never the question or answer).

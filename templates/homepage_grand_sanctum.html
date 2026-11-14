@@ -134,7 +134,7 @@
 
     <!-- 3. Cinematic Dark Table Showcase -->
     <section id="showcase" class="showcase-section" aria-label="O‘yin stoli ko‘rgazmasi">
-      <div class="table-outer-rim">
+      <div class="table-outer-rim" data-reveal>
         <div class="table-felt-surface">
           <!-- Background Girih Pattern -->
           <div class="table-girih-bg" aria-hidden="true"></div>
@@ -223,12 +223,12 @@
     <!-- 4. Game Types: same codex layout, one column per game -->
     <section id="codex" class="codex-section" aria-label="O‘yin turlari">
       <div class="eyebrow-label" style="display:flex; justify-content:center;">O‘yin turlari</div>
-      <h2 class="section-title">Ikki o‘yin — bitta maydon</h2>
+      <h2 class="section-title" data-reveal>Ikki o‘yin — bitta maydon</h2>
       <p class="section-subtitle">
         O‘zingizga mos formatni tanlang.
       </p>
 
-      <div class="codex-triptych">
+      <div class="codex-triptych" data-reveal style="--reveal-delay: 60ms;">
         <!-- Game 1: Zakovat -->
         <div class="codex-column featured" id="game-card-zakovat">
           <div class="pillar-marker">
@@ -270,7 +270,7 @@
 
     <!-- 6. Call to action -->
     <section id="arena" class="hero-section" style="padding-top: var(--space-8); padding-bottom: var(--space-16); overflow: visible;">
-      <h2 class="section-title">Boshlashga tayyormisiz?</h2>
+      <h2 class="section-title" data-reveal>Boshlashga tayyormisiz?</h2>
       <p class="hero-subhead">
         To‘plamlarni o‘ynash uchun bepul ro‘yxatdan o‘ting. Natijalaringiz profilingizda saqlanadi.
       </p>
@@ -436,5 +436,6 @@
     })();
   </script>
   <script src="{{ static_url('js/zakowhat-navbar.js') }}"></script>
+  <script src="{{ static_url('js/zakowhat-motion.js') }}" defer></script>
 </body>
 </html>

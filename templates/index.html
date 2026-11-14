@@ -250,7 +250,7 @@
                         <span id="gameplay-question-counter" class="game-bar-counter">Savol 1 / 12</span>
                         <span id="gameplay-ranked-badge" class="hidden game-rank-badge"></span>
                         <!-- Svoya Igra: running score stays visible while a question is open -->
-                        <span id="gameplay-score-chip" class="game-score-chip">Ball: <strong id="gameplay-score-value">0</strong></span>
+                        <span id="gameplay-score-chip" class="game-score-chip">Ball: <strong id="gameplay-score-value" data-motion-tick>0</strong></span>
                     </div>
 
                     <!-- Deliberation clock (whole seconds, no tenths jitter) -->
@@ -272,7 +272,7 @@
                             <p class="game-board-hint">Istalgan mavzu va ball katagini tanlab o'ynang</p>
                         </div>
                         <!-- Restart lives in the header bar; progress lives in the header counter. Score stays here. -->
-                        <span id="svoyak-board-score-pill" class="game-board-score">
+                        <span id="svoyak-board-score-pill" class="game-board-score" data-motion-tick>
                             Ball: 0
                         </span>
                     </div>
@@ -295,7 +295,7 @@
                         <span id="gameplay-card-subtag" class="game-subtag">ZAKOVAT 2×12</span>
                     </div>
 
-                    <h2 id="gameplay-question-text" class="game-question">
+                    <h2 id="gameplay-question-text" class="game-question" data-motion-enter>
                         Yuklanmoqda...
                     </h2>
 
@@ -5021,5 +5021,6 @@
         });
     </script>
     <script src="{{ static_url('js/zakowhat-navbar.js') }}"></script>
+    <script src="{{ static_url('js/zakowhat-motion.js') }}" defer></script>
 </body>
 </html>
