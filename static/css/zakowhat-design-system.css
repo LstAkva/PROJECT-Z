@@ -5555,6 +5555,19 @@ button.game-cell:focus-visible {
 .hero-content-wrapper > :nth-child(3) { animation-delay: calc(var(--motion-stagger) * 2); }
 .hero-content-wrapper > :nth-child(n+4) { animation-delay: calc(var(--motion-stagger) * 3); }
 
+/* ---- Homepage hero ornament: one full turn every 100 s, clockwise -----------------------------
+   Only the decorative SVG turns (the text lives in a separate layer). All of its artwork sits inside
+   a circle around the centre of its square box, so turning it never exposes an edge; the canvas
+   still clips and fades it exactly as before. At rest (0°) it is identical to the static design. */
+@keyframes zw-orbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.hero-girih-svg {
+  transform-origin: 50% 50%;
+  animation: zw-orbit 100s linear infinite;
+}
+
 /* ---- Scroll reveals (homepage sections): once, small, never blocking ------------------------- */
 .zw-motion [data-reveal] {
   transition: opacity var(--motion-slow) var(--ease-out), transform var(--motion-slow) var(--ease-out);
@@ -5647,6 +5660,7 @@ button.game-cell:active {
   }
   .animate-fade-in,
   .hero-content-wrapper > *,
+  .hero-girih-svg,
   .arena-card-grid > .arena-pack-card,
   .pack-progress,
   .leaderboard-table tbody tr,
