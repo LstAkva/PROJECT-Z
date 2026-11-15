@@ -30,17 +30,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS (for layout utilities) -->
-    <script>
-        (function() {
-            var origWarn = console.warn;
-            console.warn = function() {
-                if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].indexOf('cdn.tailwindcss.com') !== -1) return;
-                return origWarn.apply(console, arguments);
-            };
-        })();
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- Core ZakoWhat Design System v1.1 -->
@@ -53,31 +42,8 @@
         })();
     </script>
 
-    <script>
-        tailwind.config = {
-            darkMode: ['class', '[data-theme="dark"]'],
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                        display: ['"Cinzel"', 'serif'],
-                        serif: ['"Playfair Display"', 'serif'],
-                        mono: ['"JetBrains Mono"', 'monospace'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#FAF7F2',
-                            100: '#E6D09C',
-                            500: '#C5A059',
-                            700: '#7A1627',
-                            900: '#3B0A12',
-                            950: '#0A080C',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind utilities, generated once from the former runtime config (no Tailwind CDN at runtime) -->
+    <link rel="stylesheet" href="{{ static_url('css/tailwind-app.css') }}">
     <script src="{{ static_url('js/zakowhat-dialog.js') }}"></script>
 </head>
 <body class="min-h-full flex flex-col font-sans selection:bg-amber-600/30 selection:text-white">
