@@ -194,8 +194,11 @@ def health_check():
     }
 
 @app.get("/")
-def read_grand_sanctum_homepage(request: Request):
-    response = templates.TemplateResponse(request=request, name="homepage_grand_sanctum.html")
+def read_grand_sanctum_homepage(request: Request, db: Session = Depends(get_db)):
+    # Signed-out visitors get the sample question's answer row blurred with a sign-up invitation.
+    viewer_signed_in = get_current_user_optional(request, db) is not None
+    response = templates.TemplateResponse(request=request, name="homepage_grand_sanctum.html",
+                                          context={"viewer_signed_in": viewer_signed_in})
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return response
 

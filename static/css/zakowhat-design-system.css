@@ -603,13 +603,19 @@ h1, h2, h3, h4, h5, h6 {
   border-bottom-color: rgba(23, 20, 23, 0.12);
 }
 
+/* Three equal-weight columns, so the nav is centred on the page whatever the widths of the logo and
+   the account buttons (space-between pushed it ~115px off centre). */
 .masthead-inner {
   max-width: 1240px;
   margin: 0 auto;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
+  column-gap: var(--space-4);
 }
+.masthead-inner > .brand-link { grid-column: 1; justify-self: start; }
+.masthead-inner > .nav-desktop { grid-column: 2; justify-self: center; }
+.masthead-inner > .masthead-right-controls { grid-column: 3; justify-self: end; }
 
 .brand-link {
   display: flex;
@@ -734,6 +740,30 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(110, 85, 40, 0.2);
   color: #5C4A28;
 }
+
+/* Mobile menu button: the same round control as the theme toggle (its look no longer depends on
+   Tailwind utilities, which the homepage does not load). Shown under 768px by the masthead rules. */
+.mobile-menu-btn {
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast), background-color var(--transition-fast);
+}
+[data-theme="light"] .mobile-menu-btn {
+  background: rgba(110, 85, 40, 0.06);
+  border-color: rgba(110, 85, 40, 0.2);
+  color: #5C4A28;
+}
+.mobile-menu-btn:hover { border-color: var(--accent-brass); color: var(--accent-brass); }
+.mobile-menu-btn:focus-visible { outline: 2px solid var(--accent-brass); outline-offset: 2px; }
+.mobile-menu-btn svg { width: 18px; height: 18px; }
 
 .theme-toggle-btn:hover {
   border-color: var(--accent-brass);
@@ -1614,10 +1644,12 @@ h1, h2, h3, h4, h5, h6 {
    11. FOOTER & PRIVACY CONSENT SYSTEM
    -------------------------------------------------------------------------- */
 .site-footer {
+  position: relative;
+  overflow: hidden;
   border-top: 1px solid var(--border-subtle);
   background-color: var(--bg-surface);
   color: var(--text-dim);
-  padding: var(--space-10) var(--space-6) var(--space-8);
+  padding: var(--space-12) var(--space-6) var(--space-6);
   margin-top: var(--space-16);
   width: 100%;
   transition: background-color var(--transition-base), border-color var(--transition-base);
@@ -1629,83 +1661,140 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-dim);
 }
 
+
+/* Two zones (brand + link columns) over a faint girih, then one bottom line. Tokens only. */
+.footer-art {
+  position: absolute;
+  right: -220px;
+  bottom: -420px;
+  width: 820px;
+  height: 820px;
+  pointer-events: none;
+  color: var(--accent-brass);
+  opacity: 0.08;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0%, #000 34%, transparent 66%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 0%, #000 34%, transparent 66%);
+}
+[data-theme="light"] .footer-art {
+  color: var(--burgundy);
+  opacity: 0.09;
+}
+.footer-girih-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .footer-container {
+  position: relative;
+  z-index: 1;
   max-width: 1140px;
   margin: 0 auto;
+}
+
+.footer-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: var(--space-10);
+  align-items: start;
+}
+
+.footer-brand-zone {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  max-width: 440px;
 }
 
 .footer-brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
 }
 
 .footer-brand-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.65rem;
   text-decoration: none;
   color: var(--text-main);
 }
 
-.footer-logo-img {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-}
-
 .footer-brand .brand-mark {
-  width: 25px;
-  height: 20px;
+  width: 30px;
+  height: 24px;
 }
 
 .footer-brand-title {
   font-family: var(--font-serif);
-  font-size: 1.05rem;
+  font-size: 1.35rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--text-main);
 }
 
-.footer-bullet {
-  color: var(--text-dim);
-  font-size: 0.75rem;
-  opacity: 0.5;
-}
-
 .footer-brand-tag {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
   color: var(--text-muted);
 }
 
-.footer-nav {
+
+.footer-social {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
+  gap: 0.6rem 0.75rem;
+}
+.footer-icon {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 1.25rem 1.75rem;
-  font-size: 0.8rem;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border-medium);
+  border-radius: 50%;
+  color: var(--text-brass);
+  text-decoration: none;
+  transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+}
+.footer-icon:hover { background-color: var(--burgundy); border-color: var(--burgundy); color: var(--ivory); }
+.footer-icon:focus-visible { outline: 2px solid var(--link-color); outline-offset: 3px; }
+
+.footer-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  justify-content: end;
+  gap: var(--space-6) var(--space-12);
+}
+.footer-col-title {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--text-main);
+}
+.footer-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
 }
 
 .footer-link {
   color: var(--text-muted);
+  font-size: 0.88rem;
   text-decoration: none;
   transition: color var(--transition-fast);
   cursor: pointer;
 }
-
-.footer-link:hover {
-  color: var(--accent-brass);
-}
-
+.footer-link:hover { color: var(--link-color); }
 .footer-link:focus-visible {
   outline: 2px solid var(--accent-brass);
   outline-offset: 3px;
@@ -1717,42 +1806,51 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 0.4rem;
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font: inherit;
+  font-size: 0.88rem;
   background: transparent;
   border: none;
   padding: 0;
   cursor: pointer;
   transition: color var(--transition-fast);
 }
-
-.footer-cookie-btn:hover {
-  color: var(--accent-brass);
-}
-
+.footer-cookie-btn:hover { color: var(--link-color); }
 .footer-cookie-btn:focus-visible {
   outline: 2px solid var(--accent-brass);
   outline-offset: 3px;
   border-radius: var(--radius-xs);
 }
 
-.footer-copyright {
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-10);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+.footer-copyright,
+.footer-credit {
+  margin: 0;
   font-size: 0.78rem;
   color: var(--text-dim);
-  font-family: var(--font-mono);
-  text-align: right;
 }
 
 @media (max-width: 860px) {
-  .footer-container {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 1.5rem;
-  }
-  .footer-copyright {
-    text-align: center;
-  }
+  .footer-main { grid-template-columns: 1fr; gap: var(--space-8); }
+  .footer-columns { justify-content: start; }
+  .footer-art { right: -320px; bottom: -480px; }
 }
+@media (max-width: 480px) {
+  .site-footer { padding: var(--space-10) var(--space-4) var(--space-5); }
+  .footer-columns { gap: var(--space-6) var(--space-8); }
+  .footer-bottom { flex-direction: column; align-items: flex-start; }
+}
+
+/* During a game: no footer, so nothing competes with the question */
+body:has(#screen-gameplay:not(.hidden)) .site-footer { display: none; }
 
 /* Privacy & Cookie Consent Modal Architecture */
 .consent-modal-overlay {
@@ -5797,3 +5895,33 @@ button.game-cell:active {
 @media (prefers-reduced-motion: reduce) {
   .owner-controls { animation: none; }
 }
+
+/* ==========================================================================
+   19. HOMEPAGE SAMPLE — guest gate
+   Signed-out visitors see the answer row blurred with one invitation to sign up; signed-in players
+   answer the sample as before. A nudge, not a secret: nothing here is a security boundary.
+   ========================================================================== */
+.sample-answer { position: relative; }
+.sample-answer.is-gated .submission-bar {
+  filter: blur(3px);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}
+.sample-gate {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+.sample-gate-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* The sample card header keeps its clock on the right now that the left label is gone. */
+.table-hud .clock-display { margin-left: auto; }

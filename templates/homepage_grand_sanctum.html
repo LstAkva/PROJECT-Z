@@ -53,32 +53,7 @@
       <!-- Architectural Girih Background & Directional Oxblood Lighting -->
       <div class="hero-girih-canvas" aria-hidden="true">
         <div class="hero-girih-lighting"></div>
-        <svg class="hero-girih-svg" viewBox="0 0 1000 1000" fill="none">
-          <circle cx="500" cy="500" r="480" stroke="currentColor" stroke-width="0.8" stroke-dasharray="3 6" opacity="0.3"/>
-          <circle cx="500" cy="500" r="440" stroke="currentColor" stroke-width="1.0" opacity="0.45"/>
-          <circle cx="500" cy="500" r="380" stroke="currentColor" stroke-width="0.75" stroke-dasharray="2 4" opacity="0.35"/>
-          <circle cx="500" cy="500" r="320" stroke="currentColor" stroke-width="1.0" opacity="0.5"/>
-          <circle cx="500" cy="500" r="220" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
-          <circle cx="500" cy="500" r="140" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>
-          <circle cx="500" cy="500" r="60" stroke="currentColor" stroke-width="1.0" opacity="0.65"/>
-          
-          <!-- 16-Axis radial astronomical rays -->
-          <line x1="980.0" y1="500.0" x2="20.0" y2="500.0" stroke="currentColor" stroke-width="0.75" opacity="0.35"/>
-          <line x1="943.5" y1="683.7" x2="56.5" y2="316.3" stroke="currentColor" stroke-width="0.75" stroke-dasharray="4 8" opacity="0.22"/>
-          <line x1="839.4" y1="839.4" x2="160.6" y2="160.6" stroke="currentColor" stroke-width="0.75" opacity="0.35"/>
-          <line x1="683.7" y1="943.5" x2="316.3" y2="56.5" stroke="currentColor" stroke-width="0.75" stroke-dasharray="4 8" opacity="0.22"/>
-          <line x1="500.0" y1="980.0" x2="500.0" y2="20.0" stroke="currentColor" stroke-width="0.75" opacity="0.35"/>
-          <line x1="316.3" y1="943.5" x2="683.7" y2="56.5" stroke="currentColor" stroke-width="0.75" stroke-dasharray="4 8" opacity="0.22"/>
-          <line x1="160.6" y1="839.4" x2="839.4" y2="160.6" stroke="currentColor" stroke-width="0.75" opacity="0.35"/>
-          <line x1="56.5" y1="683.7" x2="943.5" y2="316.3" stroke="currentColor" stroke-width="0.75" stroke-dasharray="4 8" opacity="0.22"/>
-          
-          <!-- Concentric Interlocking Polygons -->
-          <rect x="290.0" y="290.0" width="420" height="420" stroke="currentColor" stroke-width="0.9" fill="none" opacity="0.4"/>
-          <rect x="290.0" y="290.0" width="420" height="420" stroke="currentColor" stroke-width="0.9" fill="none" transform="rotate(45 500 500)" opacity="0.4"/>
-          <rect x="340.0" y="340.0" width="320" height="320" stroke="currentColor" stroke-width="0.9" fill="none" opacity="0.4"/>
-          <rect x="340.0" y="340.0" width="320" height="320" stroke="currentColor" stroke-width="0.9" fill="none" transform="rotate(45 500 500)" opacity="0.4"/>
-          <polygon points="940.0,500.0 670.3,588.6 774.4,774.4 588.6,670.3 500.0,940.0 411.4,670.3 225.6,774.4 329.7,588.6 60.0,500.0 329.7,411.4 225.6,225.6 411.4,329.7 500.0,60.0 588.6,329.7 774.4,225.6 670.3,411.4" stroke="currentColor" stroke-width="1.2" fill="none" opacity="0.55"/>
-        </svg>
+        {% with girih_class="hero-girih-svg" %}{% include "components/girih_art.html" %}{% endwith %}
       </div>
 
       <!-- Foreground Content Wrapper -->
@@ -141,10 +116,6 @@
 
           <!-- Table HUD -->
           <div class="table-hud">
-            <div class="table-hud-meta">
-              <span class="meta-status-dot" aria-hidden="true"></span>
-              <span>Namuna savol</span>
-            </div>
 
             <!-- Real one-shot countdown: starts on first input, runs once, reveals the answer at 00:00 -->
             <div class="clock-display" aria-label="Savol taymeri: 90 soniya">
@@ -171,7 +142,8 @@
               <strong>Diqqat, savol:</strong> Ushbu bayram nimaga bag'ishlangan?
             </p>
 
-            <form class="submission-bar" id="sampleAnswerForm" aria-label="Javob topshirish shakli">
+            <div class="sample-answer{% if not viewer_signed_in %} is-gated{% endif %}">
+            <form class="submission-bar" id="sampleAnswerForm" aria-label="Javob topshirish shakli"{% if not viewer_signed_in %} aria-hidden="true"{% endif %}>
               <!-- No spoiler placeholder! -->
               <input
                 id="sampleAnswerInput"
@@ -179,13 +151,21 @@
                 type="text"
                 placeholder="Javobingizni kiriting..."
                 aria-label="Javobingiz"
-                autocomplete="off"
+                autocomplete="off"{% if not viewer_signed_in %}
+                disabled tabindex="-1"{% endif %}
               >
               <!-- Dedicated submission action with authentic terminology -->
-              <button class="btn-submit" type="submit" id="submitActionBtn">
+              <button class="btn-submit" type="submit" id="submitActionBtn"{% if not viewer_signed_in %} disabled tabindex="-1"{% endif %}>
                 Javobni yuborish
               </button>
             </form>
+            {% if not viewer_signed_in %}
+            <div class="sample-gate">
+              <button type="button" class="btn btn-primary" onclick="openAuthModal('register')">Javobingizni bering</button>
+              <span class="sample-gate-note">Bepul ro‘yxatdan o‘ting va javobingizni tekshiring</span>
+            </div>
+            {% endif %}
+            </div>
 
             <!-- Answer reveal (shown after submitting or when time runs out) -->
             <div id="sampleReveal" hidden style="margin-top: var(--space-4); text-align: left;" aria-live="polite">
@@ -214,7 +194,7 @@
 
           <!-- Format HUD Bottom -->
           <div class="table-format-info">
-            <span>Namuna savol — javobingizni yozing va natijani darhol ko‘ring</span>
+            <span>Javobingizni yozing va natijani darhol ko‘ring</span>
           </div>
         </div>
       </div>

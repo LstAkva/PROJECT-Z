@@ -1,39 +1,69 @@
 <!-- ZakoWhat Unified Global Footer -->
 {% from "components/brand_mark.html" import brand_mark %}
 <footer class="site-footer">
+  <div class="footer-art" aria-hidden="true">
+    {% with girih_class="footer-girih-svg" %}{% include "components/girih_art.html" %}{% endwith %}
+  </div>
   <div class="footer-container">
-    <!-- Brand Info -->
-    <div class="footer-brand">
-      <a href="/" class="footer-brand-link" aria-label="ZakoWhat Bosh Sahifa">
-        {{ brand_mark("footer") }}
-        <span class="footer-brand-title">ZakoWhat</span>
-      </a>
-      <span class="footer-bullet" aria-hidden="true">•</span>
-      <span class="footer-brand-tag">Intelligence meets culture.</span>
+    <div class="footer-main">
+      <!-- Brand zone -->
+      <div class="footer-brand-zone">
+        <div class="footer-brand">
+          <a href="/" class="footer-brand-link" aria-label="ZakoWhat Bosh Sahifa">
+            {{ brand_mark("footer") }}
+            <span class="footer-brand-title">ZakoWhat</span>
+          </a>
+        </div>
+        <p class="footer-brand-tag">Intelligence meets culture.</p>
+
+        <div class="footer-social">
+          <a class="footer-icon" href="https://t.me/zakozat" target="_blank" rel="noopener noreferrer" aria-label="Telegram: @zakozat (yangi oynada)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="M21.5 3.5 2.8 10.7c-.9.4-.9 1.6.1 1.9l4.6 1.4 1.8 5.6c.3.9 1.4 1.1 2 .4l2.6-2.7 4.8 3.5c.8.6 1.9.1 2.1-.9l3-15.1c.2-1.1-.9-1.9-1.9-1.4Z"/>
+              <path d="m7.5 14 9.5-6.5-6.4 7.6"/>
+            </svg>
+          </a>
+          <a class="footer-icon" href="mailto:exfert.contact@gmail.com" aria-label="Elektron pochta: exfert.contact@gmail.com">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <rect x="2.5" y="4.5" width="19" height="15" rx="2"/>
+              <path d="m3 6.5 8.2 6.2c.5.4 1.1.4 1.6 0L21 6.5"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Link columns -->
+      <nav class="footer-columns" aria-label="Quyi navigatsiya">
+        <div class="footer-col">
+          <h2 class="footer-col-title" id="footer-col-games">O‘yinlar</h2>
+          <ul aria-labelledby="footer-col-games">
+            <li><a href="/arena" class="footer-link">Arena</a></li>
+            <li><a href="/arena?mode=classic_zakovat" class="footer-link">Zakovat</a></li>
+            <li><a href="/arena?mode=svoyak" class="footer-link">Svoya Igra</a></li>
+            <li><a href="/daily" class="footer-link">Kun savoli</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-col-title" id="footer-col-legal">Huquqiy</h2>
+          <ul aria-labelledby="footer-col-legal">
+            <li><a href="/privacy" class="footer-link">Maxfiylik siyosati</a></li>
+            <li><a href="/terms" class="footer-link">Foydalanish shartlari</a></li>
+            <li>
+              <button type="button" onclick="openConsentModal()" class="footer-cookie-btn" title="Maxfiylik va Cookie sozlamalarini ochish">
+                <span>Cookie sozlamalari</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </nav>
     </div>
 
-    <!-- Navigation & Legal Links -->
-    <nav class="footer-nav" aria-label="Quyi navigatsiya">
-      <a href="/" class="footer-link">Bosh sahifa</a>
-      <a href="/daily" class="footer-link">Kun savoli</a>
-      <a href="/arena" class="footer-link">To‘plamlar</a>
-      <a href="/privacy" class="footer-link">Maxfiylik siyosati</a>
-      <a href="/terms" class="footer-link">Foydalanish shartlari</a>
-      <button type="button" onclick="openConsentModal()" class="footer-cookie-btn" title="Maxfiylik va Cookie sozlamalarini ochish">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-        <span>Cookie sozlamalari</span>
-      </button>
-    </nav>
-
-    <!-- Copyright -->
-    <div class="footer-copyright">
-      &copy; 2026 ZakoWhat. Barcha huquqlar himoyalangan.
+    <div class="footer-bottom">
+      <p class="footer-copyright">&copy; 2026 ZakoWhat. Barcha huquqlar himoyalangan.</p>
+      <p class="footer-credit">Boburshox Xamraqulov</p>
     </div>
   </div>
 </footer>
-
 <!-- Cookie / Privacy Consent Modal -->
 <div id="modal-consent-settings" class="consent-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="consent-modal-title">
   <div class="consent-modal-box">
