@@ -39,10 +39,23 @@
       border-radius: var(--radius-md);
       padding: 2.5rem;
     }
+    .legal-title {
+      font-family: var(--font-serif);
+      font-size: 2.1rem;
+      font-weight: 600;
+      line-height: 1.15;
+      color: var(--text-main);
+      margin: 0;
+    }
+    .legal-updated {
+      margin: 0.5rem 0 1.75rem;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
     .legal-prose h2 {
-      font-family: var(--font-display);
-      font-size: 1.25rem;
-      font-weight: 700;
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      font-weight: 600;
       color: var(--text-main);
       margin-top: 2rem;
       margin-bottom: 0.75rem;
@@ -96,81 +109,100 @@
   <main class="flex-grow legal-container">
     <div class="legal-card space-y-6">
       <div>
-        <h1 class="text-3xl font-display font-extrabold text-[var(--text-main)]">Foydalanish Shartlari</h1>
-        <p class="text-xs text-[var(--text-dim)] font-mono mt-1">Oxirgi tahrir: 2026-yil oktyabr · O'zbekiston Respublikasi qonunchiligi asosida</p>
+        <h1 class="legal-title">Foydalanish shartlari</h1>
+        <p class="legal-updated">Oxirgi tahrir: 2026-yil 15-noyabr</p>
       </div>
 
       <div class="legal-prose">
         <p>
-          ZakoWhat mustaqil intellektual viktorina platformasiga (keyingi o'rinlarda «Platforma») xush kelibsiz. Platformadan ro'yxatdan o'tish, o'yinlarda ishtirok etish yoki undan foydalanish orqali siz quyidagi shartlarga to'liq va so'zsiz rozilik bildirasiz.
+          Ushbu shartlar ZakoWhat platformasidan (keyingi o‘rinlarda «Platforma») foydalanish qoidalarini belgilaydi. Platformadan foydalanish orqali siz ushbu shartlarga rozilik bildirasiz. Agar shartlarga rozi bo‘lmasangiz, iltimos, Platformadan foydalanmang.
         </p>
 
-        <h2>1. Umumiy Qoidalar va Halol O'yin (Fair Play)</h2>
+        <h2>1. Xizmat tavsifi</h2>
         <p>
-          Platforma bilimni charxlash, mantiqiy tafakkurni rivojlantirish va ishtirokchilar o'rtasida halol musobaqa muhitini yaratishga xizmat qiladi. Barcha ishtirokchilar «Fair Play» tamoyillariga qat'iy rioya etishlari shart:
+          ZakoWhat — Zakovat (2 tur × 12 savol) va Svoya Igra formatlaridagi intellektual o‘yinlar hamda har kuni yangi «Kun savoli»ni taqdim etuvchi bepul onlayn platforma. Ayrim o‘yinlarni ro‘yxatdan o‘tmasdan sinab ko‘rish mumkin; natijalarni saqlash va reytingda qatnashish uchun hisob kerak.
         </p>
+
+        <h2>2. Hisob</h2>
         <ul>
-          <li>O'yin davomida javoblarni qidirish uchun avtomatlashtirilgan dasturlar, brauzer botlari yoki sun'iy intellekt skriptlaridan foydalanish taqiqlanadi;</li>
-          <li>Server infratuzilmasiga ruxsatsiz yuklama tushirish, server so'rovlarini manipulyatsiya qilish yoki tizim xatoliklaridan (bug/exploit) noqonuniy foydalanish taqiqlanadi;</li>
-          <li>Reytinglar va liderlar jadvalini sun'iy ravishda soxtalashtirish taqiqlanadi.</li>
+          <li>Ro‘yxatdan o‘tishda to‘g‘ri ma’lumot kiriting. Platforma 13 yoshdan katta foydalanuvchilar uchun mo‘ljallangan.</li>
+          <li>Parolingizni maxfiy saqlang. Parolni boshqalarga berishingiz oqibatida hisobingizda sodir bo‘lgan harakatlar uchun o‘zingiz javobgarsiz.</li>
+          <li>Reytingda qo‘shimcha imkoniyat olish uchun bir nechta hisob ochish taqiqlanadi.</li>
         </ul>
 
-        <h2>2. Foydalanuvchi Kontenti va Odob-axloq Qoidalari</h2>
-        <p>
-          Foydalanuvchilar o'z profillarida ko'rsatiladigan ism, taxallus (@username), bio va avatar suratini yuklash imkoniyatiga ega. Foydalanuvchi tomonidan yaratiladigan har qanday ma'lumot (UGC) quyidagi talablarga javob berishi shart:
-        </p>
+        <h2>3. O‘yin qoidalari</h2>
         <ul>
-          <li>Foydalanuvchi nomlari yoki biografiyada behayo, haqoratomuz, milliy, irqiy yoki diniy adovatni qo'zg'atuvchi, zo'ravonlikni targ'ib qiluvchi so'zlardan foydalanish qat'iyan taqiqlanadi;</li>
-          <li>Boshqa shaxslar yoki tashkilotlar nomidan soxta profil ochish (impersonation) taqiqlanadi;</li>
-          <li>Mualliflik huquqini buzuvchi yoki axloqsiz tasvirlarni avatar sifatida yuklash taqiqlanadi.</li>
-        </ul>
-        <p>
-          Platforma ma'muriyati yuqoridagi talablarga mos kelmaydigan kontentni ogohlantirishsiz o'chirish yoki foydalanuvchi profilini vaqtincha cheklash huquqini o'zida saqlab qoladi.
-        </p>
-
-        <h2>3. Intellektual Mulk va Savollar Provonansi (Mualliflik Huquqi)</h2>
-        <p>
-          ZakoWhat platformasidagi barcha dasturiy kodlar, ma'lumotlar bazasi arxitekturasi, platforma dizayni, logotip va belgilar platforma operatorining intellektual mulki hisoblanadi:
-        </p>
-        <ul>
-          <li>Platformada taqdim etilayotgan Zakovat to'plamlari va Svoya Igra o'yinlari intellektual jamoatchilik an'analari hamda mualliflar hamkorligida shakllantirilgan;</li>
-          <li>Savollarni ommaviy tijoriy maqsadlarda qayta nashr etish, sotish yoki ruxsatsiz nusxalash taqiqlanadi;</li>
-          <li>Ta'limiy, shaxsiy va notijorat maqsadlarda platformadan foydalanish erkin hisoblanadi.</li>
+          <li>Har bir to‘plam bo‘yicha birinchi vaqtli o‘yiningiz reyting o‘yini hisoblanadi. Keyingi o‘yinlar (qayta boshlash yoki vaqtsiz o‘yin) mashq sifatida o‘tadi va reytingga ta’sir qilmaydi.</li>
+          <li>Vaqt va ballar server tomonidan hisoblanadi. Sahifani yangilash yoki boshqa qurilmaga o‘tish qo‘shimcha vaqt bermaydi.</li>
+          <li>30 daqiqa faolsizlikdan so‘ng o‘yin sessiyasi tugaydi.</li>
+          <li>«Kun savoli»ga har kuni 3 tagacha urinish beriladi; to‘g‘ri javob urinishlaringiz tugagandan keyin ko‘rsatiladi.</li>
+          <li>Qoidabuzarlik aniqlansa, natija bekor qilinishi mumkin.</li>
         </ul>
 
-        <h2>4. Mualliflik Huquqi Buzilishiga Doir Shikoyatlar (Notice & Takedown)</h2>
+        <h2>4. Halol o‘yin</h2>
+        <p>Quyidagilar taqiqlanadi:</p>
+        <ul>
+          <li>o‘yin davomida javob topish uchun avtomatlashtirilgan dasturlar, botlar yoki sun’iy intellekt vositalaridan foydalanish;</li>
+          <li>serverga ortiqcha yuklama berish, so‘rovlarni soxtalashtirish yoki tizimdagi xatoliklardan foydalanish;</li>
+          <li>reyting va natijalarni sun’iy ravishda o‘zgartirishga urinish.</li>
+        </ul>
+
+        <h2>5. Foydalanuvchi kontenti</h2>
+        <p>Ismingiz, taxallusingiz (@username), bio va profil suratingiz quyidagi talablarga javob berishi kerak:</p>
+        <ul>
+          <li>haqoratli, behayo so‘zlar, milliy, irqiy yoki diniy adovatni qo‘zg‘atuvchi va zo‘ravonlikni targ‘ib qiluvchi mazmun bo‘lmasligi;</li>
+          <li>boshqa shaxs yoki tashkilot nomidan soxta profil ochilmasligi;</li>
+          <li>mualliflik huquqini buzuvchi yoki axloqsiz tasvirlar profil surati sifatida yuklanmasligi.</li>
+        </ul>
+        <p>Ma’muriyat ushbu talablarga mos kelmaydigan kontentni o‘chirishi mumkin.</p>
+
+        <h2>6. Intellektual mulk</h2>
+        <ul>
+          <li>Platformaning dasturiy kodi, dizayni, logotipi va belgilari Platforma operatorining intellektual mulki hisoblanadi.</li>
+          <li>Zakovat to‘plamlari va Svoya Igra o‘yinlari intellektual o‘yinlar jamoatchiligi an’analari va mualliflar ishi asosida tayyorlangan.</li>
+          <li>Savollarni tijoriy maqsadda qayta nashr etish, sotish yoki ruxsatsiz ommaviy nusxalash taqiqlanadi. Shaxsiy, ta’limiy va notijorat maqsadlarda foydalanish mumkin.</li>
+        </ul>
+
+        <h2>7. Mualliflik huquqi bo‘yicha shikoyatlar</h2>
         <p>
-          Agar siz biror savol yoki material mualliflik huquqingizni buzgan deb hisoblasangiz, <strong>exfert.contact@gmail.com</strong> manziliga shikoyat yuborishingiz mumkin.
-        </p>
-        <p>
-          Shikoyatda mualliflik huquqini tasdiqlovchi ma'lumotlar, aniq to'plam yoki savol manzili hamda aloqa rekvizitlari ko'rsatilishi kerak. Platforma 5 ish kuni ichida shikoyatni ko'rib chiqadi va asosli e'tiroz bo'lsa materialni zudlik bilan olib tashlaydi.
+          Agar biror savol yoki material mualliflik huquqingizni buzgan deb hisoblasangiz, exfert.contact@gmail.com manziliga yozing. Murojaatda huquqingizni tasdiqlovchi ma’lumotlar, tegishli to‘plam yoki savol hamda aloqa ma’lumotlaringizni ko‘rsating. Murojaat 5 ish kuni ichida ko‘rib chiqiladi; shikoyat asosli bo‘lsa, material olib tashlanadi.
         </p>
 
-        <h2>5. Akkaunt Xavfsizligi va Mas'uliyat</h2>
+        <h2>8. Hisobni cheklash va o‘chirish</h2>
+        <ul>
+          <li>Ma’muriyat ushbu shartlarni buzgan hisobni vaqtincha cheklashi yoki o‘chirishi, qoidabuzarlik bilan olingan natijalarni bekor qilishi mumkin.</li>
+          <li>Siz hisobingizni istalgan vaqtda «Profil sozlamalari» orqali o‘chirishingiz mumkin. Bunda ma’lumotlaringiz bilan nima bo‘lishi Maxfiylik siyosatining 8-bo‘limida tushuntirilgan.</li>
+        </ul>
+
+        <h2>9. Xizmatning ishlashi</h2>
         <p>
-          Har bir foydalanuvchi o'z login va parolini maxfiy saqlashga shaxsan javobgardir. Parol uchinchi shaxslarga berilishi oqibatida yuzaga keladigan harakatlar uchun foydalanuvchi javobgar bo'ladi.
-        </p>
-        <p>
-          Foydalanuvchi istalgan vaqtda platforma sozlamalari orqali o'z akkauntini butunlay o'chirish huquqiga ega.
+          Platforma «mavjud holicha» (as is) taqdim etiladi. Biz uning uzluksiz va xatosiz ishlashiga kafolat bera olmaymiz: texnik ishlar yoki nosozliklar vaqtida Platforma vaqtincha ishlamasligi, tugallanmagan o‘yin natijalari esa saqlanmasligi mumkin. Biz Platforma imkoniyatlarini o‘zgartirish yoki to‘xtatish huquqini saqlab qolamiz.
         </p>
 
-        <h2>6. Kafolatlarning Cheklanishi, Xizmat Qiymati va To'lovlar (Refund Policy)</h2>
+        <h2>10. To‘lovlar</h2>
         <p>
-          Platforma xizmatlari «xuddi shunday» («as is») va «mavjud bo'lganicha» («as available») tamoyilida taqdim etiladi. Platforma operatori o'yin jarayonining uzluksiz bo'lishi yoki texnik profilaktika vaqtida platformaning vaqtincha ishlamay qolishi bo'yicha javobgarlikni o'z zimmasiga olmaydi.
-        </p>
-        <p>
-          ZakoWhat platformasidagi barcha viktorinalar, to'plamlar va imkoniyatlar <strong>to'liq bepul</strong> hisoblanadi. Foydalanuvchilardan hech qanday majburiy to'lov, obuna yoki yashirin komissiya olinmaydi. Shu sababli, to'lovlarni qaytarish (refund) talab etilmaydi. Agar kelajakda ixtiyoriy pullik xizmatlar joriy etilsa, to'lovlar va ularni qaytarish shartlari shaffof tartibda e'lon qilinadi.
+          Platformadagi barcha o‘yinlar va imkoniyatlar bepul. Hech qanday to‘lov yoki obuna olinmaydi, shuning uchun to‘lovni qaytarish masalasi yuzaga kelmaydi. Kelajakda pullik xizmatlar joriy etilsa, ularning shartlari, jumladan to‘lovni qaytarish tartibi, oldindan alohida e’lon qilinadi.
         </p>
 
-        <h2>7. Amaldagi Qonunchilik va Nizolarni Hal Qilish</h2>
+        <h2>11. Javobgarlikni cheklash</h2>
         <p>
-          Mazkur Foydalanish shartlari O'zbekiston Respublikasining amaldagi qonunchiligiga muvofiq tartibga solinadi. Tomonlar o'rtasida yuzaga keladigan barcha kelishmovchiliklar muzokaralar yo'li bilan, kelishuvga erishilmagan taqdirda esa O'zbekiston Respublikasi qonunlariga muvofiq sud tartibida hal qilinadi.
+          Qonunchilikda ruxsat etilgan doirada Platforma operatori Platformadan foydalanish yoki foydalana olmaslik natijasida yuzaga kelgan bilvosita zarar uchun javobgar bo‘lmaydi.
         </p>
 
-        <h2>8. Bog'lanish va Aloqa</h2>
+        <h2>12. Shartlarga o‘zgartirishlar</h2>
         <p>
-          Platforma: ZakoWhat — Mustaqil intellektual viktorina maydoni<br>
-          Manzil: Toshkent, O'zbekiston<br>
+          Shartlar o‘zgarganda yangi tahrir shu sahifada e’lon qilinadi va yuqoridagi sana yangilanadi. Yangi tahrir e’lon qilingandan keyin Platformadan foydalanishni davom ettirsangiz, yangilangan shartlarga rozi bo‘lgan hisoblanasiz.
+        </p>
+
+        <h2>13. Amaldagi qonunchilik</h2>
+        <p>
+          Ushbu shartlar O‘zbekiston Respublikasi qonunchiligiga muvofiq tartibga solinadi. Kelishmovchiliklar avvalo muzokaralar yo‘li bilan, kelishuvga erishilmasa, O‘zbekiston Respublikasi qonunchiligida belgilangan tartibda sudda hal qilinadi.
+        </p>
+
+        <h2>14. Aloqa</h2>
+        <p>
+          ZakoWhat — mustaqil intellektual o‘yinlar platformasi<br>
+          Manzil: Toshkent, O‘zbekiston<br>
           Elektron pochta: exfert.contact@gmail.com<br>
           Telegram: @zakozat
         </p>
