@@ -66,7 +66,8 @@ async def security_headers_and_csrf_middleware(request: Request, call_next):
     # 2. Hardened Security Headers
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if "referrer-policy" not in response.headers:          # a route may ask for a stricter policy
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
 
@@ -144,7 +145,7 @@ SITEMAP_PAGES = (
 
 ROBOTS_DISALLOW = (
     "/api/", "/owner", "/bank", "/admin", "/builder", "/create", "/staging",
-    "/play/", "/profile", "/u/", "/preview/",
+    "/play/", "/profile", "/u/", "/preview/", "/reset-password",
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -212,6 +213,15 @@ def read_daily_page(request: Request):
 def read_privacy_page(request: Request):
     response = templates.TemplateResponse(request=request, name="legal/privacy.html")
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
+@app.get("/reset-password")
+def read_reset_password_page(request: Request):
+    """Password reset (request a link / set a new password). Never cached, never indexed, never referred."""
+    response = templates.TemplateResponse(request=request, name="reset_password.html")
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
     return response
 
 

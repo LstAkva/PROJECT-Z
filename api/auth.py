@@ -847,6 +847,128 @@ def change_password(
     return {"success": True, "message": "Parol muvaffaqiyatli o'zgartirildi"}
 
 
+# =====================================================================
+# PASSWORD RESET (no schema change)
+# A reset link carries a signed token (HS256, SECRET_KEY) that names the user, expires after
+# PASSWORD_RESET_TTL_MINUTES and embeds a fingerprint of the CURRENT password hash: once the password
+# changes, every earlier link stops working, so each link is single-use. Requests always get the same
+# answer, so the endpoint never reveals whether an account or address exists.
+# =====================================================================
+PASSWORD_RESET_TTL_MINUTES = 30
+PASSWORD_RESET_PURPOSE = "password_reset"
+PASSWORD_RESET_GENERIC_MESSAGE = (
+    "Agar bu manzil bilan hisob mavjud bo'lsa, parolni tiklash havolasi elektron pochtangizga yuborildi. "
+    "Xat kelmasa, «Spam» papkasini tekshiring."
+)
+
+
+class PasswordResetRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=254)
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str = Field(..., min_length=10, max_length=2048)
+    new_password: str = Field(..., min_length=6, max_length=128)
+
+
+def _password_fingerprint(user: User) -> str:
+    import hashlib
+    return hashlib.sha256((user.hashed_password or "").encode("utf-8")).hexdigest()[:24]
+
+
+def create_password_reset_token(user: User) -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": str(user.id),
+        "purpose": PASSWORD_RESET_PURPOSE,
+        "fp": _password_fingerprint(user),
+        "iat": now,
+        "exp": now + timedelta(minutes=PASSWORD_RESET_TTL_MINUTES),
+    }
+    return jwt.encode(payload, get_secret_key(), algorithm=ALGORITHM)
+
+
+def user_from_password_reset_token(token: str, db: Session) -> Optional[User]:
+    """The user a valid, unexpired, still-unused reset token belongs to; None otherwise."""
+    try:
+        payload = jwt.decode(token, get_secret_key(), algorithms=[ALGORITHM])
+    except Exception:
+        return None
+    if payload.get("purpose") != PASSWORD_RESET_PURPOSE:
+        return None          # a sign-in token can never be used as a reset token (and vice versa)
+    try:
+        user = db.query(User).filter(User.id == int(payload.get("sub"))).first()
+    except (TypeError, ValueError):
+        return None
+    if not user or not secrets.compare_digest(str(payload.get("fp", "")), _password_fingerprint(user)):
+        return None
+    return user
+
+
+def is_generated_email(user: User) -> bool:
+    """Registration without an email creates the placeholder {username}@zakowhat.uz (auth_modal.html).
+    Nobody reads those inboxes, so no reset mail is sent to them."""
+    email = (user.email or "").lower()
+    local, _, domain = email.partition("@")
+    if domain != "zakowhat.uz":
+        return False
+    candidates = {re.sub(r"[^a-z0-9]", "", (user.username or "").lower()),
+                  re.sub(r"[^a-z0-9]", "", (user.display_name or "").lower())}
+    return local in candidates
+
+
+def send_password_reset_email(user: User) -> bool:
+    from services.mailer import send_email
+    from services.daily_engagement import public_site_url
+    link = f"{public_site_url()}/reset-password?token={create_password_reset_token(user)}"
+    name = user.display_name or "foydalanuvchi"
+    text = (
+        f"Assalomu alaykum, {name}!\n\n"
+        "ZakoWhat hisobingiz uchun parolni tiklash so'raldi. Yangi parol o'rnatish uchun quyidagi "
+        f"havolani oching (havola {PASSWORD_RESET_TTL_MINUTES} daqiqa amal qiladi va bir marta ishlaydi):\n\n"
+        f"{link}\n\n"
+        "Agar bu so'rovni siz yubormagan bo'lsangiz, ushbu xatni e'tiborsiz qoldiring: parolingiz o'zgarmaydi.\n\n"
+        "ZakoWhat"
+    )
+    safe_name = html.escape(name)
+    body = (
+        f"<p>Assalomu alaykum, {safe_name}!</p>"
+        "<p>ZakoWhat hisobingiz uchun parolni tiklash so'raldi. Yangi parol o'rnatish uchun quyidagi tugmani bosing "
+        f"(havola {PASSWORD_RESET_TTL_MINUTES} daqiqa amal qiladi va bir marta ishlaydi):</p>"
+        f'<p><a href="{html.escape(link)}" style="display:inline-block;padding:10px 18px;background:#782F3B;'
+        'color:#F1EBDD;text-decoration:none;border-radius:4px">Yangi parol o\'rnatish</a></p>'
+        "<p>Agar bu so'rovni siz yubormagan bo'lsangiz, ushbu xatni e'tiborsiz qoldiring: parolingiz o'zgarmaydi.</p>"
+        "<p>ZakoWhat</p>"
+    )
+    return send_email(user.email, "ZakoWhat: parolni tiklash", text, body)
+
+
+@router.post("/password-reset/request", status_code=status.HTTP_200_OK)
+def request_password_reset(payload: PasswordResetRequest, request: Request, db: Session = Depends(get_db)):
+    """Sends a reset link when the address belongs to a password account with a real inbox.
+    The answer is identical in every case (no account enumeration)."""
+    enforce_rate_limit(request, "password_reset_request", max_requests=5, window_seconds=300)
+    clean = payload.email.strip().lower()
+    user = db.query(User).filter(func.lower(User.email) == clean).first()
+    if user and user.auth_provider == "local" and user.hashed_password and not is_generated_email(user):
+        send_password_reset_email(user)
+    return {"success": True, "message": PASSWORD_RESET_GENERIC_MESSAGE}
+
+
+@router.post("/password-reset/confirm", status_code=status.HTTP_200_OK)
+def confirm_password_reset(payload: PasswordResetConfirm, request: Request, db: Session = Depends(get_db)):
+    enforce_rate_limit(request, "password_reset_confirm", max_requests=10, window_seconds=300)
+    user = user_from_password_reset_token(payload.token.strip(), db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Havola yaroqsiz yoki muddati o'tgan. Parolni tiklashni qaytadan so'rang.",
+        )
+    user.hashed_password = hash_password(payload.new_password)   # also invalidates this and older links
+    db.commit()
+    return {"success": True, "message": "Parol yangilandi. Endi yangi parol bilan kirishingiz mumkin."}
+
+
 @router.post("/consent", status_code=status.HTTP_200_OK)
 def record_consent(
     payload: ConsentRequest,
