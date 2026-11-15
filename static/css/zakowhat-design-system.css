@@ -6079,3 +6079,39 @@ button.game-cell:active {
   #mobileNavDrawer.is-closing { animation: none; }
   .mobile-menu-btn .burger span { transition: none; }
 }
+
+/* ==========================================================================
+   21. RESULT SHARING (results screen)
+   ========================================================================== */
+.results-share {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-6) 0 var(--space-2);
+}
+.results-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+}
+.results-share-status {
+  min-height: 1.2em;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+.results-share-status.is-error { color: var(--state-incorrect); }
+.results-share-fallback {
+  width: min(100%, 420px);
+  padding: var(--space-3);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-main);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  resize: none;
+}

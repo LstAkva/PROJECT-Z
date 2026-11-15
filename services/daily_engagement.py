@@ -124,6 +124,24 @@ def build_share_text(*, schedule_date: date, is_correct: bool, attempts_used: Op
     return "\n".join(lines)
 
 
+def build_game_share_text(*, quiz_id: int, title: Optional[str], game_mode: Optional[str], total_correct: int,
+                          total_questions: int, total_score: int, formatted_time: str, ranked: bool) -> str:
+    """Short text a player can paste into Telegram after a game. Only the pack, the score, the time and a
+    link to the pack — never a question, an answer, the player's name or any id other than the pack's."""
+    svoyak = game_mode == "svoyak"
+    clean_title = (title or "").replace("Classic Zakovat", "Zakovat").strip() or "ZakoWhat to‘plami"
+    lines = [f"🧠 ZakoWhat — {'Svoya Igra' if svoyak else 'Zakovat'}", f"📚 {clean_title}"]
+    if svoyak:
+        lines.append(f"🏆 {total_score} ball · {total_correct}/{total_questions} to‘g‘ri javob")
+    else:
+        lines.append(f"🎯 {total_correct}/{total_questions} to‘g‘ri javob")
+    lines.append(f"⏱ {formatted_time}" + ("" if ranked else " · mashq o‘yini"))
+    lines.append("")
+    lines.append("Siz nechta topasiz?")
+    lines.append(f"{public_site_url()}/quiz/{quiz_id}")
+    return "\n".join(lines)
+
+
 # --------------------------------------------------------------------------- bank monitoring
 
 # Fields the scheduler reads unconditionally when it creates the day's question

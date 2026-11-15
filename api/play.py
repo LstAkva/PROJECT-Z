@@ -2695,8 +2695,25 @@ def get_final_results(
     mins = attempt.active_time_seconds // 60
     secs = attempt.active_time_seconds % 60
 
+    # Shareable summary for real games only (staff previews, staging packs and owner demos get none).
+    share_text = None
+    if not is_preview_attempt(attempt) and version is not None and version.status == "published":
+        from services.daily_engagement import build_game_share_text
+        manifest_title = (version.published_manifest or {}).get("title")
+        share_text = build_game_share_text(
+            quiz_id=version.quiz_id,
+            title=manifest_title or (version.quiz.title if version.quiz else None),
+            game_mode=version.game_mode,
+            total_correct=attempt.total_correct if attempt.total_correct is not None else total_correct,
+            total_questions=total_correct + total_incorrect + total_unanswered,
+            total_score=attempt.total_score,
+            formatted_time=f"{mins:02d}:{secs:02d}",
+            ranked=is_ranked_or_legacy_timed(attempt),
+        )
+
     return {
         "status": "completed",
+        "share_text": share_text,
         "is_preview": (attempt.timer_mode in ("preview", "preview_no_timer")),
         "is_anonymous": (attempt.user_id is None),
         "game_mode": getattr(version, "game_mode", "modern_multiround"),
