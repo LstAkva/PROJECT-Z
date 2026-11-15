@@ -5921,6 +5921,37 @@ button.game-cell:active {
   justify-content: center;
   gap: var(--space-2);
   text-align: center;
+  cursor: pointer;                 /* the whole blurred row opens registration */
+}
+/* Mouse: the invitation appears only while the pointer is over the blurred row (or keyboard focus is in it). */
+.sample-gate .sample-gate-btn,
+.sample-gate .sample-gate-note {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity var(--transition-base), transform var(--transition-base);
+}
+.sample-gate:hover .sample-gate-btn,
+.sample-gate:hover .sample-gate-note,
+.sample-gate:focus-within .sample-gate-btn,
+.sample-gate:focus-within .sample-gate-note {
+  opacity: 1;
+  transform: none;
+}
+/* Touch screens (no hover): nothing is drawn over the blur; a tap on the row goes straight to registration. */
+@media (hover: none) {
+  .sample-gate .sample-gate-btn,
+  .sample-gate .sample-gate-note {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .sample-gate:hover .sample-gate-btn,
+  .sample-gate:hover .sample-gate-note,
+  .sample-gate:focus-within .sample-gate-btn,
+  .sample-gate:focus-within .sample-gate-note { opacity: 0; }      /* taps leave a sticky :hover on phones */
+}
+@media (prefers-reduced-motion: reduce) {
+  .sample-gate .sample-gate-btn,
+  .sample-gate .sample-gate-note { transform: none; }
 }
 .sample-gate-note {
   font-size: 0.75rem;

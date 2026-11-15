@@ -124,7 +124,6 @@
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
               <span id="countdownDisplay">01:30</span>
-              <span class="clock-preview-badge">Namoyish</span>
             </div>
           </div>
 
@@ -160,8 +159,8 @@
               </button>
             </form>
             {% if not viewer_signed_in %}
-            <div class="sample-gate">
-              <button type="button" class="btn btn-primary" onclick="openAuthModal('register')">Javobingizni bering</button>
+            <div class="sample-gate" onclick="openAuthModal('register')">
+              <button type="button" class="btn btn-primary sample-gate-btn">Javobingizni bering</button>
               <span class="sample-gate-note">Bepul ro‘yxatdan o‘ting va javobingizni tekshiring</span>
             </div>
             {% endif %}
