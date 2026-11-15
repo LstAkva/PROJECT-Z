@@ -104,9 +104,10 @@
   .auth-error-banner {
     padding: 0.75rem 1rem;
     border-radius: 6px;
-    background: rgba(122, 22, 39, 0.25);
-    border: 1px solid rgba(158, 31, 52, 0.5);
-    color: #fca5a5;
+    /* theme-aware: the verdict token is rose on dark and deep red on light (was light pink in both) */
+    background: color-mix(in srgb, var(--state-incorrect, #E8939D) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--state-incorrect, #E8939D) 55%, transparent);
+    color: var(--state-incorrect, #fca5a5);
     font-size: 0.82rem;
     font-weight: 600;
     line-height: 1.4;
@@ -173,11 +174,32 @@
     font-size: 0.8rem;
   }
   .auth-legal-note {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-muted, #94a3b8);
     text-align: center;
     line-height: 1.45;
-    margin: 0.25rem 0 0;
+    margin: 0.75rem 0 0;
+  }
+  .auth-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--text-muted, #94a3b8);
+    cursor: pointer;
+  }
+  .auth-consent input {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0.1rem 0 0;
+    accent-color: var(--burgundy, #782F3B);
+    cursor: pointer;
+  }
+  .auth-consent input:focus-visible {
+    outline: 2px solid var(--accent-brass, #C5A059);
+    outline-offset: 2px;
   }
   .auth-legal-link {
     color: var(--accent-brass, #C5A059);
@@ -209,6 +231,7 @@
     display: flex;
     justify-content: center;
     min-height: 44px;
+    color-scheme: normal;          /* keeps Google's iframe from getting a dark backdrop */
   }
 </style>
 
@@ -266,18 +289,20 @@
           <label class="auth-label" for="register-password">Parol (kamida 6 belgi)</label>
           <input type="password" data-password-toggle id="register-password" name="password" required autocomplete="new-password" minlength="6" placeholder="••••••••" class="auth-input" />
         </div>
+        <label class="auth-consent" for="register-consent">
+          <input type="checkbox" id="register-consent" name="consent" aria-required="true">
+          <span><a href="/privacy" target="_blank" rel="noopener" class="auth-legal-link">Maxfiylik siyosati</a> va <a href="/terms" target="_blank" rel="noopener" class="auth-legal-link">Foydalanish shartlari</a>ga roziman.</span>
+        </label>
         <button type="submit" id="register-submit-btn" class="btn btn-primary auth-submit-btn">
           <span>Ro‘yxatdan o‘tish</span>
         </button>
-        <p class="auth-legal-note">
-          Ro‘yxatdan o‘tish orqali siz <a href="/terms" target="_blank" class="auth-legal-link">Foydalanish shartlari</a> va <a href="/privacy" target="_blank" class="auth-legal-link">Maxfiylik siyosati</a>ga rozilik bildirasiz.
-        </p>
       </form>
 
       <!-- Google Sign-In: shown only when GOOGLE_CLIENT_ID is configured on the server -->
       <div id="auth-google-block" class="auth-google-block hidden">
         <div class="auth-divider"><span>yoki</span></div>
         <div id="auth-google-container" class="auth-google-container"></div>
+        <p class="auth-legal-note">Google orqali davom etib, siz <a href="/privacy" target="_blank" rel="noopener" class="auth-legal-link">Maxfiylik siyosati</a> va <a href="/terms" target="_blank" rel="noopener" class="auth-legal-link">Foydalanish shartlari</a>ga rozilik bildirasiz.</p>
       </div>
     </div>
   </div>
@@ -311,7 +336,7 @@
       }
 
       // Google's script is loaded lazily on first open (not for every page visitor).
-      initGoogleSignIn();
+      initGoogleSignIn().then(renderGoogleButton);
 
       setTimeout(() => {
         const activeInput = tab === 'login' 
@@ -371,6 +396,7 @@
         if (formRegister) formRegister.classList.remove('hidden');
         if (formLogin) formLogin.classList.add('hidden');
       }
+      renderGoogleButton();
     }
 
     async function handleLoginSubmit(e) {
@@ -448,6 +474,15 @@
       if (isAuthSubmitting) return;
 
       const banner = document.getElementById('auth-error-banner');
+      const consentBox = document.getElementById('register-consent');
+      if (consentBox && !consentBox.checked) {
+        if (banner) {
+          banner.textContent = 'Davom etish uchun Maxfiylik siyosati va Foydalanish shartlariga rozilik bildiring.';
+          banner.classList.remove('hidden');
+        }
+        consentBox.focus();
+        return;
+      }
       const submitBtn = document.getElementById('register-submit-btn');
       const usernameInput = document.getElementById('register-username');
       const emailInput = document.getElementById('register-email');
@@ -529,6 +564,31 @@
     // verified server-side: signature, audience = GOOGLE_CLIENT_ID, email_verified)
     // ---------------------------------------------------------------
     let googleInitPromise = null;
+    let googleReady = false;
+
+    // Google draws its own button (an iframe); only its official options can be set. Drawn when the window is
+    // visible so it can take the form's width, and again on each tab switch (sign-in vs sign-up wording).
+    function renderGoogleButton() {
+      const container = document.getElementById('auth-google-container');
+      const modal = document.getElementById('modal-auth');
+      if (!googleReady || !container || !modal || modal.classList.contains('hidden')) return;
+      const width = Math.floor(container.getBoundingClientRect().width);
+      if (!width) return;
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const registerForm = document.getElementById('auth-register-form');
+      const registering = registerForm && !registerForm.classList.contains('hidden');
+      container.innerHTML = '';
+      window.google.accounts.id.renderButton(container, {
+        type: 'standard',
+        theme: dark ? 'filled_black' : 'outline',
+        size: 'large',
+        shape: 'rectangular',
+        text: registering ? 'signup_with' : 'signin_with',
+        logo_alignment: 'center',
+        width: Math.max(200, Math.min(400, width)),
+        locale: 'uz',
+      });
+    }
 
     function loadGoogleScript() {
       if (window.google && window.google.accounts && window.google.accounts.id) return Promise.resolve();
@@ -558,16 +618,10 @@
             ux_mode: 'popup',
           });
           const block = document.getElementById('auth-google-block');
-          const container = document.getElementById('auth-google-container');
-          if (!block || !container) return;
+          if (!block) return;
           block.classList.remove('hidden');
-          window.google.accounts.id.renderButton(container, {
-            theme: 'filled_black',
-            size: 'large',
-            shape: 'rectangular',
-            text: 'continue_with',
-            width: 300,
-          });
+          googleReady = true;
+          renderGoogleButton();
         } catch (e) {
           googleInitPromise = null;  // allow a retry on the next open
         }
