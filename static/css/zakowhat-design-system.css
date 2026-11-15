@@ -222,8 +222,12 @@
   }
 }
 
-/* Masthead Global Responsive Behavior */
-@media (max-width: 767px) {
+/* Masthead Global Responsive Behavior
+   Logo + three links + the two guest buttons need about 920px; below 1024px the account buttons
+   slid over the nav links, so the hamburger menu takes over there. The .98 closes the gap between
+   the two queries: with display scaling the viewport can be e.g. 1023.5px wide, which matched
+   neither rule, so the desktop links and the hamburger showed at once. */
+@media (max-width: 1023.98px) {
   .masthead .nav-desktop,
   .masthead .auth-desktop {
     display: none !important;
@@ -233,7 +237,7 @@
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .masthead .nav-desktop,
   .masthead .auth-desktop {
     display: flex !important;
@@ -742,7 +746,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Mobile menu button: the same round control as the theme toggle (its look no longer depends on
-   Tailwind utilities, which the homepage does not load). Shown under 768px by the masthead rules. */
+   Tailwind utilities, which the homepage does not load). Shown under 1024px by the masthead rules. */
 .mobile-menu-btn {
   align-items: center;
   justify-content: center;
