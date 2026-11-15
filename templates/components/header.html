@@ -68,13 +68,8 @@
       </div>
 
       <!-- Mobile Menu Hamburger Button -->
-      <button id="mobileMenuToggleBtn" class="mobile-menu-btn" type="button" aria-label="Menyuni ochish" onclick="toggleMobileNav()">
-        <svg id="hamburgerIcon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-        <svg id="closeMenuIcon" class="hidden" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
+      <button id="mobileMenuToggleBtn" class="mobile-menu-btn" type="button" aria-label="Menyuni ochish" aria-expanded="false" aria-controls="mobileNavDrawer" onclick="toggleMobileNav()">
+        <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
       </button>
     </div>
   </div>

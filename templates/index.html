@@ -1421,6 +1421,12 @@
 
         function openAuthModal(tab = 'login') {
             switchAuthTab(tab);
+            // close the mobile menu first, as the shared sign-in window does on other pages
+            const drawer = document.getElementById('mobileNavDrawer');
+            if (drawer && !drawer.classList.contains('hidden') && !drawer.classList.contains('is-closing')
+                && typeof window.toggleMobileNav === 'function') {
+                window.toggleMobileNav();
+            }
             const banner = document.getElementById('auth-error-banner');
             if (banner) {
                 banner.classList.add('hidden');

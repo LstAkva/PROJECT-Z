@@ -52,21 +52,34 @@
   };
 
   // 2. Mobile Drawer Navigation
+  // Opening: the drawer slides in (CSS, section 17). Closing: a short fade/lift (.is-closing), then hidden.
+  // A drawer that is mid-close counts as closed, so a quick second tap simply reopens it.
+  const DRAWER_EXIT_MS = 180;
   window.toggleMobileNav = function() {
     const drawer = document.getElementById('mobileNavDrawer');
-    const burger = document.getElementById('hamburgerIcon');
-    const closeIcon = document.getElementById('closeMenuIcon');
+    const btn = document.getElementById('mobileMenuToggleBtn');
     if (!drawer) return;
 
-    const isHidden = drawer.classList.contains('hidden');
-    if (isHidden) {
-      drawer.classList.remove('hidden');
-      if (burger) burger.classList.add('hidden');
-      if (closeIcon) closeIcon.classList.remove('hidden');
+    const opening = drawer.classList.contains('hidden') || drawer.classList.contains('is-closing');
+    clearTimeout(drawer._zwCloseTimer);
+    if (opening) {
+      drawer.classList.remove('is-closing', 'hidden');
     } else {
-      drawer.classList.add('hidden');
-      if (burger) burger.classList.remove('hidden');
-      if (closeIcon) closeIcon.classList.add('hidden');
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) {
+        drawer.classList.add('hidden');
+      } else {
+        drawer.classList.add('is-closing');
+        drawer._zwCloseTimer = setTimeout(function () {
+          drawer.classList.add('hidden');
+          drawer.classList.remove('is-closing');
+        }, DRAWER_EXIT_MS);
+      }
+    }
+    if (btn) {
+      btn.classList.toggle('is-open', opening);
+      btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+      btn.setAttribute('aria-label', opening ? 'Menyuni yopish' : 'Menyuni ochish');
     }
   };
 

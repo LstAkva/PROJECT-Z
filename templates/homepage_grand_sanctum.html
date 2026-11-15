@@ -159,7 +159,7 @@
               </button>
             </form>
             {% if not viewer_signed_in %}
-            <div class="sample-gate" onclick="openAuthModal('register')">
+            <div class="sample-gate" onclick="this.parentElement.classList.add('is-tapped'); openAuthModal('register')">
               <button type="button" class="btn btn-primary sample-gate-btn">Javobingizni bering</button>
               <span class="sample-gate-note">Bepul ro‘yxatdan o‘ting va javobingizni tekshiring</span>
             </div>

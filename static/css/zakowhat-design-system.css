@@ -703,6 +703,33 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 9999px;
 }
 
+#mobileNavDrawer {
+  margin-top: var(--space-3);
+  padding: var(--space-3) 0 var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+#mobileNavDrawer > nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+#mobileNavDrawer .mobile-auth-section {
+  padding-top: var(--space-4);
+}
+#mobile-guest-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+#mobile-guest-controls .btn,
+#mobile-user-controls .btn {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+}
+
 #mobileNavDrawer .nav-link {
   display: block;
   font-size: 0.95rem;
@@ -767,7 +794,29 @@ h1, h2, h3, h4, h5, h6 {
 }
 .mobile-menu-btn:hover { border-color: var(--accent-brass); color: var(--accent-brass); }
 .mobile-menu-btn:focus-visible { outline: 2px solid var(--accent-brass); outline-offset: 2px; }
-.mobile-menu-btn svg { width: 18px; height: 18px; }
+/* Burger: three bars that fold into a cross when the menu is open */
+.mobile-menu-btn .burger {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 12px;
+}
+.mobile-menu-btn .burger span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: center;
+  transition: transform var(--transition-base), opacity var(--transition-fast);
+}
+.mobile-menu-btn .burger span:nth-child(1) { top: 0; }
+.mobile-menu-btn .burger span:nth-child(2) { top: 5px; }
+.mobile-menu-btn .burger span:nth-child(3) { top: 10px; }
+.mobile-menu-btn.is-open .burger span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.mobile-menu-btn.is-open .burger span:nth-child(2) { opacity: 0; transform: scaleX(0.3); }
+.mobile-menu-btn.is-open .burger span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
 
 .theme-toggle-btn:hover {
   border-color: var(--accent-brass);
@@ -5907,10 +5956,15 @@ button.game-cell:active {
    ========================================================================== */
 .sample-answer { position: relative; }
 .sample-answer.is-gated .submission-bar {
+  pointer-events: none;            /* guests can't type here; the row looks normal until it is approached */
+  user-select: none;
+  transition: filter var(--transition-base), opacity var(--transition-base);
+}
+.sample-answer.is-gated:hover .submission-bar,
+.sample-answer.is-gated:focus-within .submission-bar,
+.sample-answer.is-gated.is-tapped .submission-bar {
   filter: blur(3px);
   opacity: 0.55;
-  pointer-events: none;
-  user-select: none;
 }
 .sample-gate {
   position: absolute;
@@ -6011,3 +6065,17 @@ button.game-cell:active {
 .reset-status.is-error { border-left-color: var(--state-incorrect); }
 .reset-done { margin-top: var(--space-4); }
 .reset-foot { margin: var(--space-6) 0 0; font-size: 0.85rem; }
+
+/* Mobile drawer exit: a short fade and lift before it is hidden (entrance: section 17). */
+@keyframes zw-drawer-out {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(-6px); }
+}
+#mobileNavDrawer.is-closing {
+  animation: zw-drawer-out var(--motion-fast) var(--ease-in-out) forwards;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  #mobileNavDrawer.is-closing { animation: none; }
+  .mobile-menu-btn .burger span { transition: none; }
+}

@@ -318,7 +318,7 @@
 
       // Close mobile drawer if open
       const drawer = document.getElementById('mobileNavDrawer');
-      if (drawer && !drawer.classList.contains('hidden')) {
+      if (drawer && !drawer.classList.contains('hidden') && !drawer.classList.contains('is-closing')) {
         if (typeof window.toggleMobileNav === 'function') {
           window.toggleMobileNav();
         }
