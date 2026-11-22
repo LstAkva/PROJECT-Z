@@ -96,7 +96,7 @@ def test_upload_avatar_valid_and_delete(client):
     up_res = client.post("/api/auth/avatar", json={"image_data": b64_png})
     assert up_res.status_code == status.HTTP_200_OK
     avatar_url = up_res.json()["avatar_url"]
-    assert avatar_url.startswith("/static/uploads/avatars/avatar_u")
+    assert avatar_url.startswith("/static/uploads/avatars/avatar_")
 
     # Check via me
     me = client.get("/api/auth/me").json()["user"]

@@ -6115,3 +6115,33 @@ button.game-cell:active {
   border-radius: var(--radius-sm);
   resize: none;
 }
+
+/* ==========================================================================
+   22. PROFILE SETTINGS — your data (download)
+   ========================================================================== */
+.settings-data-box {
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.settings-data-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-brass);
+}
+.settings-data-text {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+.settings-data-btn {
+  font-size: 0.78rem;
+  padding: 0.45rem 0.9rem;
+}

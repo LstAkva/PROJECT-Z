@@ -66,6 +66,10 @@ async def security_headers_and_csrf_middleware(request: Request, call_next):
     # 2. Hardened Security Headers
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-Content-Type-Options"] = "nosniff"
+    # HTTPS only (Railway terminates TLS, so the original scheme arrives in X-Forwarded-Proto). Browsers ignore
+    # this header over plain http; no includeSubDomains/preload, so other subdomains are unaffected.
+    if request.headers.get("x-forwarded-proto", request.url.scheme) == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=15552000"
     if "referrer-policy" not in response.headers:          # a route may ask for a stricter policy
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["X-XSS-Protection"] = "1; mode=block"

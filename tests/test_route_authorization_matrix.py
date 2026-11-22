@@ -112,6 +112,7 @@ AUTHENTICATED_PLAYER_ROUTES = {
     ("GET", "/api/daily/history"),
     ("GET", "/api/daily/stats"),  # the signed-in player's own streak
     ("GET", "/api/me/pack-progress"),  # own Arena progress
+    ("GET", "/api/me/export"),  # download of the caller's own data
     ("POST", "/api/play/start/{quiz_id}"),
     ("GET", "/api/play/{session_token}"),
     ("GET", "/api/play/{session_token}/board"),

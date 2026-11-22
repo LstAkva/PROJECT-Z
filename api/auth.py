@@ -779,7 +779,8 @@ def upload_avatar(
         raise HTTPException(status_code=400, detail="Faqat PNG, JPG yoki WebP formatidagi rasmlar qabul qilinadi")
 
     os.makedirs(os.path.join("static", "uploads", "avatars"), exist_ok=True)
-    filename = f"avatar_u{current_user.id}_{secrets.token_hex(6)}.{ext}"
+    # Random, unguessable name with no user id in it (the URL is public once used as a profile picture).
+    filename = f"avatar_{secrets.token_hex(16)}.{ext}"
     filepath = os.path.join("static", "uploads", "avatars", filename)
 
     with open(filepath, "wb") as f:
