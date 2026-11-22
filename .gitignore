@@ -57,3 +57,7 @@ scratch/
 .agents/
 .DS_Store
 Thumbs.db
+
+# Local-only material (kept out of git): old generated outputs and personal working files
+/archive/outputs/
+/_private/
