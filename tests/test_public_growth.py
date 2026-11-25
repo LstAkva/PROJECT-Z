@@ -76,8 +76,9 @@ def test_public_pages_have_canonical_and_social_metadata(client, monkeypatch, pa
 def test_titles_and_descriptions_differ_between_pages(client):
     titles = {p: re.search(r"<title>([^<]+)</title>", _head(client, p)).group(1) for p in PUBLIC_PAGES}
     descriptions = {p: re.search(r'name="description" content="([^"]+)"', _head(client, p)).group(1) for p in PUBLIC_PAGES}
-    assert len(set(titles.values())) >= 4                                # "/" and "/arena" share the approved title
-    assert len(set(descriptions.values())) >= 3
+    assert len(set(titles.values())) == len(PUBLIC_PAGES)               # every public page has its own title
+    assert len(set(descriptions.values())) >= 4                          # incl. "/" and "/arena" (not duplicates)
+    assert descriptions["/"] != descriptions["/arena"]
 
 
 @pytest.mark.parametrize("path", ["/quiz/1", "/play/1", "/profile", "/u/someone", "/staging"])
@@ -142,3 +143,19 @@ def test_session_expiry_message_matches_the_real_limit(client):
     source = Path("api/play.py").read_text(encoding="utf-8")
     assert SESSION_INACTIVITY_LIMIT_SECONDS == 1800
     assert "5 daqiqa" not in source and source.count("30 daqiqa faolsizlik") == 3
+
+
+def test_homepage_describes_the_site_for_search_engines(client):
+    """JSON-LD on the homepage: one WebSite named ZakoWhat and its Organization with a square raster logo."""
+    import json as _json
+    html = client.get("/").text
+    block = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)
+    assert block, "homepage has no JSON-LD"
+    graph = {node["@type"]: node for node in _json.loads(block.group(1))["@graph"]}
+    assert graph["WebSite"]["name"] == "ZakoWhat" and graph["WebSite"]["url"] == "https://zakowhat.uz/"
+    assert graph["WebSite"]["publisher"]["@id"] == graph["Organization"]["@id"]
+    logo = graph["Organization"]["logo"]
+    assert logo == "https://zakowhat.uz/static/img/zakowhat-logo-512.png"
+    res = client.get("/static/img/zakowhat-logo-512.png")
+    assert res.status_code == 200 and res.content[:8] == b"\x89PNG\r\n\x1a\n"
+    assert int.from_bytes(res.content[16:20], "big") == int.from_bytes(res.content[20:24], "big") >= 112

@@ -23,6 +23,30 @@
   
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-app-icon.svg">
+  <!-- Site name and logo for search engines (one site, one brand). -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "{{ public_site_url() }}/#website",
+        "name": "ZakoWhat",
+        "alternateName": ["Zakowhat", "zakowhat.uz"],
+        "url": "{{ public_site_url() }}/",
+        "inLanguage": "uz",
+        "publisher": {"@id": "{{ public_site_url() }}/#organization"}
+      },
+      {
+        "@type": "Organization",
+        "@id": "{{ public_site_url() }}/#organization",
+        "name": "ZakoWhat",
+        "url": "{{ public_site_url() }}/",
+        "logo": "{{ public_site_url() }}/static/img/zakowhat-logo-512.png"
+      }
+    ]
+  }
+  </script>
 
   <!-- Architectural Google Fonts: Cinzel, Playfair Display, Plus Jakarta Sans, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">

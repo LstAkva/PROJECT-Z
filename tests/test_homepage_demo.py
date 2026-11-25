@@ -106,9 +106,11 @@ def test_homepage_game_and_daily_links(client):
 
 
 def test_arena_page_title_matches_homepage_positioning(client):
-    """The Arena/gameplay page uses the same approved title and makes no "Mustaqil" claim."""
+    """The Arena page has its own title (so search engines see two different pages, not a duplicate of the
+    homepage), keeps the approved positioning and the brand, and makes no "Mustaqil" claim."""
     res = client.get("/arena")
     assert res.status_code == status.HTTP_200_OK
     head = res.text[:res.text.index("</head>")]
-    assert "<title>ZakoWhat — Zakovat va Svoya Igra onlayn</title>" in head
+    assert "<title>Arena — Zakovat va Svoya Igra to‘plamlari | ZakoWhat</title>" in head
+    assert "<title>ZakoWhat — Zakovat va Svoya Igra onlayn</title>" not in head
     assert "Mustaqil" not in head and "mustaqil" not in head
