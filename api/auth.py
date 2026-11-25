@@ -26,7 +26,7 @@ ACCESS_TOKEN_EXPIRE_DAYS = 30
 SESSION_INACTIVITY_LIMIT_SECONDS = 1800  # 30 minutes server-side inactivity limit
 # Version of the Privacy Policy / Terms of Use a new user agrees to: the later of the two "last updated" dates.
 # Change it whenever those documents change, so each recorded agreement says which version it was.
-TERMS_VERSION = "2026-11-23"
+TERMS_VERSION = "2026-11-25"
 TERMS_NOT_ACCEPTED_DETAIL = "Davom etish uchun Maxfiylik siyosati va Foydalanish shartlariga rozilik bildiring."
 
 

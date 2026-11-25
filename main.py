@@ -269,29 +269,50 @@ def read_staging(request: Request, quiz_id: int = None, db: Session = Depends(ge
     return response
 
 
+def _viewer_is_owner(request: Request, db: Session) -> bool:
+    """Same rule as the owner API (verify_owner_access): signed in, and the email is in OWNER_EMAIL(S).
+    Fails closed when no owner is configured."""
+    user = get_current_user_optional(request, db)
+    owner_emails = get_owner_emails()
+    return bool(user and owner_emails and user.email.lower() in owner_emails)
+
+
+def _away_from_owner_pages() -> RedirectResponse:
+    """Everyone who is not the owner (signed out or not) is sent to the public Arena, without any hint that an
+    owner area exists. The owner signs in on the site as usual and then opens /owner."""
+    return RedirectResponse(url="/arena", status_code=status.HTTP_303_SEE_OTHER, headers={"Cache-Control": "no-store"})
+
+
+def _owner_page(request: Request, name: str):
+    response = templates.TemplateResponse(request=request, name=name)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return response
+
+
 @app.get("/bank")
 @app.get("/admin")
 def read_bank(request: Request, db: Session = Depends(get_db)):
-    user = get_current_user_optional(request, db)
-    owner_emails = get_owner_emails()
-    if not user or not owner_emails or user.email.lower() not in owner_emails:
-        return RedirectResponse(url="/owner", status_code=status.HTTP_303_SEE_OTHER)
-    return templates.TemplateResponse(request=request, name="bank.html")
+    if not _viewer_is_owner(request, db):
+        return _away_from_owner_pages()
+    return _owner_page(request, "bank.html")
 
 @app.get("/builder")
 @app.get("/builder/{draft_id}")
 @app.get("/create")
 def read_builder(request: Request, draft_id: int = None, db: Session = Depends(get_db)):
-    user = get_current_user_optional(request, db)
-    owner_emails = get_owner_emails()
-    if not user or not owner_emails or user.email.lower() not in owner_emails:
-        return RedirectResponse(url="/owner", status_code=status.HTTP_303_SEE_OTHER)
-    return templates.TemplateResponse(request=request, name="builder.html")
+    if not _viewer_is_owner(request, db):
+        return _away_from_owner_pages()
+    return _owner_page(request, "builder.html")
 
 @app.get("/owner")
 @app.get("/owner/{subpath:path}")
-def read_owner_page(request: Request, subpath: str = ""):
-    return templates.TemplateResponse(request=request, name="owner.html")
+def read_owner_page(request: Request, subpath: str = "", db: Session = Depends(get_db)):
+    """Owner panel page. The owner API enforces access on its own; the page itself is no longer shown
+    (with its sign-in screen) to anyone else."""
+    if not _viewer_is_owner(request, db):
+        return _away_from_owner_pages()
+    return _owner_page(request, "owner.html")
 
 @app.get("/preview/grand-sanctum")
 @app.get("/preview/homepage")

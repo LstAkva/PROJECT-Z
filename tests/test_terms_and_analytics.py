@@ -162,3 +162,29 @@ def test_owner_page_has_the_analytics_tab(anon, owner):
     page = anon.get("/owner", headers=_hdr(owner)).text
     assert 'id="nav-tab-analytics"' in page and 'id="owner-view-analytics"' in page
     assert "/api/owner/analytics?days=" in page
+
+
+# --- owner pages are not shown to anyone else ----------------------------------------------------------------
+
+@pytest.mark.parametrize("path", ["/owner", "/owner/users", "/bank", "/admin", "/builder", "/builder/3", "/create"])
+def test_owner_pages_send_everyone_else_to_the_arena(anon, owner, db_session, path):
+    res = anon.get(path, follow_redirects=False)
+    assert res.status_code == status.HTTP_303_SEE_OTHER and res.headers["location"] == "/arena"
+    assert res.headers["cache-control"] == "no-store"
+    player = _user(db_session, f"curious-{abs(hash(path)) % 10000}@misol.uz", "Qiziquvchan")
+    res = anon.get(path, headers=_hdr(player), follow_redirects=False)
+    assert res.status_code == status.HTTP_303_SEE_OTHER and res.headers["location"] == "/arena"
+    assert "Owner" not in res.text and "owner" not in res.text
+
+
+def test_owner_pages_fail_closed_without_owner_config(anon, owner, monkeypatch):
+    monkeypatch.delenv("OWNER_EMAIL", raising=False)
+    monkeypatch.delenv("OWNER_EMAILS", raising=False)
+    res = anon.get("/owner", headers=_hdr(owner), follow_redirects=False)
+    assert res.status_code == status.HTTP_303_SEE_OTHER and res.headers["location"] == "/arena"
+
+
+def test_owner_gets_the_owner_page_uncached(anon, owner):
+    res = anon.get("/owner", headers=_hdr(owner), follow_redirects=False)
+    assert res.status_code == 200 and 'id="nav-tab-analytics"' in res.text
+    assert res.headers["cache-control"] == "no-store" and res.headers["x-robots-tag"] == "noindex, nofollow"

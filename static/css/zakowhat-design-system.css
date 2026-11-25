@@ -107,9 +107,17 @@
   --border-subtle: rgba(197, 160, 89, 0.15);
   --border-medium: rgba(197, 160, 89, 0.32);
   --border-prominent: var(--brass-500);
+  --border-field: #84796F;   /* edge of text fields: 3:1+ against cards and the page (WCAG 1.4.11) */
 
   --accent-primary: var(--oxblood-700);
   --accent-primary-hover: var(--oxblood-600);
+  --accent-burgundy: #B4485A; /* "on" switch track: 3:1+ against dark cards */
+  --switch-off: #5F5862;
+  --danger-text: #FB7185;
+  --danger-text-hover: #FDA4AF;
+  --alert-bg: rgba(76, 5, 25, 0.5);
+  --alert-border: #9F1239;
+  --alert-text: #FDA4AF;
   --accent-brass: var(--brass-400);
   --mode-rule-svoyak: var(--brass);        /* format rule for Svoya Igra cards and details */
   --state-correct: #8FCFAE;                /* gameplay verdicts: calm green and rose that read on ink */
@@ -159,12 +167,20 @@
 
   --text-main: var(--ink);
   --text-muted: #4E4348;
-  --text-dim: #74686D;
+  --text-dim: #62575C;   /* 5:1+ on ivory and on the beige surfaces (was #74686D, 4.3:1 on #ECE6D7) */
   --text-brass: #664E1D;
 
   --border-subtle: rgba(110, 85, 40, 0.2);
   --border-medium: rgba(110, 85, 40, 0.35);
   --border-prominent: var(--brass-700);
+  --border-field: #8E7C68;
+  --accent-burgundy: var(--oxblood-700);
+  --switch-off: #8A8088;
+  --danger-text: #A3182F;
+  --danger-text-hover: #7F1022;
+  --alert-bg: #FBE9EC;
+  --alert-border: #E3A1AC;
+  --alert-text: #8A1C2C;
 
   --accent-primary: var(--oxblood-700);
   --accent-primary-hover: var(--oxblood-800);
@@ -545,7 +561,7 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
   padding: 0.8rem 1.15rem;
   background-color: #0E0C12;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-field);
   border-radius: var(--radius-sm);
   color: #FAF7F2;
   font-family: var(--font-sans);
@@ -566,7 +582,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .input-answer::placeholder {
-  color: rgba(250, 247, 242, 0.3);
+  color: var(--text-dim);
   font-size: 0.92rem;
 }
 
@@ -577,7 +593,7 @@ h1, h2, h3, h4, h5, h6 {
 
 [data-theme="light"] .input-answer {
   background-color: #F8F5EE;
-  border-color: rgba(0, 0, 0, 0.15);
+  border-color: var(--border-field);
   color: #1D181A;
 }
 
@@ -1020,7 +1036,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-theme="light"] .header-logout-btn {
-  color: #E11D48 !important;
+  color: #B3123A !important;
 }
 
 [data-theme="light"] .header-logout-btn:hover {
@@ -1317,7 +1333,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.04em;
-  color: #6C6675;
+  color: #9A93A2;
   margin-bottom: var(--space-4);
   padding-bottom: var(--space-2);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
@@ -1351,7 +1367,7 @@ h1, h2, h3, h4, h5, h6 {
   padding-top: var(--space-3);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   font-size: 0.75rem;
-  color: #6C6675;
+  color: #9A93A2;
   z-index: 2;
   position: relative;
 }
@@ -1531,7 +1547,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-theme="light"] .question-stage-tag {
-  color: #8C8492;
+  color: #625A68;
   border-bottom-color: rgba(0, 0, 0, 0.06);
 }
 
@@ -1541,7 +1557,7 @@ h1, h2, h3, h4, h5, h6 {
 
 [data-theme="light"] .table-format-info {
   border-top-color: rgba(0, 0, 0, 0.06);
-  color: #8C8492;
+  color: #625A68;
 }
 
 /* --------------------------------------------------------------------------
@@ -2368,7 +2384,7 @@ body:has(#screen-gameplay:not(.hidden)) .site-footer { display: none; }
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
   background-color: var(--bg-surface-elevated);
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--border-field);
   border-radius: var(--radius-sm);
   color: var(--text-main);
   font-family: var(--font-sans);
@@ -6145,3 +6161,32 @@ button.game-cell:active {
   font-size: 0.78rem;
   padding: 0.45rem 0.9rem;
 }
+
+
+/* ==========================================================================
+   23. CONTRAST FIXES (WCAG AA: text 4.5:1, large text and control edges 3:1)
+   ========================================================================== */
+[data-theme="light"] .skip-link { background: var(--oxblood-700); color: var(--ivory); }
+
+/* Rose "danger" text from the dark palette is unreadable on parchment */
+[data-theme="light"] .text-rose-400,
+[data-theme="light"] .text-rose-300 { color: var(--danger-text) !important; }
+[data-theme="light"] .hover\:text-rose-300:hover { color: var(--danger-text-hover) !important; }
+
+/* Arena page login/registration window (markup uses dark-palette utility classes) */
+#modal-auth .text-zinc-500 { color: var(--text-dim); }
+#modal-auth input[type="text"], #modal-auth input[type="email"], #modal-auth input[type="password"] { border-color: var(--border-field); }
+[data-theme="light"] #modal-auth .text-white { color: var(--text-main); }
+[data-theme="light"] #modal-auth .text-zinc-300 { color: var(--text-muted); }
+[data-theme="light"] #modal-auth .text-zinc-400 { color: var(--text-dim); }
+[data-theme="light"] #modal-auth .hover\:text-white:hover,
+[data-theme="light"] #modal-auth .hover\:text-zinc-200:hover { color: var(--text-main); }
+[data-theme="light"] #modal-auth .border-zinc-800 { border-color: var(--border-medium); }
+[data-theme="light"] #modal-auth input[type="text"],
+[data-theme="light"] #modal-auth input[type="email"],
+[data-theme="light"] #modal-auth input[type="password"] { background-color: var(--bg-surface-elevated); color: var(--text-main); border-color: var(--border-field); }
+[data-theme="light"] #modal-auth input::placeholder { color: var(--text-dim); }
+[data-theme="light"] #auth-error-banner { background-color: var(--alert-bg); border-color: var(--alert-border); color: var(--alert-text) !important; }
+
+/* Switch track when off: visible edge on both themes */
+.peer:not(:checked) ~ .bg-zinc-700 { background-color: var(--switch-off); }

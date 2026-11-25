@@ -102,21 +102,21 @@ def test_question_bank_api_authorization_guards(client, monkeypatch):
 def test_question_bank_and_builder_page_route_protection(client, monkeypatch):
     """
     Contract: Direct browser access to /bank, /admin, /builder, /create
-    redirects unauthenticated and normal users to /owner.
+    redirects unauthenticated and normal users to the public Arena.
     """
     monkeypatch.setenv("OWNER_EMAIL", "authorized_owner@example.test")
     client.cookies.clear()
 
-    # Unauthenticated -> redirect to /owner (303)
+    # Unauthenticated -> redirect to /arena (303)
     res = client.get("/bank", follow_redirects=False)
     assert res.status_code == status.HTTP_303_SEE_OTHER
-    assert res.headers["location"] == "/owner"
+    assert res.headers["location"] == "/arena"
 
     res = client.get("/builder", follow_redirects=False)
     assert res.status_code == status.HTTP_303_SEE_OTHER
-    assert res.headers["location"] == "/owner"
+    assert res.headers["location"] == "/arena"
 
-    # Normal user -> redirect to /owner (303)
+    # Normal user -> redirect to /arena (303)
     client.post("/api/auth/register", json={
         "email": "regular_player2@example.test",
         "password": "ValidPassword123!",
@@ -124,11 +124,11 @@ def test_question_bank_and_builder_page_route_protection(client, monkeypatch):
     })
     res = client.get("/bank", follow_redirects=False)
     assert res.status_code == status.HTTP_303_SEE_OTHER
-    assert res.headers["location"] == "/owner"
+    assert res.headers["location"] == "/arena"
 
     res = client.get("/builder", follow_redirects=False)
     assert res.status_code == status.HTTP_303_SEE_OTHER
-    assert res.headers["location"] == "/owner"
+    assert res.headers["location"] == "/arena"
 
 
 def test_list_questions_pagination(owner_client, sample_question_bank):

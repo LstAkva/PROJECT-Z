@@ -239,7 +239,7 @@ def test_anonymous_access_denied_on_all_sensitive_routes(client):
     # 6. HTML Admin views redirect unauthenticated users
     res_builder = client.get("/builder", follow_redirects=False)
     assert res_builder.status_code == status.HTTP_303_SEE_OTHER
-    assert res_builder.headers["location"] == "/owner"
+    assert res_builder.headers["location"] == "/arena"
 
     res_bank = client.get("/bank", follow_redirects=False)
     assert res_bank.status_code == status.HTTP_303_SEE_OTHER
