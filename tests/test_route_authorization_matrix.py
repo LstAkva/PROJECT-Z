@@ -82,6 +82,7 @@ OWNER_ONLY_ROUTES = {
     ("PUT", "/api/owner/questions/{question_id}/answers/{answer_id}/primary"),
     ("POST", "/api/owner/pack-generator/preview"),
     ("POST", "/api/owner/pack-generator/generate"),
+    ("GET", "/api/owner/analytics"),  # aggregate usage counts
     ("GET", "/api/owner/users"),
     ("GET", "/api/owner/users/{user_id}"),
     ("PUT", "/api/owner/users/{user_id}"),

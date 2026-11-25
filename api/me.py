@@ -121,6 +121,8 @@ def export_my_data(
             "theme": u.theme_preference,
             "cookie_choice": u.cookie_consent,
             "cookie_choice_recorded_at": _iso(u.consent_recorded_at),
+            "terms_accepted_at": _iso(u.terms_accepted_at),
+            "terms_version": u.terms_version,
             "sign_in_method": u.auth_provider,
             "has_password": bool(u.hashed_password),
             "linked_google_account": bool(u.google_id),

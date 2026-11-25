@@ -1390,6 +1390,134 @@ def generate_and_commit_pack(
 # 8. USER MANAGEMENT
 # =============================================================================
 
+PREVIEW_TIMER_MODES = ("preview", "preview_no_timer")   # staff previews and owner demonstrations, not games
+
+
+def _tashkent_day(value):
+    """Calendar day in Asia/Tashkent for a stored timestamp (stored timestamps without a zone are UTC)."""
+    from services.daily_question import TASHKENT_TZ
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(TASHKENT_TZ).date()
+
+
+@router.get("/analytics", status_code=status.HTTP_200_OK)
+def get_owner_analytics(
+    days: int = Query(30, ge=7, le=90),
+    db: Session = Depends(get_db),
+    current_owner: User = Depends(verify_owner_access),
+):
+    """
+    First-party usage numbers for the owner: counts only, computed from our own tables (no trackers, no
+    names or emails in the response). Days are Asia/Tashkent calendar days; the period is the last `days`
+    days including today. Staff previews and owner demonstrations are not counted as games.
+    """
+    from datetime import timedelta
+    from services.daily_question import get_tashkent_today
+    from models import DailyQuestion
+
+    today = get_tashkent_today()
+    first_day = today - timedelta(days=days - 1)
+    # A little wider than the period in UTC, then trimmed by Tashkent day below.
+    since = datetime.combine(first_day, datetime.min.time()) - timedelta(days=1)
+    in_period = lambda value: value is not None and first_day <= _tashkent_day(value) <= today
+    week_start = today - timedelta(days=6)
+
+    series = {first_day + timedelta(days=i): {"new_users": 0, "games_started": 0, "games_completed": 0,
+                                              "daily_answers": 0} for i in range(days)}
+
+    # --- accounts ---
+    total_users = db.query(func.count(User.id)).scalar() or 0
+    by_provider = {row[0] or "local": int(row[1]) for row in
+                   db.query(User.auth_provider, func.count(User.id)).group_by(User.auth_provider).all()}
+    terms_recorded = db.query(func.count(User.id)).filter(User.terms_accepted_at.isnot(None)).scalar() or 0
+    new_users = new_users_week = 0
+    for (created,) in db.query(User.created_at).filter(User.created_at >= since).all():
+        if in_period(created):
+            day = _tashkent_day(created)
+            series[day]["new_users"] += 1
+            new_users += 1
+            new_users_week += day >= week_start
+
+    # --- games ---
+    games = (db.query(SoloAttempt.started_at, SoloAttempt.completed_at, SoloAttempt.status, SoloAttempt.user_id,
+                      SoloAttempt.anon_id, QuizVersion.quiz_id)
+             .join(QuizVersion, QuizVersion.id == SoloAttempt.quiz_version_id)
+             .filter(SoloAttempt.timer_mode.notin_(PREVIEW_TIMER_MODES),
+                     or_(SoloAttempt.started_at >= since, SoloAttempt.completed_at >= since))
+             .all())
+    started = completed = started_signed_in = 0
+    players, anon_players, players_week = set(), set(), set()
+    per_pack = {}
+    for started_at, completed_at, game_status, user_id, anon_id, quiz_id in games:
+        if in_period(started_at):
+            day = _tashkent_day(started_at)
+            series[day]["games_started"] += 1
+            started += 1
+            pack = per_pack.setdefault(quiz_id, {"started": 0, "completed": 0})
+            pack["started"] += 1
+            if user_id:
+                started_signed_in += 1
+                players.add(user_id)
+                if day >= week_start:
+                    players_week.add(user_id)
+            elif anon_id:
+                anon_players.add(anon_id)
+        if game_status == "completed" and in_period(completed_at):
+            series[_tashkent_day(completed_at)]["games_completed"] += 1
+            completed += 1
+            if quiz_id in per_pack:
+                per_pack[quiz_id]["completed"] += 1
+
+    top_ids = sorted(per_pack, key=lambda q: (-per_pack[q]["started"], q))[:5]
+    titles = dict(db.query(Quiz.id, Quiz.title).filter(Quiz.id.in_(top_ids)).all()) if top_ids else {}
+    top_packs = [{"quiz_id": q, "title": titles.get(q, f"#{q}"), **per_pack[q]} for q in top_ids]
+
+    # --- daily question ---
+    daily_answers = daily_correct = 0
+    daily_players = set()
+    for answered_at, is_correct, user_id, anon_id in (
+            db.query(DailySubmission.answered_at, DailySubmission.is_correct, DailySubmission.user_id,
+                     DailySubmission.anon_id)
+            .filter(DailySubmission.answered_at >= since).all()):
+        if in_period(answered_at):
+            series[_tashkent_day(answered_at)]["daily_answers"] += 1
+            daily_answers += 1
+            daily_correct += bool(is_correct)
+            daily_players.add(("u", user_id) if user_id else ("a", anon_id))
+    scheduled_ahead = (db.query(func.count(DailyQuestion.id))
+                       .filter(DailyQuestion.schedule_date > today).scalar() or 0)
+
+    return {
+        "period": {"days": days, "from": first_day.isoformat(), "to": today.isoformat(), "timezone": "Asia/Tashkent"},
+        "users": {
+            "total": int(total_users),
+            "new_in_period": new_users,
+            "new_last_7_days": new_users_week,
+            "by_sign_in_method": by_provider,
+            "with_recorded_agreement": int(terms_recorded),
+        },
+        "games": {
+            "started": started,
+            "completed": completed,
+            "completion_rate": round(completed / started, 3) if started else None,
+            "started_signed_in": started_signed_in,
+            "started_anonymous": started - started_signed_in,
+            "active_players": len(players),
+            "active_players_last_7_days": len(players_week),
+            "anonymous_players": len(anon_players),
+        },
+        "daily_question": {
+            "answers": daily_answers,
+            "correct_rate": round(daily_correct / daily_answers, 3) if daily_answers else None,
+            "players": len(daily_players),
+            "questions_scheduled_ahead": int(scheduled_ahead),
+        },
+        "top_packs": top_packs,
+        "series": [{"date": day.isoformat(), **counts} for day, counts in sorted(series.items())],
+    }
+
+
 @router.get("/users", status_code=status.HTTP_200_OK)
 def list_owner_users(
     page: int = Query(1, ge=1),

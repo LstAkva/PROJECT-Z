@@ -24,6 +24,16 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 SESSION_INACTIVITY_LIMIT_SECONDS = 1800  # 30 minutes server-side inactivity limit
+# Version of the Privacy Policy / Terms of Use a new user agrees to: the later of the two "last updated" dates.
+# Change it whenever those documents change, so each recorded agreement says which version it was.
+TERMS_VERSION = "2026-11-23"
+TERMS_NOT_ACCEPTED_DETAIL = "Davom etish uchun Maxfiylik siyosati va Foydalanish shartlariga rozilik bildiring."
+
+
+def record_terms_acceptance(user: "User") -> None:
+    """Stores that this user agreed to the current Privacy Policy and Terms (time + document version)."""
+    user.terms_accepted_at = datetime.now(timezone.utc)
+    user.terms_version = TERMS_VERSION
 
 
 def is_practice_attempt(attempt) -> bool:
@@ -280,6 +290,9 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=6)
     display_name: str = Field(..., min_length=1, max_length=100)
     session_token: Optional[str] = None
+    # The sign-up forms send true once the agreement box is ticked. false is refused; older clients that
+    # do not send it can still register, but no agreement is recorded for them.
+    accept_terms: Optional[bool] = None
 
 
 class LoginRequest(BaseModel):
@@ -290,6 +303,8 @@ class LoginRequest(BaseModel):
 class GoogleAuthRequest(BaseModel):
     credential: str
     session_token: Optional[str] = None
+    # Sent as true by the sign-in forms, which show "by continuing with Google you agree to ..." next to the button.
+    accept_terms: Optional[bool] = None
 
 
 class UserResponse(BaseModel):
@@ -347,6 +362,9 @@ def register(payload: RegisterRequest, request: Request, response: Response, db:
     has user_id IS NULL, and status == 'completed' before assigning attempt.user_id.
     """
     enforce_rate_limit(request, "register", max_requests=10, window_seconds=60)
+
+    if payload.accept_terms is False:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=TERMS_NOT_ACCEPTED_DETAIL)
 
     pw_bytes = payload.password.encode("utf-8")
     if len(pw_bytes) > 72:
@@ -422,6 +440,8 @@ def register(payload: RegisterRequest, request: Request, response: Response, db:
         display_name=clean_name,
         auth_provider="local",
     )
+    if payload.accept_terms:
+        record_terms_acceptance(user)
     db.add(user)
     db.flush()
 
@@ -1250,6 +1270,8 @@ def google_auth(payload: GoogleAuthRequest, request: Request, response: Response
             auth_provider="google",
             google_id=google_id,
         )
+        if payload.accept_terms:
+            record_terms_acceptance(user)
         db.add(user)
         db.flush()
     else:
@@ -1259,6 +1281,9 @@ def google_auth(payload: GoogleAuthRequest, request: Request, response: Response
             # Google-only account (that would block "change password" for its owner).
             if not user.hashed_password:
                 user.auth_provider = "google"
+        # An account from before agreements were recorded: signing in again next to the agreement note records it.
+        if payload.accept_terms and user.terms_accepted_at is None:
+            record_terms_acceptance(user)
 
     if claimed_attempt:
         claimed_attempt.user_id = user.id

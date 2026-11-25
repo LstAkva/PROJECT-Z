@@ -921,12 +921,13 @@
                         <label class="text-xs font-medium text-zinc-300">Parol (kamida 6 belgi)</label>
                         <input type="password" data-password-toggle id="register-password" name="password" required autocomplete="new-password" minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-sm bg-black/60 border border-zinc-800 text-white text-sm outline-none focus:border-[var(--brass-500)] transition-colors" />
                     </div>
+                    <label for="arena-register-consent" class="flex items-start gap-2 text-[11px] text-zinc-400 leading-normal cursor-pointer">
+                        <input type="checkbox" id="arena-register-consent" name="consent" aria-required="true" style="margin-top: 2px; width: 15px; height: 15px; flex-shrink: 0; accent-color: var(--accent-brass);">
+                        <span><a href="/privacy" target="_blank" rel="noopener" class="underline hover:text-white transition-colors" style="color: var(--accent-brass);">Maxfiylik siyosati</a> va <a href="/terms" target="_blank" rel="noopener" class="underline hover:text-white transition-colors" style="color: var(--accent-brass);">Foydalanish shartlari</a>ga roziman.</span>
+                    </label>
                     <button type="submit" id="register-submit-btn" class="btn btn-primary w-full py-3 text-sm">
                         <span>Ro‘yxatdan o‘tish</span>
                     </button>
-                    <p class="text-[11px] text-zinc-400 text-center leading-normal pt-1">
-                        Ro‘yxatdan o‘tish orqali siz <a href="/terms" target="_blank" class="underline hover:text-white transition-colors" style="color: var(--accent-brass);">Foydalanish shartlari</a> va <a href="/privacy" target="_blank" class="underline hover:text-white transition-colors" style="color: var(--accent-brass);">Maxfiylik siyosati</a>ga rozilik bildirasiz.
-                    </p>
                 </form>
 
                 <!-- Google GIS Sign-In -->
@@ -939,6 +940,9 @@
                     <div id="google-signin-container" class="flex justify-center">
                         <!-- Loaded dynamically via GIS SDK if available -->
                     </div>
+                    <p class="text-[11px] text-zinc-400 text-center leading-normal">
+                        Google orqali davom etib, siz <a href="/privacy" target="_blank" rel="noopener" class="underline hover:text-white transition-colors" style="color: var(--accent-brass);">Maxfiylik siyosati</a> va <a href="/terms" target="_blank" rel="noopener" class="underline hover:text-white transition-colors" style="color: var(--accent-brass);">Foydalanish shartlari</a>ga rozilik bildirasiz.
+                    </p>
                 </div>
             </div>
         </div>
@@ -1612,6 +1616,13 @@
             if (state.isAuthSubmitting) return;
 
             const banner = document.getElementById('auth-error-banner');
+            const consentBox = document.getElementById('arena-register-consent');
+            if (consentBox && !consentBox.checked) {
+                banner.textContent = 'Davom etish uchun Maxfiylik siyosati va Foydalanish shartlariga rozilik bildiring.';
+                banner.classList.remove('hidden');
+                consentBox.focus();
+                return;
+            }
             const submitBtn = document.getElementById('register-submit-btn');
             const usernameInput = document.getElementById('register-username');
             const emailInput = document.getElementById('register-email');
@@ -1634,7 +1645,8 @@
                     display_name: username,
                     email: email,
                     password: password,
-                    session_token: state.sessionToken || null
+                    session_token: state.sessionToken || null,
+                    accept_terms: true
                 };
 
                 const res = await fetch(`${API_BASE}/auth/register`, {
@@ -1965,7 +1977,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         credential: response.credential,
-                        session_token: state.sessionToken || null
+                        session_token: state.sessionToken || null,
+                        accept_terms: true
                     })
                 });
 

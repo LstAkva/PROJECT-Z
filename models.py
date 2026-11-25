@@ -128,6 +128,9 @@ class User(Base):
     theme_preference = Column(String(20), default="dark", nullable=False)
     cookie_consent = Column(String(50), default="necessary", nullable=False)
     consent_recorded_at = Column(DateTime, nullable=True)
+    # Agreement to the Privacy Policy and Terms at sign-up: when, and which dated version of the documents.
+    terms_accepted_at = Column(DateTime, nullable=True)
+    terms_version = Column(String(20), nullable=True)
     auth_provider = Column(String(50), default="local", nullable=False)  # 'local' или 'google'
     google_id = Column(String(255), unique=True, index=True, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
