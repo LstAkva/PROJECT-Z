@@ -104,7 +104,7 @@
         document.getElementById('play-pack').textContent = s.pack_title || 'Jonli xona';
         document.getElementById('play-team').textContent = s.team.name;
         document.getElementById('play-score').textContent = s.my_points + ' ball' + (s.my_rank ? ' · ' + s.my_rank + '-o‘rin' : '');
-        countdown.set(s.status === 'question' ? s.remaining_seconds : null, s.paused);
+        countdown.set(s.status === 'question' ? s.remaining_seconds : null, s.paused && !s.clock_waiting, s.clock_waiting);
         const key = s.status + ':' + s.question_number;
         if (key !== shownKey) {
           shownKey = key;

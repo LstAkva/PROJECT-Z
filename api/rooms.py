@@ -172,10 +172,18 @@ def _answer_window_open(room: LiveRoom) -> bool:
 
 
 def _open_question(room: LiveRoom, index: int) -> None:
+    """Shows the question with the clock stopped at full time, as in live Zakovat: the host reads the question
+    aloud and then starts the clock (the next key press / "Taymerni boshlash")."""
     room.status = "question"
     room.current_index = index
-    room.paused_remaining = None
-    room.question_deadline = (_now() + timedelta(seconds=room.seconds_per_question)).replace(tzinfo=None)
+    room.paused_remaining = room.seconds_per_question
+    room.question_deadline = None
+
+
+def _clock_waiting(room: LiveRoom) -> bool:
+    """The question is up but its clock has never been started: paused, and no deadline was ever set
+    (pausing a running clock keeps its old deadline as the "started" marker)."""
+    return room.status == "question" and room.paused_remaining is not None and room.question_deadline is None
 
 
 def _standings(room: LiveRoom, db: Session) -> List[Dict[str, Any]]:
@@ -241,6 +249,7 @@ def _base_state(room: LiveRoom, title: str, questions: List[Dict[str, Any]]) -> 
         "seconds_per_question": room.seconds_per_question,
         "remaining_seconds": _remaining(room),
         "paused": room.paused_remaining is not None and room.status == "question",
+        "clock_waiting": _clock_waiting(room),
         "question": None, "reveal": None,
     }
     if room.status in ("question", "reveal") and 0 <= room.current_index < len(questions):
@@ -401,8 +410,8 @@ def control_room_timer(code: str, payload: TimerRequest, db: Session = Depends(g
             _conflict("Hozir ochiq savol yo‘q")
         left = _remaining(room) or 0
         if payload.action == "pause":
+            # question_deadline stays set (unused while paused): it records that this clock has been started
             room.paused_remaining = left
-            room.question_deadline = None
         elif payload.action == "resume":
             if room.paused_remaining is not None:
                 room.question_deadline = (_now() + timedelta(seconds=room.paused_remaining)).replace(tzinfo=None)

@@ -77,7 +77,7 @@
           latest = s;
           document.getElementById('scr-pack').textContent = 'ZakoWhat · ' + (s.pack_title || 'Jonli xona') + ' · ' + CODE;
           document.getElementById('scr-progress').textContent = s.question_number ? s.question_number + ' / ' + s.total_questions : '';
-          countdown.set(s.status === 'question' ? s.remaining_seconds : null, s.paused);
+          countdown.set(s.status === 'question' ? s.remaining_seconds : null, s.paused && !s.clock_waiting, s.clock_waiting);
           const k = s.status + ':' + s.question_number;
           if (s.status === 'lobby') lobby(s);
           else if (s.status === 'question') { if (k !== key) question(s); else if (document.getElementById('scr-answered')) document.getElementById('scr-answered').textContent = s.answered_count + ' / ' + s.teams_count + ' jamoa javob yubordi'; }

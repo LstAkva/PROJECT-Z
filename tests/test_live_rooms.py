@@ -148,7 +148,11 @@ def test_full_game_flow(anon, owner, pack):
 
     state = host(anon, owner, code, "start")
     assert state["status"] == "question" and state["question_number"] == 1 and state["total_questions"] == CLASSIC_Q
-    assert 28 <= state["remaining_seconds"] <= 30 and state["host_question"]["correct_answer"] == "Javob 1"
+    assert state["host_question"]["correct_answer"] == "Javob 1"
+    # the question opens with the clock stopped at full time; the host starts it after reading the question
+    assert state["clock_waiting"] is True and state["paused"] is True and state["remaining_seconds"] == 30
+    state = host(anon, owner, code, "timer", {"action": "resume"})
+    assert state["clock_waiting"] is False and state["paused"] is False and 28 <= state["remaining_seconds"] <= 30
 
     screen = anon.get(f"/api/rooms/{code}/screen").json()
     assert screen["question"]["text"].endswith("savol 1") and screen["reveal"] is None
@@ -185,6 +189,7 @@ def test_answers_close_when_the_clock_runs_out(anon, owner, pack, db_session):
     code = create(anon, owner, pack)
     token = join(anon, code, "Kech qolganlar")
     host(anon, owner, code, "start")
+    host(anon, owner, code, "timer", {"action": "resume"})
     room = db_session.query(LiveRoom).filter_by(code=code).one()
     room.question_deadline = (datetime.now(timezone.utc) - timedelta(seconds=5)).replace(tzinfo=None)
     db_session.commit()
@@ -196,14 +201,18 @@ def test_answers_close_when_the_clock_runs_out(anon, owner, pack, db_session):
 def test_pause_resume_and_extra_time(anon, owner, pack):
     code = create(anon, owner, pack, seconds_per_question=40)
     token = join(anon, code, "Sabrlilar")
-    host(anon, owner, code, "start")
-    state = host(anon, owner, code, "timer", {"action": "pause"})
-    assert state["paused"] is True and 38 <= state["remaining_seconds"] <= 40
-    answer(anon, code, token, "Javob 1")                              # answering still works while paused
+    state = host(anon, owner, code, "start")
+    assert state["clock_waiting"] is True
+    answer(anon, code, token, "Javob 1")                              # teams may answer while the question is read
     state = host(anon, owner, code, "timer", {"action": "add", "seconds": 15})
-    assert 53 <= state["remaining_seconds"] <= 55
+    assert state["clock_waiting"] is True and state["remaining_seconds"] == 55   # still not started
     state = host(anon, owner, code, "timer", {"action": "resume"})
-    assert state["paused"] is False and 52 <= state["remaining_seconds"] <= 55
+    assert state["clock_waiting"] is False and 53 <= state["remaining_seconds"] <= 55
+    state = host(anon, owner, code, "timer", {"action": "pause"})
+    assert state["paused"] is True and state["clock_waiting"] is False and 50 <= state["remaining_seconds"] <= 55
+    answer(anon, code, token, "Javob 2")                              # answering still works while paused
+    state = host(anon, owner, code, "timer", {"action": "resume"})
+    assert state["paused"] is False and 48 <= state["remaining_seconds"] <= 55
     host(anon, owner, code, "timer", {"action": "explode"}, expect=422)
 
 
@@ -368,5 +377,5 @@ def test_console_and_screen_take_keyboard_and_clicker(anon, owner, pack):
     screen = anon.get(f"/room/{code}/screen").text
     assert "R.hostKeys(CODE" in console and "R.hostKeys(CODE" in screen
     js = anon.get("/static/js/zakowhat-rooms.js").text
-    for key in ("'ArrowRight'", "'PageDown'", "'p'", "now - last < 700"):
+    for key in ("'ArrowRight'", "'PageDown'", "'p'", "now - last < 700", "st.status === 'question' && st.paused"):
         assert key in js, key

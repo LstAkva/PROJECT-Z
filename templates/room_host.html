@@ -29,7 +29,7 @@
         </div>
         <div id="host-question"></div>
         <div class="room-actions" id="host-controls" style="margin-top:var(--space-4)"></div>
-        <p class="room-meta" style="margin-top:var(--space-2)"><kbd>Probel</kbd> / <kbd>→</kbd> / clicker — keyingi qadam · <kbd>P</kbd> — pauza. Proyektor oynasi faol bo‘lsa ham ishlaydi.</p>
+        <p class="room-meta" style="margin-top:var(--space-2)"><kbd>Probel</kbd> / <kbd>→</kbd> / clicker — keyingi qadam (savol → taymer → javob → keyingi savol) · <kbd>P</kbd> — pauza. Proyektor oynasi faol bo‘lsa ham ishlaydi.</p>
         <div id="host-status" class="room-status is-error hidden" role="alert"></div>
         <div class="join-only hidden">
           <h2 class="room-label" style="margin-top:var(--space-6)">Javoblar <span id="host-answered"></span></h2>
@@ -86,7 +86,10 @@
         const box = document.getElementById('host-controls');
         const list = [];
         if (s.status === 'lobby') list.push(button('O‘yinni boshlash ▶', function () { act('/start'); }, true));
-        if (s.status === 'question') {
+        if (s.status === 'question' && s.clock_waiting) {
+          list.push(button('Taymerni boshlash ▶', function () { act('/timer', { action: 'resume' }); }, true));
+          list.push(button('Javobni ochish', function () { act('/reveal'); }));
+        } else if (s.status === 'question') {
           list.push(button('Javobni ochish', function () { act('/reveal'); }, true));
           list.push(s.paused ? button('Davom ettirish', function () { act('/timer', { action: 'resume' }); })
                              : button('Pauza', function () { act('/timer', { action: 'pause' }); }));
@@ -159,9 +162,9 @@
         document.querySelectorAll('.join-only').forEach(function (n) { n.classList.toggle('hidden', !s.player_join); });
         document.querySelectorAll('.presentation-only').forEach(function (n) { n.classList.toggle('hidden', !!s.player_join); });
         document.getElementById('host-pack').textContent = s.pack_title || 'Jonli xona';
-        document.getElementById('host-progress').textContent = s.question_number ? s.question_number + '-savol / ' + s.total_questions
+        document.getElementById('host-progress').textContent = s.question_number ? s.question_number + '-savol / ' + s.total_questions + (s.clock_waiting ? ' · savolni o‘qing, so‘ng taymerni boshlang' : '')
           : (s.status === 'lobby' ? 'Kutish zali' : '');
-        countdown.set(s.status === 'question' ? s.remaining_seconds : null, s.paused);
+        countdown.set(s.status === 'question' ? s.remaining_seconds : null, s.paused && !s.clock_waiting, s.clock_waiting);
         controls(s); questionView(s); answersView(s); teamsView(s);
         document.getElementById('host-table').replaceChildren(R.standingsTable(s.standings));
       }

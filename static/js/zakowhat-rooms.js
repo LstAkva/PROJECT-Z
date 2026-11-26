@@ -48,9 +48,9 @@
 
   /* Local countdown between polls: the server's remaining_seconds is the source of truth. */
   function Countdown(node) {
-    let left = null, paused = false;
+    let left = null, paused = false, frozen = false;
     setInterval(function () {
-      if (left === null || paused) return;
+      if (left === null || paused || frozen) return;
       left = Math.max(0, left - 1);
       draw();
     }, 1000);
@@ -58,7 +58,8 @@
       node.textContent = left === null ? '' : (paused ? '⏸ ' : '') + clock(left);
       node.classList.toggle('is-low', left !== null && left <= 10);
     }
-    return { set: function (seconds, isPaused) { left = (seconds === null || seconds === undefined) ? null : seconds; paused = !!isPaused; draw(); } };
+    /* isPaused shows ⏸; isFrozen (clock not started yet) stops the count without the icon */
+    return { set: function (seconds, isPaused, isFrozen) { left = (seconds === null || seconds === undefined) ? null : seconds; paused = !!isPaused; frozen = !!isFrozen; draw(); } };
   }
 
   /* Repeating poll; slower while the tab is hidden. Stops when fn returns false. */
@@ -113,7 +114,8 @@
   }
 
   /* Keyboard and presentation-clicker control for the host (works in the console and on the projector window):
-     Space / → / PageDown / Enter = next step (start → reveal the answer → next question),
+     Space / → / PageDown / Enter = next step (open the question → start the clock → reveal the answer → next question;
+     a paused clock is resumed first),
      P (or З on a Russian layout, "." / B from a clicker's blank-screen key) = pause / resume the clock.
      getState() returns the latest {status, paused}; onState(hostState) runs after each action. */
   function hostKeys(code, getState, onState) {
@@ -128,6 +130,7 @@
       if ([' ', 'ArrowRight', 'PageDown', 'Enter'].indexOf(e.key) !== -1) {
         if (t && /^(BUTTON|A)$/.test(t.tagName) && (e.key === ' ' || e.key === 'Enter')) return;   // let the focused button act
         if (st.status === 'lobby') path = '/start';
+        else if (st.status === 'question' && st.paused) { path = '/timer'; body = { action: 'resume' }; }
         else if (st.status === 'question') path = '/reveal';
         else if (st.status === 'reveal') path = '/next';
       } else if (['p', 'P', 'з', 'З', '.', 'b', 'B'].indexOf(e.key) !== -1 && st.status === 'question') {
