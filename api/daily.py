@@ -1,4 +1,5 @@
 from datetime import date
+from services.text import clean_visible_text
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -139,6 +140,11 @@ def submit_today_answer(
     Allows up to 3 tries per user per day.
     Reveals the correct answer only upon correct submission or after 3 failed tries.
     """
+    # a blank or invisible-only answer is a typing slip, not an attempt (it used to raise a 500)
+    payload.answer = clean_visible_text(payload.answer, 500)
+    if not payload.answer:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Javobni yozing.")
+
     today = get_tashkent_today()
     daily_q = get_or_schedule_daily_question(db, target_date=today)
 

@@ -28,6 +28,7 @@ from api.play import clean_explanation, get_manifest_or_db_rounds, resolve_prima
 from database import get_db
 from models import LiveAnswer, LiveRoom, LiveTeam, Quiz, QuizVersion, User
 from services.gameplay import is_conservative_typo_match, is_true_false_match, normalize_uzbek_latin
+from services.text import clean_visible_text
 
 router = APIRouter(prefix="/api/rooms", tags=["rooms"])
 
@@ -495,7 +496,7 @@ def join_room(payload: JoinRequest, request: Request, response: Response, db: Se
     room = _load_room(payload.code, db, lock=True)
     if room.status == "finished":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Bu xonadagi o‘yin tugagan")
-    name = " ".join(payload.team_name.split())[:40]
+    name = clean_visible_text(payload.team_name, 40)
     if not name:
         raise HTTPException(status_code=422, detail="Jamoa nomini yozing")
     if sum(1 for t in room.teams if not t.removed) >= MAX_TEAMS:
@@ -547,7 +548,7 @@ def submit_room_answer(code: str, payload: AnswerRequest, request: Request, resp
     team = _team_for(room, x_team_token, db)
     if not _answer_window_open(room):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Javob qabul qilish vaqti tugadi")
-    text = " ".join(payload.text.split())
+    text = clean_visible_text(payload.text, 300)
     if not text:
         raise HTTPException(status_code=422, detail="Javobni yozing")
     _, questions = _context(room, db)

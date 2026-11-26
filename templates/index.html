@@ -1631,7 +1631,7 @@
             const username = usernameInput.value.trim();
             let email = emailInput.value.trim();
             if (!email) {
-                email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@zakowhat.uz`;
+                email = (username.toLowerCase().replace(/[^a-z0-9]/g, '') || ('player' + Math.random().toString(16).slice(2, 8).padEnd(6, '0'))) + '@zakowhat.uz';  // names without Latin letters (Шерзод) get player######
             }
             const password = passwordInput.value;
 
@@ -2974,6 +2974,8 @@
                 }
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
+                    // a game rule (e.g. untimed mode opens after the ranked game) is a notice, not an "Xatolik"
+                    if (res.status < 500 && apiDetail(err)) { await zwAlert(apiDetail(err)); return; }
                     throw new Error(apiDetail(err) || "O'yinni boshlab bo'lmadi");
                 }
                 const data = await res.json();
@@ -4187,6 +4189,11 @@
                 }
                 state.currentQuizId = data.quiz_id || parseInt(sessionStorage.getItem('zakowhat_quiz_id'), 10) || null;
                 state.isStaging = Boolean(data.is_staging);
+                // /play/<other id> (an old or typed link) restores this tab's game: show its real address
+                const playMatch = window.location.pathname.match(/^\/play\/([^/]+)$/);
+                if (playMatch && state.currentQuizId && playMatch[1] !== String(state.currentQuizId)) {
+                    window.history.replaceState({}, '', `/play/${state.currentQuizId}`);
+                }
                 state.totalScore = data.total_score || 0;
 
                 if (data.status === 'board_selection') {
@@ -4763,7 +4770,7 @@
             try {
                 const res = await fetch(`/api/users/${identifier}/public`);
                 if (!res.ok) {
-                    await zwAlert("Bu profil topilmadi yoki yopiq.");
+                    await zwAlert("Bu profil topilmadi yoki egasi uni yopiq qilgan.", { variant: "info", title: "Profil topilmadi" });
                     return;
                 }
                 const data = await res.json();

@@ -17,11 +17,14 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from database import get_db
+from services.text import clean_visible_text
 from models import User, SoloAttempt, QuizVersion, Quiz, AnswerRecord
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 ALGORITHM = "HS256"
+EMAIL_SHAPE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+PLACEHOLDER_EMAIL_DOMAIN = "zakowhat.uz"   # addresses the sign-up forms build when no email is typed
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 SESSION_INACTIVITY_LIMIT_SECONDS = 1800  # 30 minutes server-side inactivity limit
 # Version of the Privacy Policy / Terms of Use a new user agrees to: the later of the two "last updated" dates.
@@ -382,13 +385,15 @@ def register(payload: RegisterRequest, request: Request, response: Response, db:
                 detail="Tizim egasi (Owner) hisobi ommaviy ro'yxatdan o'tish orqali ochilishi taqiqlangan.",
             )
 
-    if "@" not in clean_email or "." not in clean_email:
+    # one "@", something before it, a dot in the domain, no spaces (rejects "@zakowhat.uz", "a@b", "two@@x.uz")
+    if not EMAIL_SHAPE.match(clean_email):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Noto'g'ri email formati",
         )
 
-    clean_name = html.escape(payload.display_name.strip(), quote=False)
+    # invisible characters (zero-width space, right-to-left override, NUL...) never make a name
+    clean_name = html.escape(clean_visible_text(payload.display_name, 100), quote=False)
     if not clean_name:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -397,6 +402,12 @@ def register(payload: RegisterRequest, request: Request, response: Response, db:
 
     # Check email uniqueness
     existing = db.query(User).filter(User.email == clean_email).first()
+    if existing and clean_email.endswith("@" + PLACEHOLDER_EMAIL_DOMAIN):
+        # the browser built a placeholder address from the name: the person typed no email, so talk about the name
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Bu nom bilan hisob allaqachon mavjud. Boshqa nom tanlang yoki emailingizni kiriting.",
+        )
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -482,14 +493,22 @@ def login(payload: LoginRequest, request: Request, response: Response, db: Sessi
     # 1. Authoritative lookup by unique email first
     user = db.query(User).filter(func.lower(User.email) == clean_identifier).first()
 
-    # 2. Fallback lookup by username / display_name
+    # 2. The unique @username
     if not user:
-        user = (
+        user = db.query(User).filter(func.lower(User.username) == clean_identifier.lstrip("@")).first()
+
+    # 3. Display name. Names are not unique: try every account with that name (oldest first) and take the one whose
+    #    password matches, so a newer "Ali" can still sign in when an older "Ali" exists.
+    if not user:
+        same_name = (
             db.query(User)
             .filter(func.lower(User.display_name) == clean_identifier)
             .order_by(User.id.asc())
-            .first()
+            .limit(10)
+            .all()
         )
+        user = next((u for u in same_name if u.hashed_password and verify_password(payload.password, u.hashed_password)),
+                    same_name[0] if same_name else None)
 
     if not user:
         # Mitigate timing-based account enumeration by equalizing bcrypt execution time
@@ -699,7 +718,7 @@ def update_profile(
 ):
     """Updates profile attributes for the authenticated user."""
     if payload.display_name is not None:
-        dn = html.escape(payload.display_name.strip(), quote=False)
+        dn = html.escape(clean_visible_text(payload.display_name, 100), quote=False)
         if not dn:
             raise HTTPException(status_code=400, detail="Ko'rsatiladigan ism bo'sh bo'lishi mumkin emas")
         current_user.display_name = dn
@@ -927,12 +946,15 @@ def user_from_password_reset_token(token: str, db: Session) -> Optional[User]:
 
 
 def is_generated_email(user: User) -> bool:
-    """Registration without an email creates the placeholder {username}@zakowhat.uz (auth_modal.html).
+    """Registration without an email creates the placeholder {username}@zakowhat.uz (auth_modal.html), or
+    player{6 hex}@zakowhat.uz when the name has no Latin letters or digits.
     Nobody reads those inboxes, so no reset mail is sent to them."""
     email = (user.email or "").lower()
     local, _, domain = email.partition("@")
-    if domain != "zakowhat.uz":
+    if domain != PLACEHOLDER_EMAIL_DOMAIN:
         return False
+    if re.fullmatch(r"player[0-9a-f]{6,12}", local):
+        return True
     candidates = {re.sub(r"[^a-z0-9]", "", (user.username or "").lower()),
                   re.sub(r"[^a-z0-9]", "", (user.display_name or "").lower())}
     return local in candidates
@@ -1213,7 +1235,7 @@ def google_auth(payload: GoogleAuthRequest, request: Request, response: Response
 
     google_id = id_info.get("sub")
     email = (id_info.get("email") or "").strip().lower()
-    name = (id_info.get("name") or email.split("@")[0] or "Foydalanuvchi").strip()
+    name = clean_visible_text(id_info.get("name") or "", 100) or clean_visible_text(email.split("@")[0], 100) or "Foydalanuvchi"
 
     if not google_id or not email:
         raise HTTPException(

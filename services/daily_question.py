@@ -210,13 +210,15 @@ def submit_daily_answer(
     if not clean_text:
         raise ValueError("Javob bo'sh bo'lishi mumkin emas.")
 
-    # Check if already submitted
+    # Check if already submitted. The row is locked so two answers sent at the same moment are counted one after
+    # the other (otherwise both read "1 attempt used" and a player could get more than 3 tries).
     existing = (
         db.query(DailySubmission)
         .filter(
             DailySubmission.daily_question_id == daily_question.id,
             DailySubmission.user_id == user.id
         )
+        .with_for_update()
         .first()
     )
 
@@ -290,5 +292,6 @@ def submit_daily_answer(
             .first()
         )
         if existing:
-            return existing, True
+            # a parallel first answer won the insert: report its result, not "all attempts used"
+            return existing, bool(existing.is_correct or (existing.submission_meta or {}).get("is_finished"))
         raise

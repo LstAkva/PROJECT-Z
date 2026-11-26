@@ -491,7 +491,7 @@
       const username = usernameInput ? usernameInput.value.trim() : '';
       let email = emailInput ? emailInput.value.trim() : '';
       if (!email && username) {
-        email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@zakowhat.uz`;
+        email = (username.toLowerCase().replace(/[^a-z0-9]/g, '') || ('player' + Math.random().toString(16).slice(2, 8).padEnd(6, '0'))) + '@zakowhat.uz';  // names without Latin letters (Шерзод) get player######
       }
       const password = passwordInput ? passwordInput.value : '';
 

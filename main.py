@@ -90,6 +90,44 @@ async def security_headers_and_csrf_middleware(request: Request, call_next):
     return response
 
 
+def _is_number_out_of_range(exc: Exception) -> bool:
+    """An id in the URL too large for the database integer type (SQLite: OverflowError; PostgreSQL: DataError
+    "integer out of range")."""
+    from sqlalchemy.exc import DataError, StatementError
+    if isinstance(exc, OverflowError):
+        return True
+    if isinstance(exc, StatementError) and isinstance(getattr(exc, "orig", None), OverflowError):
+        return True
+    return isinstance(exc, DataError) and "out of range" in str(getattr(exc, "orig", exc)).lower()
+
+
+from sqlalchemy.exc import DataError as _DataError, StatementError as _StatementError  # noqa: E402
+from starlette.exceptions import HTTPException as _StarletteHTTPException  # noqa: E402
+
+
+@app.exception_handler(_StarletteHTTPException)
+async def http_error_handler(request: Request, exc: _StarletteHTTPException):
+    """A browser asking for a page that does not exist gets a real page, not {"detail": "Not Found"}.
+    API clients (and anything not asking for HTML) keep the JSON answer."""
+    wants_html = "text/html" in request.headers.get("accept", "")
+    if exc.status_code == 404 and wants_html and request.method == "GET" and not request.url.path.startswith("/api/"):
+        response = templates.TemplateResponse(request=request, name="not_found.html", status_code=404)
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Robots-Tag"] = "noindex"
+        return response
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail}, headers=getattr(exc, "headers", None))
+
+
+@app.exception_handler(OverflowError)
+@app.exception_handler(_DataError)
+@app.exception_handler(_StatementError)
+async def out_of_range_handler(request: Request, exc: Exception):
+    """e.g. /api/quizzes/99999999999999999999: no row can have that id, so it is "not found", not a server error."""
+    if _is_number_out_of_range(exc):
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"detail": "Topilmadi"})
+    return await global_exception_handler(request, exc)
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """
@@ -102,6 +140,7 @@ async def global_exception_handler(request: Request, exc: Exception):
             content={"detail": exc.detail},
             headers=getattr(exc, "headers", None),
         )
+
     logging.getLogger("uvicorn.error").exception(
         "Unhandled exception on %s %s: %s", request.method, request.url.path, exc
     )
@@ -245,7 +284,8 @@ def read_terms_page(request: Request):
 @app.get("/u/{username}")
 @app.get("/quiz/{quiz_id}")
 @app.get("/play/{quiz_id}")
-def read_root(request: Request, quiz_id: int = None, user_id_or_username: str = None, username: str = None):
+def read_root(request: Request, quiz_id: str = None, user_id_or_username: str = None, username: str = None):
+    # quiz_id is read by the page script; a non-number (/quiz/abc) must still get the page, not a raw JSON error
     response = templates.TemplateResponse(request=request, name="index.html")
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return response
@@ -253,7 +293,7 @@ def read_root(request: Request, quiz_id: int = None, user_id_or_username: str = 
 
 @app.get("/staging")
 @app.get("/staging/{quiz_id}")
-def read_staging(request: Request, quiz_id: int = None, db: Session = Depends(get_db)):
+def read_staging(request: Request, quiz_id: str = None, db: Session = Depends(get_db)):
     """Staff-only page. Everyone else (signed out, or signed in without staging rights) is sent to the public
     Arena. Same rule as the staging API (verify_staging_access), which still enforces access on its own."""
     user = get_current_user_optional(request, db)
@@ -303,7 +343,7 @@ def read_bank(request: Request, db: Session = Depends(get_db)):
 @app.get("/builder")
 @app.get("/builder/{draft_id}")
 @app.get("/create")
-def read_builder(request: Request, draft_id: int = None, db: Session = Depends(get_db)):
+def read_builder(request: Request, draft_id: str = None, db: Session = Depends(get_db)):
     if not _viewer_is_owner(request, db):
         return _away_from_owner_pages()
     return _owner_page(request, "builder.html")

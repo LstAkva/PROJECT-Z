@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="light">
+<head>
+  <title>Sahifa topilmadi — ZakoWhat</title>
+  {% include "components/room_head.html" %}
+</head>
+<body class="room-page">
+  {% include "components/header.html" %}
+  <main class="room-main">
+    <section class="room-card room-narrow" aria-labelledby="nf-title">
+      <p class="room-eyebrow">404</p>
+      <h1 id="nf-title" class="room-title">Sahifa topilmadi</h1>
+      <p class="room-lede">Bu manzilda sahifa yo‘q. Havola noto‘g‘ri yozilgan yoki sahifa o‘chirilgan bo‘lishi mumkin.</p>
+      <div class="room-actions">
+        <a href="/arena" class="btn btn-primary">To‘plamlarga o‘tish</a>
+        <a href="/" class="btn btn-secondary">Bosh sahifa</a>
+      </div>
+    </section>
+  </main>
+  {% include "components/footer.html" %}
+  {% include "components/auth_modal.html" %}
+  <script src="{{ static_url('js/zakowhat-navbar.js') }}"></script>
+</body>
+</html>
