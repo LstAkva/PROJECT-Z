@@ -26,6 +26,22 @@ OWNER_ONLY_ROUTES = {
     ("POST", "/api/demo/{session_token}/score"),
     ("POST", "/api/demo/{session_token}/end"),
     ("POST", "/api/demo/{session_token}/restart"),
+    # Jonli xona (live rooms): creating and running rooms, results export, host console page
+    ("POST", "/api/rooms"),
+    ("GET", "/api/rooms/mine"),
+    ("GET", "/api/rooms/{code}/host"),
+    ("POST", "/api/rooms/{code}/start"),
+    ("POST", "/api/rooms/{code}/reveal"),
+    ("POST", "/api/rooms/{code}/next"),
+    ("POST", "/api/rooms/{code}/timer"),
+    ("POST", "/api/rooms/{code}/end"),
+    ("POST", "/api/rooms/{code}/answers/{answer_id}/verdict"),
+    ("POST", "/api/rooms/{code}/teams/{team_id}/remove"),
+    ("GET", "/api/rooms/{code}/export"),
+    ("GET", "/room/{code}/host"),
+    # ...the same room routes are open to HOST_EMAILS (verify_room_host), which grants nothing else
+    ("GET", "/api/rooms/packs"),
+    ("GET", "/host"),
     # Drafts Authoring API
     ("POST", "/api/drafts"),
     ("GET", "/api/drafts"),
@@ -165,6 +181,15 @@ PUBLIC_ROUTES = {
     ("POST", "/api/auth/google"),
     ("GET", "/api/users/{identifier}/public"),
     ("GET", "/api/auth/users/{identifier}/public"),
+    # Jonli xona players and projector: no account; /me and /answer need the team's secret token
+    ("POST", "/api/rooms/join"),
+    ("GET", "/api/rooms/{code}/me"),
+    ("POST", "/api/rooms/{code}/answer"),
+    ("GET", "/api/rooms/{code}/screen"),  # question text, then the answer only after the host reveals it
+    ("GET", "/api/rooms/{code}/qr.svg"),  # QR of the join link; only while phone joining is on
+    ("GET", "/join"),
+    ("GET", "/room/{code}"),
+    ("GET", "/room/{code}/screen"),
     # Public Daily Question
     ("GET", "/api/daily/today"),
     ("POST", "/api/daily/submit"),

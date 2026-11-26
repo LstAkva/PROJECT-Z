@@ -10,3 +10,4 @@ PyJWT
 bcrypt
 google-auth
 requests
+segno==1.6.6

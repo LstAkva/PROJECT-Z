@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="light">
+<head>
+  <title>Jonli xona {{ room_code }} — ZakoWhat</title>
+  {% include "components/room_head.html" %}
+</head>
+<body class="room-page">
+  {% include "components/header.html" %}
+
+  <main class="room-main">
+    <section class="room-card room-narrow" aria-live="polite">
+      <div class="room-row">
+        <div>
+          <p class="room-eyebrow" id="play-pack">Jonli xona</p>
+          <p class="room-meta" style="margin:0"><strong id="play-team"></strong> · <span id="play-score">0 ball</span></p>
+        </div>
+        <span class="room-clock" id="play-clock" aria-label="Qolgan vaqt"></span>
+      </div>
+      <div id="play-body" style="margin-top:var(--space-4)">
+        <p class="room-lede">Yuklanmoqda…</p>
+      </div>
+    </section>
+  </main>
+
+  {% include "components/footer.html" %}
+  {% include "components/auth_modal.html" %}
+  <script src="{{ static_url('js/zakowhat-navbar.js') }}"></script>
+  <script>
+    (function () {
+      const R = window.ZWRoom, el = R.el;
+      const CODE = {{ room_code | tojson }};
+      const token = R.getToken(CODE);
+      if (!token) { location.replace('/join?code=' + encodeURIComponent(CODE)); return; }
+      const body = document.getElementById('play-body');
+      const countdown = R.Countdown(document.getElementById('play-clock'));
+      let shownKey = null, last = null;
+
+      function headers() { return { 'X-Team-Token': token }; }
+
+      function renderLobby(s) {
+        body.replaceChildren(
+          el('h1', { class: 'room-title' }, 'Siz xonadasiz!'),
+          el('p', { class: 'room-lede' }, 'Boshlovchi o‘yinni boshlashini kuting. Savollar shu yerda paydo bo‘ladi.'),
+          el('p', { class: 'room-meta' }, 'Xonada ' + s.teams_count + ' ta jamoa.'));
+      }
+
+      function renderQuestion(s) {
+        const wrap = el('div');
+        wrap.appendChild(el('p', { class: 'room-meta' }, (s.question.round_name ? s.question.round_name + ' · ' : '') +
+          s.question_number + '-savol / ' + s.total_questions));
+        wrap.appendChild(R.questionBlock(s.question));
+        const box = el('form', { class: 'room-answer-box', novalidate: '' });
+        const label = el('label', { class: 'room-label', for: 'play-answer' }, 'Javobingiz');
+        const input = el('input', { id: 'play-answer', class: 'room-input', maxlength: '300', autocomplete: 'off', placeholder: 'Javobni yozing' });
+        const btn = el('button', { type: 'submit', class: 'btn btn-primary', style: 'width:100%;margin-top:var(--space-3)' }, 'Yuborish');
+        const note = el('p', { class: 'room-meta', id: 'play-saved', style: 'margin-top:var(--space-3)' });
+        box.append(label, input, btn, note);
+        box.addEventListener('submit', function (e) {
+          e.preventDefault();
+          const text = input.value.trim();
+          if (!text) { input.focus(); return; }
+          btn.disabled = true;
+          R.api('/api/rooms/' + CODE + '/answer', { method: 'POST', headers: headers(), body: { text: text } })
+            .then(function (d) { note.textContent = 'Yuborildi: «' + d.my_answer + '». Vaqt tugaguncha o‘zgartirishingiz mumkin.'; })
+            .catch(function (err) { note.textContent = err.message; })
+            .finally(function () { btn.disabled = false; });
+        });
+        wrap.appendChild(box);
+        body.replaceChildren(wrap);
+        if (s.my_answer) { input.value = s.my_answer; note.textContent = 'Yuborildi: «' + s.my_answer + '». Vaqt tugaguncha o‘zgartirishingiz mumkin.'; }
+        input.focus();
+      }
+
+      function updateQuestion(s) {
+        const input = document.getElementById('play-answer');
+        const btn = body.querySelector('button[type=submit]');
+        if (!input || !btn) return;
+        input.disabled = btn.disabled = !s.answer_open;
+        if (!s.answer_open) document.getElementById('play-saved').textContent =
+          s.my_answer ? 'Vaqt tugadi. Javobingiz: «' + s.my_answer + '».' : 'Vaqt tugadi. Javob yuborilmadi.';
+      }
+
+      function renderReveal(s) {
+        const wrap = el('div');
+        wrap.appendChild(el('p', { class: 'room-meta' }, s.question_number + '-savol / ' + s.total_questions));
+        wrap.appendChild(el('p', { class: 'room-label' }, 'To‘g‘ri javob'));
+        wrap.appendChild(el('p', { class: 'room-question' }, s.reveal.correct_answer || '—'));
+        if (s.reveal.explanation) wrap.appendChild(el('p', { class: 'room-lede' }, s.reveal.explanation));
+        wrap.appendChild(el('p', { class: 'room-verdict ' + (s.my_correct ? 'is-correct' : 'is-wrong') },
+          s.my_correct ? '✓ Jamoangiz to‘g‘ri topdi' : (s.my_answer ? '✗ Javobingiz: «' + s.my_answer + '»' : '✗ Javob yuborilmagan')));
+        wrap.appendChild(el('p', { class: 'room-meta', style: 'margin-top:var(--space-4)' }, 'Jadval'));
+        wrap.appendChild(R.standingsTable(s.standings, s.team.id));
+        body.replaceChildren(wrap);
+      }
+
+      function renderFinished(s) {
+        body.replaceChildren(
+          el('h1', { class: 'room-title' }, 'O‘yin tugadi'),
+          el('p', { class: 'room-lede' }, s.my_rank ? 'Jamoangiz ' + s.my_rank + '-o‘rinda, ' + s.my_points + ' ball.' : ''),
+          R.standingsTable(s.standings, s.team.id));
+      }
+
+      function render(s) {
+        document.getElementById('play-pack').textContent = s.pack_title || 'Jonli xona';
+        document.getElementById('play-team').textContent = s.team.name;
+        document.getElementById('play-score').textContent = s.my_points + ' ball' + (s.my_rank ? ' · ' + s.my_rank + '-o‘rin' : '');
+        countdown.set(s.status === 'question' ? s.remaining_seconds : null, s.paused);
+        const key = s.status + ':' + s.question_number;
+        if (key !== shownKey) {
+          shownKey = key;
+          if (s.status === 'lobby') renderLobby(s);
+          else if (s.status === 'question') renderQuestion(s);
+          else if (s.status === 'reveal') renderReveal(s);
+          else renderFinished(s);
+        } else if (s.status === 'lobby') {
+          renderLobby(s);
+        }
+        if (s.status === 'question') updateQuestion(s);
+        last = s;
+        return s.status !== 'finished';
+      }
+
+      R.poll(function () {
+        return R.api('/api/rooms/' + CODE + '/me', { headers: headers() }).then(render).catch(function (err) {
+          if (err.status === 401 || err.status === 404) { R.clearToken(CODE); location.replace('/join?code=' + encodeURIComponent(CODE)); return false; }
+          if (err.status === 403) { body.replaceChildren(el('p', { class: 'room-status is-error' }, err.message)); return false; }
+          throw err;
+        });
+      }, 1500);
+    })();
+  </script>
+</body>
+</html>

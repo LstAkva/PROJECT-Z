@@ -100,11 +100,11 @@ def test_both_sign_up_forms_ask_and_send_the_agreement(anon):
     assert 'id="register-consent"' in modal and modal.count("accept_terms: true") >= 2
 
 
-def test_terms_migration_is_the_single_head():
+def test_migrations_have_a_single_head():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
     heads = ScriptDirectory.from_config(Config("alembic.ini")).get_heads()
-    assert heads == ["c3d4e5f6a7b8"]
+    assert len(heads) == 1   # the live-rooms migration (d4e5f6a7b8c9) follows the terms one
 
 
 # --- owner analytics ---------------------------------------------------------------------------------------

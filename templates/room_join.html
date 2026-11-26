@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="light">
+<head>
+  <title>Jonli xonaga qo‘shilish — ZakoWhat</title>
+  {% include "components/room_head.html" %}
+</head>
+<body class="room-page">
+  {% include "components/header.html" %}
+
+  <main class="room-main">
+    <section class="room-card room-narrow" aria-labelledby="join-title">
+      <p class="room-eyebrow">Jonli xona</p>
+      <h1 id="join-title" class="room-title">Xonaga qo‘shilish</h1>
+      <p class="room-lede">Boshlovchi bergan kodni va jamoangiz nomini yozing. Ro‘yxatdan o‘tish shart emas.</p>
+      <form id="join-form" novalidate>
+        <div class="room-field">
+          <label class="room-label" for="join-code">Xona kodi</label>
+          <input id="join-code" class="room-input room-code-input" maxlength="8" autocomplete="off" autocapitalize="characters"
+                 spellcheck="false" inputmode="text" placeholder="K7Q2MX" required>
+        </div>
+        <div class="room-field">
+          <label class="room-label" for="join-team">Jamoa nomi</label>
+          <input id="join-team" class="room-input" maxlength="40" autocomplete="off" placeholder="Masalan: Iqtisodchilar" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Qo‘shilish</button>
+      </form>
+      <div id="join-status" class="room-status is-error hidden" role="alert"></div>
+      <p class="room-meta" style="margin-top:var(--space-5)">Jamoa nomi va javoblaringiz faqat shu o‘yin uchun saqlanadi va 30 kundan keyin o‘chiriladi.
+        <a href="/privacy" class="footer-link">Maxfiylik siyosati</a></p>
+    </section>
+  </main>
+
+  {% include "components/footer.html" %}
+  {% include "components/auth_modal.html" %}
+  <script src="{{ static_url('js/zakowhat-navbar.js') }}"></script>
+  <script>
+    (function () {
+      const R = window.ZWRoom;
+      const form = document.getElementById('join-form');
+      const code = document.getElementById('join-code');
+      const team = document.getElementById('join-team');
+      const status = document.getElementById('join-status');
+      const fromUrl = new URLSearchParams(location.search).get('code');
+      if (fromUrl) { code.value = fromUrl.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8); team.focus(); } else { code.focus(); }
+      code.addEventListener('input', function () { code.value = code.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+
+      function fail(message) { status.textContent = message; status.classList.remove('hidden'); }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        status.classList.add('hidden');
+        const c = code.value.trim(), t = team.value.trim();
+        if (c.length < 4) { fail('Xona kodini to‘liq yozing.'); code.focus(); return; }
+        if (!t) { fail('Jamoa nomini yozing.'); team.focus(); return; }
+        if (R.getToken(c)) { location.href = '/room/' + encodeURIComponent(c); return; }   // already in this room
+        const btn = form.querySelector('button[type=submit]');
+        btn.disabled = true;
+        R.api('/api/rooms/join', { method: 'POST', body: { code: c, team_name: t } })
+          .then(function (d) { R.setToken(d.code, d.token); location.href = '/room/' + encodeURIComponent(d.code); })
+          .catch(function (err) { fail(err.message); btn.disabled = false; });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -160,6 +160,10 @@
                         <span>📈</span>
                         <span>Statistika</span>
                     </button>
+                    <button id="nav-tab-rooms" onclick="switchOwnerTab('rooms')" class="px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
+                        <span>🎤</span>
+                        <span>Jonli xona</span>
+                    </button>
                 </div>
             </div>
         </header>
@@ -309,6 +313,38 @@
                     </div>
                     <div id="dashboard-recent-quizzes" class="space-y-3">
                         <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================= -->
+            <!-- TAB: LIVE ROOMS (host-led games joined with a code) -->
+            <!-- ========================================================= -->
+            <section id="owner-view-rooms" class="hidden space-y-6 animate-fade-in">
+                <div class="border-b border-slate-800 pb-4 space-y-1">
+                    <h2 class="text-xl font-bold text-white">Jonli xona</h2>
+                    <p class="text-xs text-slate-400">
+                        Fakultetlar musobaqasi, jamoaviy o‘yin yoki imtihon oldidan takrorlash: xona oching, kodni ekranga chiqaring,
+                        jamoalar telefondan <span class="font-mono text-slate-300">/join</span> orqali qo‘shiladi. Natijalar reytingga kirmaydi; xonalar 30 kundan keyin o‘chiriladi.
+                    </p>
+                </div>
+                <div class="grid lg:grid-cols-2 gap-4">
+                    <form id="rooms-create-form" class="rounded-2xl bg-slate-900 border border-slate-800 p-5 space-y-4" onsubmit="createLiveRoom(event)">
+                        <h3 class="text-sm font-bold text-white">Yangi xona</h3>
+                        <div class="space-y-1">
+                            <label for="rooms-pack" class="text-xs text-slate-400">To‘plam (Zakovat formati, nashr qilingan)</label>
+                            <select id="rooms-pack" required class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white outline-none focus:border-indigo-500"></select>
+                        </div>
+                        <div class="space-y-1">
+                            <label for="rooms-seconds" class="text-xs text-slate-400">Har bir savolga vaqt (soniya)</label>
+                            <input id="rooms-seconds" type="number" min="10" max="300" value="60" required class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white outline-none focus:border-indigo-500">
+                        </div>
+                        <button type="submit" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">Xona ochish</button>
+                        <p id="rooms-create-status" class="text-xs text-slate-400" role="status"></p>
+                    </form>
+                    <div class="rounded-2xl bg-slate-900 border border-slate-800 p-5 space-y-3">
+                        <h3 class="text-sm font-bold text-white">Mening xonalarim</h3>
+                        <div id="rooms-list" class="space-y-2 text-xs"></div>
                     </div>
                 </div>
             </section>
@@ -1355,7 +1391,7 @@
         // Tab Navigation
         function switchOwnerTab(tab) {
             state.activeTab = tab;
-            ['dashboard', 'quizzes', 'questions', 'generator', 'users', 'analytics'].forEach(t => {
+            ['dashboard', 'quizzes', 'questions', 'generator', 'users', 'analytics', 'rooms'].forEach(t => {
                 const view = document.getElementById(`owner-view-${t}`);
                 const btn = document.getElementById(`nav-tab-${t}`);
                 if (!view || !btn) return;
@@ -1376,6 +1412,67 @@
                 loadOwnerUsers(1);
             } else if (tab === 'analytics') {
                 loadOwnerAnalytics();
+            } else if (tab === 'rooms') {
+                loadLiveRooms();
+            }
+        }
+
+        // LIVE ROOMS (POST /api/rooms, GET /api/rooms/mine)
+        const ROOM_STATUS_LABELS = { lobby: 'Kutish zali', question: 'Savol', reveal: 'Javob ochilgan', finished: 'Tugagan' };
+
+        async function loadLiveRooms() {
+            const select = document.getElementById('rooms-pack');
+            try {
+                const res = await fetch('/api/owner/quizzes', { cache: 'no-store' });
+                const packs = res.ok ? await res.json() : [];
+                const usable = packs.filter(p => p.status === 'published' && p.game_mode !== 'svoyak');
+                select.replaceChildren(...usable.map(p => {
+                    const o = document.createElement('option');
+                    o.value = p.quiz_id;
+                    o.textContent = `${p.title} (${p.question_count} savol)`;
+                    return o;
+                }));
+                if (!usable.length) {
+                    const o = document.createElement('option');
+                    o.value = ''; o.textContent = 'Nashr qilingan Zakovat to‘plami yo‘q';
+                    select.replaceChildren(o);
+                }
+            } catch (e) { /* the list below still loads */ }
+            const list = document.getElementById('rooms-list');
+            try {
+                const res = await fetch('/api/rooms/mine', { cache: 'no-store' });
+                const data = await res.json();
+                list.innerHTML = data.rooms.length ? data.rooms.map(r => `
+                    <div class="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
+                        <div class="min-w-0">
+                            <div class="font-mono text-slate-200 tracking-widest">${escapeHtml(r.code)}</div>
+                            <div class="text-slate-400 truncate">${escapeHtml(r.pack_title)} · ${escapeHtml(ROOM_STATUS_LABELS[r.status] || r.status)} · ${r.teams} jamoa</div>
+                        </div>
+                        <div class="flex gap-2 shrink-0">
+                            <a href="/room/${encodeURIComponent(r.code)}/host" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Pult</a>
+                            <a href="/room/${encodeURIComponent(r.code)}/screen" target="_blank" rel="noopener" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">Ekran ↗</a>
+                        </div>
+                    </div>`).join('') : '<div class="text-slate-400">Hali xona ochilmagan.</div>';
+            } catch (e) {
+                list.innerHTML = '<div class="text-slate-400">Xonalarni yuklab bo‘lmadi.</div>';
+            }
+        }
+
+        async function createLiveRoom(event) {
+            event.preventDefault();
+            const statusEl = document.getElementById('rooms-create-status');
+            const quizId = parseInt(document.getElementById('rooms-pack').value, 10);
+            const seconds = parseInt(document.getElementById('rooms-seconds').value, 10);
+            if (!quizId) { statusEl.textContent = 'To‘plamni tanlang.'; return; }
+            statusEl.textContent = 'Ochilmoqda…';
+            try {
+                const res = await fetch('/api/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                       body: JSON.stringify({ quiz_id: quizId, seconds_per_question: seconds }) });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Xona ochib bo‘lmadi');
+                window.location.href = data.host_url;
+            } catch (err) {
+                statusEl.textContent = err.message;
             }
         }
 

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="light">
+<head>
+  <title>Xona {{ room_code }} — boshlovchi — ZakoWhat</title>
+  {% include "components/room_head.html" %}
+  <script src="{{ static_url('js/zakowhat-dialog.js') }}"></script>
+</head>
+<body class="room-page">
+  <main class="room-main">
+    <div class="room-row" style="margin-bottom:var(--space-4)">
+      <div>
+        <p class="room-eyebrow" style="margin:0">Boshlovchi pulti · <a href="/host" class="footer-link">Xonalarim</a></p>
+        <h1 class="room-title" style="margin:var(--space-1) 0 0" id="host-pack">Jonli xona</h1>
+        <p class="room-meta" style="margin:var(--space-1) 0 0">Kod: <strong id="host-code" style="font-family:var(--font-mono);letter-spacing:0.12em">{{ room_code }}</strong>
+          <span class="join-only hidden">· Qo‘shilish: <span id="host-join"></span></span></p>
+      </div>
+      <div class="room-actions">
+        <a class="room-small-btn" href="/room/{{ room_code }}/screen" target="_blank" rel="noopener">Ekranni ochish ↗</a>
+        <button type="button" class="room-small-btn join-only hidden" id="host-copy">Havolani nusxalash</button>
+        <a class="room-small-btn" href="/api/rooms/{{ room_code }}/export" id="host-export">Natijalar (CSV)</a>
+      </div>
+    </div>
+
+    <div class="room-grid">
+      <section class="room-card" aria-live="polite">
+        <div class="room-row">
+          <p class="room-meta" id="host-progress" style="margin:0"></p>
+          <span class="room-clock" id="host-clock" aria-label="Qolgan vaqt"></span>
+        </div>
+        <div id="host-question"></div>
+        <div class="room-actions" id="host-controls" style="margin-top:var(--space-4)"></div>
+        <p class="room-meta" style="margin-top:var(--space-2)"><kbd>Probel</kbd> / <kbd>→</kbd> / clicker — keyingi qadam · <kbd>P</kbd> — pauza. Proyektor oynasi faol bo‘lsa ham ishlaydi.</p>
+        <div id="host-status" class="room-status is-error hidden" role="alert"></div>
+        <div class="join-only hidden">
+          <h2 class="room-label" style="margin-top:var(--space-6)">Javoblar <span id="host-answered"></span></h2>
+          <p class="room-meta">Avtomatik tekshiruv natijasini bosish orqali o‘zgartirish mumkin (apellyatsiya).</p>
+          <div class="room-answers" id="host-answers"></div>
+        </div>
+      </section>
+      <aside class="room-card join-only hidden">
+        <h2 class="room-label">Jadval</h2>
+        <div id="host-table"></div>
+        <h2 class="room-label" style="margin-top:var(--space-6)">Jamoalar (<span id="host-team-count">0</span>)</h2>
+        <div class="room-answers" id="host-teams"></div>
+      </aside>
+      <aside class="room-card presentation-only hidden">
+        <h2 class="room-label">Taqdimot rejimi</h2>
+        <p class="room-meta">Jamoalar javobni qog‘ozga yozadi. «Ekranni ochish ↗» oynasini proyektorga suring va F11 ni bosing.
+          Zal faqat savol, taymer va (siz ochganingizda) javobni ko‘radi.</p>
+      </aside>
+    </div>
+  </main>
+  <script>
+    (function () {
+      const R = window.ZWRoom, el = R.el;
+      const CODE = {{ room_code | tojson }};
+      const joinUrl = location.origin + '/join?code=' + CODE;
+      document.getElementById('host-join').textContent = location.host + '/join';
+      const countdown = R.Countdown(document.getElementById('host-clock'));
+      const statusBox = document.getElementById('host-status');
+      const ask = window.zwConfirm || function (m) { return Promise.resolve(window.confirm(m)); };
+      let busy = false, state = null;
+
+      document.getElementById('host-copy').addEventListener('click', function () {
+        const btn = this;
+        (navigator.clipboard ? navigator.clipboard.writeText(joinUrl) : Promise.reject()).then(
+          function () { btn.textContent = 'Nusxalandi ✓'; setTimeout(function () { btn.textContent = 'Havolani nusxalash'; }, 1500); },
+          function () { window.prompt('Havola:', joinUrl); });
+      });
+
+      function act(path, body) {
+        if (busy) return;
+        busy = true;
+        statusBox.classList.add('hidden');
+        R.api('/api/rooms/' + CODE + path, { method: 'POST', body: body || {} })
+          .then(render)
+          .catch(function (err) { statusBox.textContent = err.message; statusBox.classList.remove('hidden'); })
+          .finally(function () { busy = false; });
+      }
+
+      function button(label, onclick, primary) {
+        return el('button', { type: 'button', class: primary ? 'btn btn-primary' : 'btn btn-secondary', onclick: onclick }, label);
+      }
+
+      function controls(s) {
+        const box = document.getElementById('host-controls');
+        const list = [];
+        if (s.status === 'lobby') list.push(button('O‘yinni boshlash ▶', function () { act('/start'); }, true));
+        if (s.status === 'question') {
+          list.push(button('Javobni ochish', function () { act('/reveal'); }, true));
+          list.push(s.paused ? button('Davom ettirish', function () { act('/timer', { action: 'resume' }); })
+                             : button('Pauza', function () { act('/timer', { action: 'pause' }); }));
+          list.push(button('+15 soniya', function () { act('/timer', { action: 'add', seconds: 15 }); }));
+        }
+        if (s.status === 'reveal') {
+          const last = s.question_number >= s.total_questions;
+          list.push(button(last ? 'Yakuniy jadval' : 'Keyingi savol ▶', function () { act('/next'); }, true));
+        }
+        if (s.status !== 'finished') list.push(button('O‘yinni tugatish', function () {
+          ask('O‘yinni hozir tugatasizmi? Jamoalar yakuniy jadvalni ko‘radi.').then(function (ok) { if (ok) act('/end'); });
+        }));
+        box.replaceChildren.apply(box, list);
+      }
+
+      function questionView(s) {
+        const box = document.getElementById('host-question');
+        if (!s.question) {
+          box.replaceChildren(el('p', { class: 'room-lede', style: 'margin-top:var(--space-4)' },
+            s.status === 'lobby' ? 'Jamoalar qo‘shilmoqda. Ekranni proyektorda oching va «O‘yinni boshlash»ni bosing.' : 'O‘yin tugadi.'));
+          return;
+        }
+        const wrap = el('div');
+        if (s.question.round_name) wrap.appendChild(el('p', { class: 'room-eyebrow', style: 'margin-top:var(--space-4)' }, s.question.round_name));
+        wrap.appendChild(R.questionBlock(s.question));
+        if (s.host_question) {
+          wrap.appendChild(el('p', { class: 'room-label' }, 'To‘g‘ri javob (faqat sizga ko‘rinadi, ochilguncha)'));
+          wrap.appendChild(el('p', { class: 'room-verdict is-correct' }, s.host_question.correct_answer || '—'));
+          const alt = (s.host_question.accepted_answers || []).filter(function (a) { return a && a !== s.host_question.correct_answer; });
+          if (alt.length) wrap.appendChild(el('p', { class: 'room-meta' }, 'Qabul qilinadi: ' + alt.join(', ')));
+          if (s.host_question.explanation) wrap.appendChild(el('p', { class: 'room-meta' }, s.host_question.explanation));
+        }
+        box.replaceChildren(wrap);
+      }
+
+      function answersView(s) {
+        const box = document.getElementById('host-answers');
+        document.getElementById('host-answered').textContent = s.question ? '(' + s.answered_count + ' / ' + s.teams.length + ')' : '';
+        if (!s.answers.length) { box.replaceChildren(el('p', { class: 'room-meta' }, s.question ? 'Hali javob yo‘q.' : '')); return; }
+        box.replaceChildren.apply(box, s.answers.map(function (a) {
+          const item = el('div', { class: 'room-answer-item' + (a.correct ? ' is-correct' : '') });
+          item.appendChild(el('span', { class: 'who' }, a.team));
+          item.appendChild(el('span', { class: 'what' }, a.text));
+          const verdict = a.host_verdict === null ? (a.correct ? '✓ avto' : '✗ avto') : (a.correct ? '✓ siz' : '✗ siz');
+          item.appendChild(el('span', { class: 'room-verdict ' + (a.correct ? 'is-correct' : 'is-wrong') }, verdict));
+          const actions = el('span', { class: 'room-actions' });
+          actions.appendChild(el('button', { type: 'button', class: 'room-small-btn', onclick: function () { act('/answers/' + a.id + '/verdict', { correct: !a.correct }); } },
+            a.correct ? 'Noto‘g‘ri deb belgilash' : 'To‘g‘ri deb belgilash'));
+          if (a.host_verdict !== null) actions.appendChild(el('button', { type: 'button', class: 'room-small-btn', onclick: function () { act('/answers/' + a.id + '/verdict', { correct: null }); } }, 'Avtoga qaytarish'));
+          item.appendChild(actions);
+          return item;
+        }));
+      }
+
+      function teamsView(s) {
+        document.getElementById('host-team-count').textContent = s.teams.length;
+        const box = document.getElementById('host-teams');
+        box.replaceChildren.apply(box, s.teams.map(function (t) {
+          const item = el('div', { class: 'room-answer-item is-correct' });
+          item.appendChild(el('span', { class: 'who' }, t.name));
+          if (s.status !== 'finished') item.appendChild(el('button', { type: 'button', class: 'room-small-btn', onclick: function () {
+            ask('«' + t.name + '» jamoasini xonadan chiqarasizmi?').then(function (ok) { if (ok) act('/teams/' + t.id + '/remove'); });
+          } }, 'Chiqarish'));
+          return item;
+        }));
+      }
+
+      function render(s) {
+        state = s;
+        document.querySelectorAll('.join-only').forEach(function (n) { n.classList.toggle('hidden', !s.player_join); });
+        document.querySelectorAll('.presentation-only').forEach(function (n) { n.classList.toggle('hidden', !!s.player_join); });
+        document.getElementById('host-pack').textContent = s.pack_title || 'Jonli xona';
+        document.getElementById('host-progress').textContent = s.question_number ? s.question_number + '-savol / ' + s.total_questions
+          : (s.status === 'lobby' ? 'Kutish zali' : '');
+        countdown.set(s.status === 'question' ? s.remaining_seconds : null, s.paused);
+        controls(s); questionView(s); answersView(s); teamsView(s);
+        document.getElementById('host-table').replaceChildren(R.standingsTable(s.standings));
+      }
+
+      R.hostKeys(CODE, function () { return state; }, render);
+
+      R.poll(function () {
+        if (busy) return true;
+        return R.api('/api/rooms/' + CODE + '/host').then(function (s) { render(s); return true; }).catch(function (err) {
+          if (err.status === 401 || err.status === 403) { location.replace('/arena'); return false; }
+          if (err.status === 404) { statusBox.textContent = err.message; statusBox.classList.remove('hidden'); return false; }
+          throw err;
+        });
+      }, 2000);
+    })();
+  </script>
+</body>
+</html>

@@ -232,3 +232,63 @@ class DailySubmission(Base):
 
     daily_question = relationship("DailyQuestion", back_populates="submissions")
     user = relationship("User")
+
+
+# --- JONLI XONA (LIVE ROOMS) ---
+
+class LiveRoom(Base):
+    """A host-led live game: teams join with a short code, everyone answers the same question at the same time.
+    Never part of rankings, statistics or player progress. Deleted (with teams and answers) 30 days after creation."""
+    __tablename__ = "live_rooms"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(8), unique=True, index=True, nullable=False)
+    host_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    quiz_version_id = Column(Integer, ForeignKey("quiz_versions.id"), nullable=False)
+    status = Column(String(20), default="lobby", nullable=False)      # lobby, question, reveal, finished
+    current_index = Column(Integer, default=-1, nullable=False)       # flat question index; -1 in the lobby
+    seconds_per_question = Column(Integer, default=60, nullable=False)
+    question_deadline = Column(DateTime, nullable=True)                # while the clock runs
+    paused_remaining = Column(Integer, nullable=True)                  # seconds left while paused
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
+    finished_at = Column(DateTime, nullable=True)
+
+    teams = relationship("LiveTeam", back_populates="room", cascade="all, delete-orphan")
+    answers = relationship("LiveAnswer", back_populates="room", cascade="all, delete-orphan")
+
+
+class LiveTeam(Base):
+    """A team (or a single player) in a live room. No account: the device keeps a secret token (stored hashed)."""
+    __tablename__ = "live_teams"
+    __table_args__ = (UniqueConstraint("room_id", "name_key", name="uq_live_team_name"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    room_id = Column(Integer, ForeignKey("live_rooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(40), nullable=False)
+    name_key = Column(String(40), nullable=False)                      # case-folded name for uniqueness
+    token_hash = Column(String(64), unique=True, nullable=False)
+    removed = Column(Boolean, default=False, nullable=False)
+    joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    room = relationship("LiveRoom", back_populates="teams")
+
+
+class LiveAnswer(Base):
+    """A team's answer to one question of a live room; the host may overrule the automatic check."""
+    __tablename__ = "live_answers"
+    __table_args__ = (UniqueConstraint("team_id", "question_index", name="uq_live_answer_team_question"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    room_id = Column(Integer, ForeignKey("live_rooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    team_id = Column(Integer, ForeignKey("live_teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    question_index = Column(Integer, nullable=False)
+    submitted_text = Column(String(300), nullable=False)
+    auto_correct = Column(Boolean, nullable=False)
+    host_verdict = Column(Boolean, nullable=True)                      # None = the automatic check stands
+    answered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    room = relationship("LiveRoom", back_populates="answers")
+
+    @property
+    def is_correct(self) -> bool:
+        return self.auto_correct if self.host_verdict is None else self.host_verdict

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="light">
+<head>
+  <title>Boshlovchi — Jonli xona — ZakoWhat</title>
+  {% include "components/room_head.html" %}
+</head>
+<body class="room-page">
+  {% include "components/header.html" %}
+
+  <main class="room-main">
+    <p class="room-eyebrow">Jonli xona · Boshlovchi</p>
+    <h1 class="room-title">Zalda o‘yin o‘tkazish</h1>
+    <p class="room-lede">To‘plamni tanlang va xona oching. Proyektorda savol va taymer, noutbukingizda esa pult va to‘g‘ri javob bo‘ladi.</p>
+
+    <div class="room-grid">
+      <section class="room-card">
+        <form id="host-create" novalidate>
+          <div class="room-field">
+            <label class="room-label" for="host-pack">To‘plam (Zakovat formati)</label>
+            <select id="host-pack" class="room-input" required></select>
+          </div>
+          <div class="room-field">
+            <label class="room-label" for="host-seconds">Har bir savolga vaqt (soniya)</label>
+            <input id="host-seconds" class="room-input" type="number" min="10" max="300" value="60" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Xona ochish</button>
+        </form>
+        <div id="host-create-status" class="room-status is-error hidden" role="alert"></div>
+
+        <h2 class="room-label" style="margin-top:var(--space-8)">Ikki ekranda qanday ishlaydi</h2>
+        <ol class="room-steps">
+          <li>Noutbukni proyektorga ulang va <strong>Win + P → «Kengaytirish»</strong> (Extend) ni tanlang. Proyektor ikkinchi monitorga aylanadi.</li>
+          <li>Xona ochilgach, <strong>pult</strong> shu oynada qoladi. «Ekranni ochish ↗» yangi oyna ochadi: uni sichqoncha bilan proyektorga suring va <strong>F11</strong> ni bosing.</li>
+          <li>Zal proyektorda faqat savol va taymerni ko‘radi. Siz noutbukda savol, <strong>to‘g‘ri javob</strong> va tugmalarni ko‘rasiz.</li>
+          <li>Boshqarish: <strong>Probel / → / PageDown</strong> — keyingi qadam (boshlash → javobni ochish → keyingi savol), <strong>P</strong> — pauza. Prezentatsiya pulti (clicker) ham ishlaydi. Qaysi oyna faol bo‘lsa ham ishlaydi.</li>
+          <li>Jamoalar javobni qog‘ozga yozadi, siz javobni ochasiz — xuddi haqiqiy Zakovatdagidek.{% if rooms_join_enabled() %} Telefon orqali qo‘shilish ham yoqilgan: ekranda kod va QR chiqadi.{% endif %}</li>
+        </ol>
+      </section>
+      <aside class="room-card">
+        <h2 class="room-label">Mening xonalarim</h2>
+        <div class="room-answers" id="host-rooms"><p class="room-meta">Yuklanmoqda…</p></div>
+      </aside>
+    </div>
+  </main>
+
+  {% include "components/footer.html" %}
+  {% include "components/auth_modal.html" %}
+  <script src="{{ static_url('js/zakowhat-navbar.js') }}"></script>
+  <script>
+    (function () {
+      const R = window.ZWRoom, el = R.el;
+      const STATUS = { lobby: 'Kutish zali', question: 'Savol', reveal: 'Javob ochilgan', finished: 'Tugagan' };
+      const select = document.getElementById('host-pack');
+      const statusBox = document.getElementById('host-create-status');
+
+      R.api('/api/rooms/packs').then(function (d) {
+        if (!d.packs.length) { select.replaceChildren(el('option', { value: '' }, 'Nashr qilingan Zakovat to‘plami yo‘q')); return; }
+        select.replaceChildren.apply(select, d.packs.map(function (p) { return el('option', { value: p.quiz_id }, p.title + ' (' + p.question_count + ' savol)'); }));
+      }).catch(function (err) { statusBox.textContent = err.message; statusBox.classList.remove('hidden'); });
+
+      R.api('/api/rooms/mine').then(function (d) {
+        const box = document.getElementById('host-rooms');
+        if (!d.rooms.length) { box.replaceChildren(el('p', { class: 'room-meta' }, 'Hali xona ochilmagan.')); return; }
+        box.replaceChildren.apply(box, d.rooms.map(function (r) {
+          const item = el('div', { class: 'room-answer-item is-correct' });
+          const info = el('span', { class: 'what' });
+          info.append(el('strong', { style: 'font-family:var(--font-mono);letter-spacing:0.1em' }, r.code), ' · ' + r.pack_title + ' · ' + (STATUS[r.status] || r.status));
+          item.appendChild(info);
+          const actions = el('span', { class: 'room-actions' });
+          actions.append(el('a', { class: 'room-small-btn', href: '/room/' + r.code + '/host' }, 'Pult'),
+                         el('a', { class: 'room-small-btn', href: '/room/' + r.code + '/screen', target: '_blank', rel: 'noopener' }, 'Ekran ↗'));
+          item.appendChild(actions);
+          return item;
+        }));
+      }).catch(function () {});
+
+      document.getElementById('host-create').addEventListener('submit', function (e) {
+        e.preventDefault();
+        statusBox.classList.add('hidden');
+        const quizId = parseInt(select.value, 10), seconds = parseInt(document.getElementById('host-seconds').value, 10);
+        if (!quizId) { statusBox.textContent = 'To‘plamni tanlang.'; statusBox.classList.remove('hidden'); return; }
+        R.api('/api/rooms', { method: 'POST', body: { quiz_id: quizId, seconds_per_question: seconds } })
+          .then(function (d) { location.href = d.host_url; })
+          .catch(function (err) { statusBox.textContent = err.message; statusBox.classList.remove('hidden'); });
+      });
+    })();
+  </script>
+</body>
+</html>

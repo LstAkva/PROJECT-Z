@@ -18,6 +18,7 @@ from api.auth import router as auth_router, users_router, get_secret_key, get_cu
 from api.daily import router as daily_router
 from api.me import router as me_router
 from api.demo import router as demo_router
+from api.rooms import router as rooms_router, is_room_host, player_join_enabled
 
 
 @asynccontextmanager
@@ -136,6 +137,7 @@ templates.env.globals["static_url"] = static_url
 # Absolute public origin for canonical / Open Graph / sitemap URLs (optional PUBLIC_SITE_URL, safe fallback)
 from services.daily_engagement import public_site_url  # noqa: E402
 templates.env.globals["public_site_url"] = public_site_url
+templates.env.globals["rooms_join_enabled"] = player_join_enabled
 
 # Pages that are meant to be found in search. Everything else is either private, user-specific or
 # rendered client-side without its own content (see docs/GAMEPLAY_AND_FRONTEND.md, "Indexing").
@@ -149,7 +151,7 @@ SITEMAP_PAGES = (
 
 ROBOTS_DISALLOW = (
     "/api/", "/owner", "/bank", "/admin", "/builder", "/create", "/staging",
-    "/play/", "/profile", "/u/", "/preview/", "/reset-password",
+    "/play/", "/profile", "/u/", "/preview/", "/reset-password", "/room/", "/join", "/host",
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -164,6 +166,7 @@ app.include_router(users_router)
 app.include_router(daily_router)
 app.include_router(me_router)
 app.include_router(demo_router)
+app.include_router(rooms_router)
 
 @app.get("/robots.txt", include_in_schema=False)
 def robots_txt():
@@ -313,6 +316,52 @@ def read_owner_page(request: Request, subpath: str = "", db: Session = Depends(g
     if not _viewer_is_owner(request, db):
         return _away_from_owner_pages()
     return _owner_page(request, "owner.html")
+
+# --- Jonli xona (live rooms) pages -------------------------------------------------------------------------
+
+def _room_page(request: Request, name: str, code: str = ""):
+    from api.rooms import _normalize_code
+    response = templates.TemplateResponse(request=request, name=name, context={"room_code": _normalize_code(code)})
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return response
+
+
+@app.get("/join")
+def read_room_join(request: Request):
+    """Players enter the room code and a team name. No account needed. Only while phone joining is on."""
+    if not player_join_enabled():
+        return RedirectResponse(url="/arena", status_code=status.HTTP_303_SEE_OTHER, headers={"Cache-Control": "no-store"})
+    return _room_page(request, "room_join.html")
+
+
+@app.get("/room/{code}")
+def read_room_player(request: Request, code: str):
+    if not player_join_enabled():
+        return RedirectResponse(url="/arena", status_code=status.HTTP_303_SEE_OTHER, headers={"Cache-Control": "no-store"})
+    return _room_page(request, "room_play.html", code)
+
+
+@app.get("/host")
+def read_host_home(request: Request, db: Session = Depends(get_db)):
+    """Hosts (owner or HOST_EMAILS): open a room for a pack, see their rooms, how to set up two screens."""
+    if not is_room_host(get_current_user_optional(request, db)):
+        return _away_from_owner_pages()
+    return _room_page(request, "host_home.html")
+
+
+@app.get("/room/{code}/screen")
+def read_room_screen(request: Request, code: str):
+    """Projector page: question, clock, answered count, then the answer and the table."""
+    return _room_page(request, "room_screen.html", code)
+
+
+@app.get("/room/{code}/host")
+def read_room_host(request: Request, code: str, db: Session = Depends(get_db)):
+    if not is_room_host(get_current_user_optional(request, db)):
+        return _away_from_owner_pages()
+    return _room_page(request, "room_host.html", code)
+
 
 @app.get("/preview/grand-sanctum")
 @app.get("/preview/homepage")
