@@ -189,7 +189,7 @@ SITEMAP_PAGES = (
 
 ROBOTS_DISALLOW = (
     "/api/", "/owner", "/bank", "/admin", "/builder", "/create", "/staging",
-    "/play/", "/profile", "/u/", "/preview/", "/reset-password", "/room/", "/join", "/host",
+    "/play/", "/profile", "/u/", "/preview/", "/reset-password", "/room/", "/join", "/host", "/verify-email",
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -233,11 +233,13 @@ def sitemap_xml():
 
 @app.get("/health")
 def health_check():
+    """For uptime monitors: 200 only when the site can reach its database, 503 otherwise (a monitor checks the
+    status code; the old answer was 200 "unavailable" even with the database down)."""
     db_is_connected = test_database_connection()
-    return {
-        "status": "ok",
-        "database": "connected" if db_is_connected else "unavailable"
-    }
+    body = {"status": "ok" if db_is_connected else "degraded",
+            "database": "connected" if db_is_connected else "unavailable"}
+    return JSONResponse(status_code=200 if db_is_connected else 503, content=body,
+                        headers={"Cache-Control": "no-store"})
 
 @app.get("/")
 def read_grand_sanctum_homepage(request: Request, db: Session = Depends(get_db)):
@@ -265,6 +267,15 @@ def read_privacy_page(request: Request):
 def read_reset_password_page(request: Request):
     """Password reset (request a link / set a new password). Never cached, never indexed, never referred."""
     response = templates.TemplateResponse(request=request, name="reset_password.html")
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@app.get("/verify-email")
+def read_verify_email_page(request: Request):
+    """Confirms an added / changed email from the link in the message. Never cached, never indexed, never referred."""
+    response = templates.TemplateResponse(request=request, name="verify_email.html")
     response.headers["Cache-Control"] = "no-store"
     response.headers["Referrer-Policy"] = "no-referrer"
     return response

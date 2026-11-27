@@ -130,6 +130,7 @@ AUTHENTICATED_PLAYER_ROUTES = {
     ("GET", "/api/daily/stats"),  # the signed-in player's own streak
     ("GET", "/api/me/pack-progress"),  # own Arena progress
     ("GET", "/api/me/export"),  # download of the caller's own data
+    ("POST", "/api/auth/email/request"),  # add/change the caller's own email (sends a confirmation link)
     ("POST", "/api/play/start/{quiz_id}"),
     ("GET", "/api/play/{session_token}"),
     ("GET", "/api/play/{session_token}/board"),
@@ -155,6 +156,8 @@ PUBLIC_ROUTES = {
     ("GET", "/reset-password"),
     ("POST", "/api/auth/password-reset/request"),
     ("POST", "/api/auth/password-reset/confirm"),
+    ("POST", "/api/auth/email/confirm"),  # signed link token from the message; no session needed
+    ("GET", "/verify-email"),
     ("GET", "/arena"),
     ("GET", "/profile"),
     ("GET", "/profile/{user_id_or_username}"),

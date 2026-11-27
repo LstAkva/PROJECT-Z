@@ -34,6 +34,8 @@ os.environ["GOOGLE_CLIENT_ID"] = ""
 # QA-only owner account (exists only in the throwaway database) for checking the owner panel
 os.environ["OWNER_EMAIL"] = "qa-owner@zakowhat.test"
 os.environ["OWNER_EMAILS"] = ""
+# QA only: phone joining in live rooms is on here (production keeps it off until load-tested)
+os.environ.setdefault("ROOMS_PLAYER_JOIN", "1")
 
 sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)

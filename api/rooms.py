@@ -110,8 +110,15 @@ def _published_version(quiz: Quiz, db: Session) -> Optional[QuizVersion]:
             .order_by(QuizVersion.version_number.desc()).first())
 
 
+_QUESTIONS_CACHE: Dict[int, List[Dict[str, Any]]] = {}
+
+
 def room_questions(version: QuizVersion, db: Session) -> List[Dict[str, Any]]:
-    """The pack's questions in playing order, flattened across rounds."""
+    """The pack's questions in playing order, flattened across rounds. Every phone asks for the room state every
+    ~1.5 s, so published versions (whose manifest never changes) are kept in memory instead of re-read each time."""
+    cacheable = version.status == "published" and bool(version.published_manifest)
+    if cacheable and version.id in _QUESTIONS_CACHE:
+        return _QUESTIONS_CACHE[version.id]
     flat = []
     for r in get_manifest_or_db_rounds(version, db) or []:
         for q in r.get("questions") or []:
@@ -126,6 +133,10 @@ def room_questions(version: QuizVersion, db: Session) -> List[Dict[str, Any]]:
                 "correct_answer": resolve_primary_answer(q),
                 "explanation": clean_explanation(q.get("explanation")),
             })
+    if cacheable:
+        if len(_QUESTIONS_CACHE) > 200:
+            _QUESTIONS_CACHE.clear()
+        _QUESTIONS_CACHE[version.id] = flat
     return flat
 
 
@@ -230,11 +241,24 @@ def _team_for(room: LiveRoom, token: Optional[str], db: Session) -> LiveTeam:
     return team
 
 
+_CONTEXT_CACHE: Dict[int, tuple] = {}
+
+
 def _context(room: LiveRoom, db: Session):
+    """(pack title, questions) of the room's pack version. Cached in memory for published versions: phones poll the
+    room every ~1.5 s, and the version row carries the whole question set."""
+    cached = _CONTEXT_CACHE.get(room.quiz_version_id)
+    if cached is not None:
+        return cached
     version = db.query(QuizVersion).filter(QuizVersion.id == room.quiz_version_id).first()
     quiz = db.query(Quiz).filter(Quiz.id == version.quiz_id).first() if version else None
     questions = room_questions(version, db) if version else []
-    return (quiz.title if quiz else ""), questions
+    result = ((quiz.title if quiz else ""), questions)
+    if version is not None and version.status == "published" and version.published_manifest:
+        if len(_CONTEXT_CACHE) > 200:
+            _CONTEXT_CACHE.clear()
+        _CONTEXT_CACHE[room.quiz_version_id] = result
+    return result
 
 
 def _public_question(q: Dict[str, Any]) -> Dict[str, Any]:
@@ -491,7 +515,8 @@ class AnswerRequest(BaseModel):
 @router.post("/join", status_code=status.HTTP_201_CREATED)
 def join_room(payload: JoinRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     _require_join_enabled()
-    enforce_rate_limit(request, "room_join", max_requests=20, window_seconds=60)
+    # the whole hall usually shares one public IP: allow every team (MAX_TEAMS) plus retries within a minute
+    enforce_rate_limit(request, "room_join", max_requests=MAX_TEAMS * 3, window_seconds=60)
     response.headers.update(NO_STORE)
     room = _load_room(payload.code, db, lock=True)
     if room.status == "finished":
@@ -542,7 +567,9 @@ def player_state(code: str, response: Response, db: Session = Depends(get_db),
 def submit_room_answer(code: str, payload: AnswerRequest, request: Request, response: Response,
                        db: Session = Depends(get_db), x_team_token: Optional[str] = Header(None)):
     _require_join_enabled()
-    enforce_rate_limit(request, "room_answer", max_requests=60, window_seconds=60)
+    # per team (its token), not per IP: teams in one hall share an IP
+    enforce_rate_limit(request, "room_answer", max_requests=30, window_seconds=60,
+                       subject=_hash_token(x_team_token or "")[:16])
     response.headers.update(NO_STORE)
     room = _load_room(code, db, lock=True)
     team = _team_for(room, x_team_token, db)

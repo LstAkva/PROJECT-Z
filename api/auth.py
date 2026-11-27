@@ -201,10 +201,15 @@ def get_current_user_required(current_user: Optional[User] = Depends(get_current
 _RATE_LIMIT_BUCKETS: Dict[str, list] = defaultdict(list)
 
 
-def enforce_rate_limit(request: Request, key_prefix: str, max_requests: int = 15, window_seconds: int = 60) -> None:
+def enforce_rate_limit(request: Request, key_prefix: str, max_requests: int = 15, window_seconds: int = 60,
+                       subject: Optional[str] = None) -> None:
     """
     In-memory sliding-window rate limiter for sensitive endpoints.
     Bypassed in test environment (ENVIRONMENT == 'test' or TESTING == 'true').
+
+    Buckets are per client IP. A whole lecture hall on one Wi-Fi shares ONE public IP, so per-IP limits must leave
+    room for a class; where a request names its own subject (the account signed in to, a room team), pass `subject`
+    and the bucket becomes IP + subject, so one person's guessing never blocks the rest of the room.
     """
     if os.getenv("ENVIRONMENT") == "test" or os.getenv("TESTING") == "true":
         return
@@ -221,7 +226,7 @@ def enforce_rate_limit(request: Request, key_prefix: str, max_requests: int = 15
     else:
         ip = request.client.host if request.client else "unknown"
 
-    bucket_key = f"{key_prefix}:{ip}"
+    bucket_key = f"{key_prefix}:{ip}" if subject is None else f"{key_prefix}:{ip}:{subject}"
     now = time.time()
     cutoff = now - window_seconds
 
@@ -364,7 +369,7 @@ def register(payload: RegisterRequest, request: Request, response: Response, db:
     validates that the attempt belongs to the request's authoritative anon_id,
     has user_id IS NULL, and status == 'completed' before assigning attempt.user_id.
     """
-    enforce_rate_limit(request, "register", max_requests=10, window_seconds=60)
+    enforce_rate_limit(request, "register", max_requests=40, window_seconds=60)   # a class signing up on one Wi-Fi
 
     if payload.accept_terms is False:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=TERMS_NOT_ACCEPTED_DETAIL)
@@ -481,7 +486,10 @@ def register(payload: RegisterRequest, request: Request, response: Response, db:
 
 @router.post("/login", status_code=status.HTTP_200_OK)
 def login(payload: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
-    enforce_rate_limit(request, "login", max_requests=25, window_seconds=60)
+    # password guessing is limited per account name; the per-IP ceiling leaves room for a hall signing in at once
+    enforce_rate_limit(request, "login_account", max_requests=10, window_seconds=60,
+                       subject=(payload.email or "").strip().lower()[:100])
+    enforce_rate_limit(request, "login", max_requests=150, window_seconds=60)
     """Logs in with email or username (display_name) and password, setting HttpOnly auth cookie."""
     clean_identifier = payload.email.strip().lower()
     if not clean_identifier:
@@ -694,6 +702,10 @@ def get_player_profile(
             "cookie_consent": current_user.cookie_consent or "necessary",
             "auth_provider": current_user.auth_provider,
             "created_at": current_user.created_at.isoformat(),
+            # placeholder address from a name-only sign-up: nobody reads it, so the password cannot be recovered
+            "email_is_placeholder": is_generated_email(current_user),
+            # a Google-only account's address comes from Google and is changed there
+            "email_managed_by_google": current_user.auth_provider == "google" and not current_user.hashed_password,
         },
         "stats": {
             "total_games": total_games,
@@ -960,6 +972,106 @@ def is_generated_email(user: User) -> bool:
     return local in candidates
 
 
+EMAIL_VERIFY_PURPOSE = "email_verify"
+EMAIL_VERIFY_TTL_HOURS = 24
+
+
+class EmailChangeRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=254)
+
+
+class EmailConfirmRequest(BaseModel):
+    token: str = Field(..., min_length=10, max_length=2048)
+
+
+def _email_fingerprint(user: User) -> str:
+    import hashlib
+    return hashlib.sha256((user.email or "").strip().lower().encode("utf-8")).hexdigest()[:24]
+
+
+def create_email_verify_token(user: User, new_email: str) -> str:
+    """Signed link token: this user may switch to new_email. Works once (bound to the current address) and
+    expires after 24 hours."""
+    now = datetime.now(timezone.utc)
+    payload = {"sub": str(user.id), "purpose": EMAIL_VERIFY_PURPOSE, "new": new_email, "fp": _email_fingerprint(user),
+               "iat": now, "exp": now + timedelta(hours=EMAIL_VERIFY_TTL_HOURS)}
+    return jwt.encode(payload, get_secret_key(), algorithm=ALGORITHM)
+
+
+def send_email_verify_email(user: User, new_email: str) -> bool:
+    from services.mailer import send_email
+    from services.daily_engagement import public_site_url
+    link = f"{public_site_url()}/verify-email?token={create_email_verify_token(user, new_email)}"
+    name = user.display_name or "foydalanuvchi"
+    text = (
+        f"Assalomu alaykum, {name}!\n\n"
+        "Ushbu manzilni ZakoWhat hisobingizga biriktirish uchun quyidagi havolani oching "
+        f"(havola {EMAIL_VERIFY_TTL_HOURS} soat amal qiladi):\n\n{link}\n\n"
+        "Shundan so'ng parolni unutsangiz, shu manzil orqali tiklay olasiz.\n"
+        "Agar bu so'rovni siz yubormagan bo'lsangiz, xatni e'tiborsiz qoldiring.\n\nZakoWhat"
+    )
+    body = (
+        f"<p>Assalomu alaykum, {html.escape(name)}!</p>"
+        "<p>Ushbu manzilni ZakoWhat hisobingizga biriktirish uchun quyidagi tugmani bosing "
+        f"(havola {EMAIL_VERIFY_TTL_HOURS} soat amal qiladi):</p>"
+        f'<p><a href="{html.escape(link)}" style="display:inline-block;padding:10px 18px;background:#782F3B;'
+        'color:#F1EBDD;text-decoration:none;border-radius:4px">Emailni tasdiqlash</a></p>'
+        "<p>Shundan so'ng parolni unutsangiz, shu manzil orqali tiklay olasiz.</p>"
+        "<p>Agar bu so'rovni siz yubormagan bo'lsangiz, xatni e'tiborsiz qoldiring.</p><p>ZakoWhat</p>"
+    )
+    return send_email(new_email, "ZakoWhat: emailni tasdiqlang", text, body)
+
+
+@router.post("/email/request", status_code=status.HTTP_200_OK)
+def request_email_change(payload: EmailChangeRequest, request: Request,
+                         current_user: User = Depends(get_current_user_required), db: Session = Depends(get_db)):
+    """Add an email to a name-only account, or change it. The address is saved only after the link in the
+    message sent to it is opened (proves the person owns the inbox)."""
+    enforce_rate_limit(request, "email_change", max_requests=5, window_seconds=300)
+    if current_user.auth_provider == "google" and not current_user.hashed_password:
+        raise HTTPException(status_code=400, detail="Google orqali kirgan hisob emaili Google hisobingizda boshqariladi.")
+    new_email = payload.email.strip().lower()
+    if not EMAIL_SHAPE.match(new_email) or new_email.endswith("@" + PLACEHOLDER_EMAIL_DOMAIN):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Noto'g'ri email formati")
+    if new_email == (current_user.email or "").lower():
+        raise HTTPException(status_code=400, detail="Bu allaqachon sizning emailingiz.")
+    if db.query(User.id).filter(func.lower(User.email) == new_email, User.id != current_user.id).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Bu email boshqa hisobga biriktirilgan.")
+    if not send_email_verify_email(current_user, new_email):
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail="Xatni yuborib bo'lmadi. Birozdan so'ng qayta urinib ko'ring.")
+    return {"success": True,
+            "message": f"Tasdiqlash havolasi {new_email} manziliga yuborildi. Xatdagi tugmani bosing "
+                       f"(havola {EMAIL_VERIFY_TTL_HOURS} soat amal qiladi). Xat kelmasa, «Spam» papkasini tekshiring."}
+
+
+@router.post("/email/confirm", status_code=status.HTTP_200_OK)
+def confirm_email_change(payload: EmailConfirmRequest, request: Request, db: Session = Depends(get_db)):
+    """Opens from the link in the message; works in any browser (the token says who and which address)."""
+    enforce_rate_limit(request, "email_confirm", max_requests=20, window_seconds=300)
+    invalid = HTTPException(status_code=400, detail="Havola yaroqsiz, eskirgan yoki allaqachon ishlatilgan.")
+    try:
+        data = jwt.decode(payload.token, get_secret_key(), algorithms=[ALGORITHM])
+    except Exception:
+        raise invalid
+    if data.get("purpose") != EMAIL_VERIFY_PURPOSE:
+        raise invalid
+    try:
+        user = db.query(User).filter(User.id == int(data.get("sub"))).with_for_update().first()
+    except (TypeError, ValueError):
+        raise invalid
+    new_email = str(data.get("new") or "").strip().lower()
+    if not user or not EMAIL_SHAPE.match(new_email) or \
+            not secrets.compare_digest(str(data.get("fp", "")), _email_fingerprint(user)):
+        raise invalid
+    if db.query(User.id).filter(func.lower(User.email) == new_email, User.id != user.id).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Bu email boshqa hisobga biriktirilgan.")
+    user.email = new_email
+    db.commit()
+    return {"success": True, "email": new_email,
+            "message": "Email tasdiqlandi. Endi parolni unutsangiz, shu manzil orqali tiklay olasiz."}
+
+
 def send_password_reset_email(user: User) -> bool:
     from services.mailer import send_email
     from services.daily_engagement import public_site_url
@@ -1208,7 +1320,7 @@ def google_auth(payload: GoogleAuthRequest, request: Request, response: Response
     Authenticates via Google Identity Services ID token using the official google-auth library.
     If GOOGLE_CLIENT_ID is not configured, returns clean HTTP 503 error.
     """
-    enforce_rate_limit(request, "google_auth", max_requests=20, window_seconds=60)
+    enforce_rate_limit(request, "google_auth", max_requests=80, window_seconds=60)   # Google verifies the token itself
     google_client_id = os.getenv("GOOGLE_CLIENT_ID")
     if not google_client_id:
         raise HTTPException(

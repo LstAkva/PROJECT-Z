@@ -6171,6 +6171,8 @@ button.game-cell:active {
 /* Rose "danger" text from the dark palette is unreadable on parchment */
 [data-theme="light"] .text-rose-400,
 [data-theme="light"] .text-rose-300 { color: var(--danger-text) !important; }
+/* Success messages ("sent", "saved") from the dark palette: mint green is unreadable on parchment */
+[data-theme="light"] .text-emerald-400 { color: var(--state-correct) !important; }
 [data-theme="light"] .hover\:text-rose-300:hover { color: var(--danger-text-hover) !important; }
 
 /* Arena page login/registration window (markup uses dark-palette utility classes) */

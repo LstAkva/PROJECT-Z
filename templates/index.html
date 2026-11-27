@@ -693,6 +693,19 @@
                         </div>
                     </div>
 
+                    <!-- Email: add one to a name-only account (password recovery) or change it; saved after the link is opened -->
+                    <div id="settings-email-section" class="p-4 rounded bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-3">
+                        <div class="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">Elektron pochta</div>
+                        <p id="settings-email-note" class="text-[11px] text-[var(--text-muted)] leading-relaxed"></p>
+                        <div id="settings-email-form" class="flex flex-col sm:flex-row gap-3">
+                            <input type="email" id="settings-new-email" class="input-answer text-xs py-1.5 w-full" placeholder="nomingiz@misol.uz" autocomplete="email" aria-label="Yangi email manzili">
+                            <button type="button" onclick="handleEmailChangeSubmit()" class="btn btn-secondary text-xs px-3.5 py-1.5 cursor-pointer shrink-0" id="settings-email-btn">
+                                Tasdiqlash havolasini yuborish
+                            </button>
+                        </div>
+                        <span id="settings-email-feedback" class="text-xs hidden" role="status"></span>
+                    </div>
+
                     <!-- Password Change -->
                     <div id="settings-password-section" class="p-4 rounded bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-3">
                         <div class="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">Parolni O'zgartirish</div>
@@ -1825,7 +1838,8 @@
                 const recent = data.recent_games || [];
 
                 document.getElementById('profile-display-name').innerText = user.display_name || user.email;
-                document.getElementById('profile-email').innerText = user.email;
+                document.getElementById('profile-email').innerText = user.email_is_placeholder ? 'Email qo‘shilmagan' : user.email;
+                renderEmailSettings(user);
                 if (user.created_at) {
                     const d = new Date(user.created_at);
                     const two = (n) => String(n).padStart(2, '0');
@@ -4603,6 +4617,47 @@
         // =====================================================================
         // PROFILE SETTINGS & PUBLIC PROFILE CONTROLLER
         // =====================================================================
+        function renderEmailSettings(user) {
+            const note = document.getElementById('settings-email-note');
+            const form = document.getElementById('settings-email-form');
+            if (!note || !form) return;
+            if (user.email_managed_by_google) {
+                note.textContent = `Hisobingiz Google orqali ochilgan: email (${user.email}) Google hisobingizda boshqariladi.`;
+                form.classList.add('hidden');
+            } else if (user.email_is_placeholder) {
+                note.textContent = 'Hisobingizda email yo‘q. Parolni unutsangiz, uni tiklab bo‘lmaydi — emailingizni qo‘shing. Manzil xatdagi havola bosilgach saqlanadi.';
+                form.classList.remove('hidden');
+            } else {
+                note.textContent = `Hozirgi email: ${user.email}. Yangi manzil xatdagi havola bosilgach saqlanadi.`;
+                form.classList.remove('hidden');
+            }
+        }
+
+        async function handleEmailChangeSubmit() {
+            const input = document.getElementById('settings-new-email');
+            const btn = document.getElementById('settings-email-btn');
+            const fb = document.getElementById('settings-email-feedback');
+            const email = (input.value || '').trim();
+            fb.classList.remove('hidden');
+            if (!email) { fb.className = 'text-xs text-rose-400'; fb.innerText = 'Email manzilini yozing.'; input.focus(); return; }
+            btn.disabled = true;
+            try {
+                const res = await fetch(`${API_BASE}/auth/email/request`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(apiDetail(data) || "Xatni yuborib bo'lmadi");
+                fb.className = 'text-xs text-emerald-400';
+                fb.innerText = data.message;
+                input.value = '';
+            } catch (err) {
+                fb.className = 'text-xs text-rose-400';
+                fb.innerText = err.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
         function toggleProfileSettings() {
             const panel = document.getElementById('profile-settings-panel');
             if (!panel) return;

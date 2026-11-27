@@ -66,8 +66,16 @@ def guard_before_cursor_execute(conn, cursor, statement, parameters, context, ex
 def setup_test_database():
     """Recreates schema before every test function for pristine isolation."""
     Base.metadata.create_all(bind=test_engine)
+    _clear_in_memory_caches()
     yield
     Base.metadata.drop_all(bind=test_engine)
+
+
+def _clear_in_memory_caches():
+    """Ids restart at 1 in every fresh test database, so per-version caches must not outlive a test."""
+    from api import rooms
+    rooms._QUESTIONS_CACHE.clear()
+    rooms._CONTEXT_CACHE.clear()
 
 
 @pytest.fixture(autouse=True)

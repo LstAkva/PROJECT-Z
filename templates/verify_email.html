@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZakoWhat — Emailni tasdiqlash</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" type="image/svg+xml" href="/static/svg/zakowhat-app-icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ static_url('css/zakowhat-design-system.css') }}">
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('zakowhat_theme') || localStorage.getItem('zakowhat-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="reset-page">
+  {% include "components/header.html" %}
+
+  <main class="reset-main">
+    <section class="reset-card" aria-labelledby="verify-title">
+      <h1 id="verify-title" class="reset-title">Emailni tasdiqlash</h1>
+      <p id="verify-lede" class="reset-lede">Tekshirilmoqda…</p>
+      <div id="verify-status" class="reset-status hidden" role="status" aria-live="polite"></div>
+      <p class="reset-foot"><a href="/profile" class="footer-link">Profilga o‘tish</a> · <a href="/" class="footer-link">Bosh sahifa</a></p>
+    </section>
+  </main>
+
+  {% include "components/footer.html" %}
+  {% include "components/auth_modal.html" %}
+  <script src="{{ static_url('js/zakowhat-navbar.js') }}"></script>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var token = params.get('token');
+      // the token leaves the address bar at once (history, screenshots, shared screens)
+      if (token) history.replaceState(null, '', '/verify-email');
+      var lede = document.getElementById('verify-lede');
+      var box = document.getElementById('verify-status');
+      function show(text, isError) {
+        lede.classList.add('hidden');
+        box.textContent = text;
+        box.classList.toggle('is-error', !!isError);
+        box.classList.remove('hidden');
+      }
+      if (!token) { show('Havolada tasdiqlash kodi yo‘q. Xatdagi havolani to‘liq oching.', true); return; }
+      fetch('/api/auth/email/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token }) })
+        .then(function (res) { return res.json().catch(function () { return {}; }).then(function (d) { return { ok: res.ok, d: d }; }); })
+        .then(function (r) {
+          var msg = typeof r.d.detail === 'string' ? r.d.detail : (r.d.message || '');
+          show(r.ok ? (r.d.message + ' (' + r.d.email + ')') : (msg || 'Tasdiqlab bo‘lmadi. Qayta urinib ko‘ring.'), !r.ok);
+        })
+        .catch(function () { show('Internet aloqasini tekshirib, sahifani yangilang.', true); });
+    })();
+  </script>
+</body>
+</html>
