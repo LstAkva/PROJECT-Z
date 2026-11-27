@@ -40,8 +40,7 @@ def test_sitemap_lists_only_canonical_public_pages_on_the_public_domain(client, 
     res = client.get("/sitemap.xml")
     assert res.status_code == status.HTTP_200_OK and "xml" in res.headers["content-type"]
     urls = [loc.text for loc in ET.fromstring(res.text).findall("sm:url/sm:loc", NS)]
-    assert urls == ["https://zakowhat.uz/", "https://zakowhat.uz/arena", "https://zakowhat.uz/daily",
-                    "https://zakowhat.uz/privacy", "https://zakowhat.uz/terms"]
+    assert urls == ["https://zakowhat.uz/", "https://zakowhat.uz/arena", "https://zakowhat.uz/daily"]
     for url in urls:
         assert not re.search(r"localhost|127\.0\.0\.1|/api/|/owner|/play/|/profile|/u/|/staging", url)
 
@@ -70,7 +69,10 @@ def test_public_pages_have_canonical_and_social_metadata(client, monkeypatch, pa
     assert '<meta property="og:image" content="https://zakowhat.uz/static/img/og-zakowhat.png">' in head
     assert '<meta name="twitter:card" content="summary_large_image">' in head
     assert head.count("<title>") == 1 and head.count('name="description"') == 1
-    assert 'name="robots"' not in head                                   # public pages are indexable
+    if path in ("/privacy", "/terms"):                                   # public, but kept out of search results
+        assert '<meta name="robots" content="noindex, follow">' in head
+    else:
+        assert 'name="robots"' not in head                               # pages meant for search are indexable
 
 
 def test_titles_and_descriptions_differ_between_pages(client):

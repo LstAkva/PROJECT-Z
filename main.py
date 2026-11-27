@@ -184,9 +184,8 @@ SITEMAP_PAGES = (
     ("/", "weekly", "1.0"),
     ("/arena", "weekly", "0.9"),
     ("/daily", "daily", "0.8"),
-    ("/privacy", "yearly", "0.2"),
-    ("/terms", "yearly", "0.2"),
 )
+# /privacy and /terms stay public but carry <meta name="robots" content="noindex">: not offered to search engines.
 
 ROBOTS_DISALLOW = (
     "/api/", "/owner", "/bank", "/admin", "/builder", "/create", "/staging",
